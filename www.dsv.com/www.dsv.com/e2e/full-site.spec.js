@@ -194,11 +194,19 @@ test.describe("Full site E2E after DB clear (Chromium)", () => {
 
     // Dashboard map with the new shipment
     await goNav(page, "Dashboard");
+    await expect(page.getByRole("heading", { name: /Welcome Back/i })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("heading", { name: /Live shipment map/i })).toBeVisible();
-    const zoomIn = page.getByRole("button", { name: /Zoom in/i });
-    if (await zoomIn.isVisible()) {
-      await zoomIn.click();
-      await page.getByRole("button", { name: /Zoom out/i }).click();
+    // Close any leftover toast/overlay that can intercept Leaflet controls.
+    await page.evaluate(() => {
+      document.querySelectorAll(".admin-toast-host, .admin-toast").forEach((el) => el.remove());
+      document.body.classList.remove("nav-open", "create-modal-open");
+      const overlay = document.getElementById("nav-overlay");
+      if (overlay) overlay.hidden = true;
+    });
+    const zoomIn = page.locator("#dashboard-live-map").getByRole("button", { name: /Zoom in/i });
+    if (await zoomIn.isVisible().catch(() => false)) {
+      await zoomIn.click({ force: true });
+      await page.locator("#dashboard-live-map").getByRole("button", { name: /Zoom out/i }).click({ force: true });
     }
   });
 
