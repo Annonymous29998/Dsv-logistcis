@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Track your shipment | DSV</title>
     <meta name="description" content="Track DSV shipments in real time. Enter a tracking, booking or consignment number to see status, last scan and estimated arrival.">
@@ -557,6 +557,10 @@
         #dialog-id-stage-chatbot::backdrop {
             background: rgba(0, 20, 50, 0.45);
         }
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
         .dsv-support-chat {
             display: flex;
             flex-direction: column;
@@ -566,6 +570,7 @@
             overflow: hidden;
             box-shadow: 0 18px 50px rgba(0, 20, 50, 0.28);
             font-family: inherit;
+            touch-action: manipulation;
         }
         .dsv-support-chat__header {
             display: flex;
@@ -664,6 +669,7 @@
             border-radius: 0.65rem;
             padding: 0.7rem 0.85rem;
             font: inherit;
+            font-size: 16px;
             margin-bottom: 0.95rem;
             background: #fff;
         }
@@ -801,6 +807,7 @@
             border-radius: 0.75rem;
             padding: 0.75rem 0.9rem;
             font: inherit;
+            font-size: 16px; /* prevents iOS input zoom */
             min-width: 0;
         }
         .dsv-support-chat__send {
@@ -871,12 +878,18 @@
             #dialog-id-stage-chatbot {
                 width: 100%;
                 max-width: none;
-                margin: auto 0 0;
-                max-height: 94vh;
+                max-height: 100dvh;
+                height: 100dvh;
+                margin: 0;
+                border-radius: 0;
             }
             .dsv-support-chat {
-                height: 94vh;
-                border-radius: 1.15rem 1.15rem 0 0;
+                height: 100%;
+                max-height: 100dvh;
+                border-radius: 0;
+            }
+            .dsv-support-chat__body {
+                overscroll-behavior: contain;
             }
         }
         #track-result:empty {
@@ -3054,7 +3067,7 @@ Standard terms and conditions
             });
         })();
     </script>
-    <script src="/resource/js/support-widget.js?v=20261102chat1"></script>
+    <script src="/resource/js/support-widget.js?v=20261102chat2"></script>
     <script>
         (function () {
             var root = document.querySelector(".js-hero-rotator");

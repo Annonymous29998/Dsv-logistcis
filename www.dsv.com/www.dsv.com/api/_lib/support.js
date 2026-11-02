@@ -132,84 +132,165 @@ async function saveChat(chat) {
   return normalized;
 }
 
+function messageKey(m) {
+  return `${m && m.from}|${m && m.at}|${m && m.text}`;
+}
+
+async function patchMetaOnly(id, metaPatch) {
+  const key = String(id || "");
+  if (!key) return null;
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("support_chats")
+    .select("meta, status")
+    .eq("id", key)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (data.status === "ended") return getChat(key);
+  const meta = Object.assign(
+    {},
+    data.meta && typeof data.meta === "object" ? data.meta : {},
+    metaPatch || {}
+  );
+  const { error: upErr } = await supabase.from("support_chats").update({ meta }).eq("id", key);
+  if (upErr) throw upErr;
+  return getChat(key);
+}
+
 async function appendMessage(id, message, options) {
   options = options || {};
-  const existing = (await getChat(id)) || emptyChat(id, options.name);
-  if (options.name) existing.name = options.name;
-  if (options.geo) Object.assign(existing, options.geo);
-  existing.messages = existing.messages || [];
-  existing.messages.push({
-    from: message.from,
-    text: message.text,
-    at: message.at || Date.now()
-  });
-  existing.updatedAt = Date.now();
-  existing.typingAgentAt = null;
-  if (existing.status !== "ended") existing.status = "open";
+  const at = message.at || Date.now();
+  const incoming = { from: message.from, text: message.text, at };
+  let last = null;
 
-  if (message.from === "customer") {
-    existing.unread = (existing.unread || 0) + 1;
-    if (options.awaitingAgent !== false) existing.awaitingAgent = true;
-  } else if (message.from === "agent") {
-    existing.unreadCustomer = (existing.unreadCustomer || 0) + 1;
-    existing.unread = 0;
-    existing.awaitingAgent = false;
-    existing.agentConnected = true;
-  } else if (message.from === "bot") {
-    /* FAQ bot replies do not alert admin */
-  } else if (message.from === "system") {
-    existing.unreadCustomer = (existing.unreadCustomer || 0) + 1;
+  // Retry: concurrent typing/read upserts used to clobber the messages array.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const existing = (await getChat(id)) || emptyChat(id, options.name);
+    if (options.name) existing.name = options.name;
+    if (options.geo) Object.assign(existing, options.geo);
+    existing.messages = Array.isArray(existing.messages) ? existing.messages.slice() : [];
+
+    if (existing.messages.some((m) => messageKey(m) === messageKey(incoming))) {
+      return existing;
+    }
+
+    existing.messages.push(incoming);
+    existing.updatedAt = Date.now();
+    existing.typingAgentAt = null;
+    if (existing.status !== "ended") existing.status = "open";
+
+    if (message.from === "customer") {
+      existing.unread = (existing.unread || 0) + 1;
+      if (options.awaitingAgent !== false) existing.awaitingAgent = true;
+    } else if (message.from === "agent") {
+      existing.unreadCustomer = (existing.unreadCustomer || 0) + 1;
+      existing.unread = 0;
+      existing.awaitingAgent = false;
+      existing.agentConnected = true;
+    } else if (message.from === "system") {
+      existing.unreadCustomer = (existing.unreadCustomer || 0) + 1;
+    }
+
+    await saveChat(existing);
+    const verify = await getChat(id);
+    last = verify;
+    if (verify && (verify.messages || []).some((m) => messageKey(m) === messageKey(incoming))) {
+      return verify;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 35 + attempt * 45));
   }
-  return saveChat(existing);
+  return last || getChat(id);
 }
 
 async function markCustomerRead(id) {
-  const chat = await getChat(id);
-  if (!chat) return null;
-  chat.unreadCustomer = 0;
-  chat.customerUnread = 0;
-  return saveChat(chat);
+  const key = String(id || "");
+  if (!key) return null;
+  const supabase = getSupabase();
+  const { error } = await supabase.from("support_chats").update({ unread_customer: 0 }).eq("id", key);
+  if (error) throw error;
+  return getChat(key);
 }
 
 async function markAdminRead(id) {
-  const chat = await getChat(id);
-  if (!chat) return null;
-  chat.unread = 0;
-  return saveChat(chat);
+  const key = String(id || "");
+  if (!key) return null;
+  const supabase = getSupabase();
+  const { error } = await supabase.from("support_chats").update({ unread_admin: 0 }).eq("id", key);
+  if (error) throw error;
+  return getChat(key);
 }
 
 async function patchChatMeta(id, patch) {
   patch = patch || {};
-  let chat = await getChat(id);
-  if (!chat) chat = emptyChat(id, patch.name);
-  if (patch.name) chat.name = String(patch.name).trim() || chat.name;
-  ["ip", "city", "country", "countryCode", "geoLabel"].forEach((key) => {
-    if (patch[key] != null) chat[key] = String(patch[key] || "");
+  const key = String(id || "");
+  if (!key) return null;
+  let chat = await getChat(key);
+  if (!chat) {
+    chat = emptyChat(key, patch.name);
+    if (patch.name) chat.name = String(patch.name).trim() || chat.name;
+    ["ip", "city", "country", "countryCode", "geoLabel"].forEach((field) => {
+      if (patch[field] != null) chat[field] = String(patch[field] || "");
+    });
+    if (patch.awaitingAgent != null) chat.awaitingAgent = !!patch.awaitingAgent;
+    if (patch.agentConnected != null) chat.agentConnected = !!patch.agentConnected;
+    chat.updatedAt = Date.now();
+    return saveChat(chat);
+  }
+
+  const supabase = getSupabase();
+  const rowPatch = {};
+  if (patch.name) rowPatch.name = String(patch.name).trim() || chat.name;
+
+  const metaPatch = {};
+  ["ip", "city", "country", "countryCode", "geoLabel"].forEach((field) => {
+    if (patch[field] != null) metaPatch[field] = String(patch[field] || "");
   });
-  if (patch.awaitingAgent != null) chat.awaitingAgent = !!patch.awaitingAgent;
-  if (patch.agentConnected != null) chat.agentConnected = !!patch.agentConnected;
-  chat.updatedAt = Date.now();
-  return saveChat(chat);
+  if (patch.awaitingAgent != null) metaPatch.awaitingAgent = !!patch.awaitingAgent;
+  if (patch.agentConnected != null) metaPatch.agentConnected = !!patch.agentConnected;
+
+  if (Object.keys(metaPatch).length) {
+    const { data, error } = await supabase.from("support_chats").select("meta").eq("id", key).maybeSingle();
+    if (error) throw error;
+    rowPatch.meta = Object.assign({}, data && data.meta && typeof data.meta === "object" ? data.meta : {}, metaPatch);
+  }
+
+  if (!Object.keys(rowPatch).length) return chat;
+  rowPatch.updated_at = new Date().toISOString();
+  const { error: upErr } = await supabase.from("support_chats").update(rowPatch).eq("id", key);
+  if (upErr) throw upErr;
+  return getChat(key);
 }
 
 async function markAgentConnected(id) {
-  const chat = await getChat(id);
+  const key = String(id || "");
+  if (!key) return null;
+  const chat = await getChat(key);
   if (!chat) return null;
   if (chat.status === "ended") return chat;
-  chat.agentConnected = true;
-  chat.agentConnectedAt = chat.agentConnectedAt || Date.now();
-  chat.awaitingAgent = false;
-  chat.unread = 0;
-  chat.updatedAt = Date.now();
-  return saveChat(chat);
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("support_chats").select("meta").eq("id", key).maybeSingle();
+  if (error) throw error;
+  const meta = Object.assign({}, data && data.meta && typeof data.meta === "object" ? data.meta : {}, {
+    agentConnected: true,
+    awaitingAgent: false,
+    agentConnectedAt: chat.agentConnectedAt || Date.now()
+  });
+  const { error: upErr } = await supabase
+    .from("support_chats")
+    .update({
+      meta,
+      unread_admin: 0,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", key);
+  if (upErr) throw upErr;
+  return getChat(key);
 }
 
 async function setTyping(id, typing) {
-  const chat = await getChat(id);
-  if (!chat || chat.status === "ended") return chat;
-  chat.typingAgentAt = typing ? Date.now() : null;
-  chat.updatedAt = Date.now();
-  return saveChat(chat);
+  // Meta-only — never rewrite messages (that race made agent replies vanish).
+  return patchMetaOnly(id, { typingAgentAt: typing ? Date.now() : null });
 }
 
 async function endChat(id) {

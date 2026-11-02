@@ -128,6 +128,8 @@
 
   var supportCache = [];
   var typingIdleTimer = null;
+  var typingPulseTimer = null;
+  var typingActiveChatId = null;
 
   function loadSupportChats() {
     return supportCache.slice();
@@ -158,10 +160,18 @@
   }
 
   function signalAgentTyping(chatId) {
-    publishAgentTyping(chatId, true);
+    typingActiveChatId = chatId;
+    // Pulse at most every 2.5s while typing so we don't stampede the API.
+    if (!typingPulseTimer) {
+      publishAgentTyping(chatId, true);
+      typingPulseTimer = window.setInterval(function () {
+        if (!typingActiveChatId) return;
+        publishAgentTyping(typingActiveChatId, true);
+      }, 2500);
+    }
     if (typingIdleTimer) clearTimeout(typingIdleTimer);
     typingIdleTimer = window.setTimeout(function () {
-      publishAgentTyping(chatId, false);
+      clearAgentTyping(chatId);
     }, 4500);
   }
 
@@ -170,6 +180,11 @@
       clearTimeout(typingIdleTimer);
       typingIdleTimer = null;
     }
+    if (typingPulseTimer) {
+      clearInterval(typingPulseTimer);
+      typingPulseTimer = null;
+    }
+    typingActiveChatId = null;
     publishAgentTyping(chatId, false);
   }
 
@@ -222,13 +237,18 @@
         (geo ? " · " + geo : " · locating visitor…") +
         (chat.status === "ended" ? " · ended" : "");
     }
-    msgs.innerHTML = (chat.messages || []).map(function (m) {
+    var nextHtml = (chat.messages || []).map(function (m) {
       if (m.from === "system") {
         return '<div class="bubble bot">' + U().escapeHtml(m.text) + "</div>";
       }
       return '<div class="bubble ' + bubbleClass(m.from) + '">' + U().escapeHtml(m.text) + "</div>";
     }).join("") || '<p class="empty">No messages in this conversation yet.</p>';
-    msgs.scrollTop = msgs.scrollHeight;
+    // Avoid wiping the transcript DOM (and scroll) when nothing changed.
+    if (msgs.getAttribute("data-msg-sig") !== String((chat.messages || []).length) + ":" + nextHtml.length) {
+      msgs.innerHTML = nextHtml;
+      msgs.setAttribute("data-msg-sig", String((chat.messages || []).length) + ":" + nextHtml.length);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
     var ended = chat.status === "ended";
     if (endBtn) {
       endBtn.disabled = ended;

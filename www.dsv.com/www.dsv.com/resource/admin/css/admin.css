@@ -854,7 +854,10 @@ button.note { font: inherit; color: inherit; width: 100%; cursor: pointer; }
   display: flex; gap: .5rem; padding: .8rem; border-top: 1px solid var(--line);
   background: #fff; flex-shrink: 0;
 }
-.chat-compose input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: .7rem .8rem; }
+.chat-compose input {
+  flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: .7rem .8rem;
+  font-size: 16px; /* prevent iOS Safari zoom on focus */
+}
 .chat-compose button {
   border: 0; border-radius: 12px; padding: 0 .9rem; background: var(--blue); color: #fff;
   font-weight: 700; cursor: pointer; flex-shrink: 0;

@@ -320,7 +320,13 @@
     }
 
     syncCenterStatus(thread);
+    // Typing-only polls must not wipe the transcript.
     if (!force && list.length === renderedCount) {
+      refreshTypingBubble();
+      return;
+    }
+    // Never replace a longer local transcript with a shorter poll (race protection).
+    if (!force && list.length < renderedCount) {
       refreshTypingBubble();
       return;
     }
