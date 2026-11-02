@@ -1,6 +1,21 @@
 (function (global) {
   "use strict";
 
+  var redirectingToLogin = false;
+
+  function handleUnauthorized(path) {
+    if (redirectingToLogin) return;
+    if (String(path || "").indexOf("/api/admin/login") === 0) return;
+    if (String(path || "").indexOf("/api/admin/me") === 0) return;
+    redirectingToLogin = true;
+    try {
+      if (typeof global.AdminApp === "object" && typeof global.AdminApp.stopPolling === "function") {
+        global.AdminApp.stopPolling();
+      }
+    } catch (e) {}
+    window.location.replace("/admin/login");
+  }
+
   async function request(path, options) {
     options = options || {};
     var response = await fetch(path, {
@@ -22,6 +37,7 @@
     }
 
     if (!response.ok) {
+      if (response.status === 401) handleUnauthorized(path);
       var error = new Error((data && data.error) || ("Request failed (" + response.status + ")"));
       error.status = response.status;
       error.payload = data;
@@ -83,6 +99,9 @@
       return request("/api/admin/shipments/" + encodeURIComponent(id), {
         method: "DELETE"
       });
+    },
+    clearAllShipments: function () {
+      return request("/api/admin/shipments", { method: "DELETE" });
     },
     supportChats: function () {
       return request("/api/admin/support");

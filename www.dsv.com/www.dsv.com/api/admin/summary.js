@@ -16,6 +16,8 @@ module.exports = async function handler(req, res) {
       delivered: 0,
       pending: 0,
       exception: 0,
+      onHold: 0,
+      cancelled: 0,
       active: 0
     };
     shipments.forEach((item) => {
@@ -24,10 +26,16 @@ module.exports = async function handler(req, res) {
       if (status === "delivered") counts.delivered += 1;
       else if (status === "out-for-delivery") counts.outForDelivery += 1;
       else if (status === "in-transit") counts.inTransit += 1;
+      else if (status === "on-hold") {
+        counts.onHold += 1;
+        counts.exception += 1;
+        counts.pending += 1;
+      } else if (status === "cancelled") counts.cancelled += 1;
       else if (status === "exception") {
         counts.exception += 1;
         counts.pending += 1;
-      } else counts.pending += 1;
+      } else if (status === "pending" || status === "label-created") counts.pending += 1;
+      else counts.pending += 1;
     });
     counts.active = counts.inTransit + counts.outForDelivery;
     return sendJson(res, 200, { ok: true, summary: counts });

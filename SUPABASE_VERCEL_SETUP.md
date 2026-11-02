@@ -44,15 +44,15 @@ Also in Supabase → Database → Replication, confirm `shipments` is enabled fo
 - Install/build uses `package.json` in that folder
 - Deploy
 
-## 4. Optional: seed existing JSON trackings
+## 4. Local development
+
+Prefer the Python server (Supabase-backed APIs):
 
 ```bash
-cd www.dsv.com/www.dsv.com
-npm install
-SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/seed-supabase.js
+python3 serve.py
 ```
 
-## 5. Local development
+Or Vercel-style local APIs:
 
 ```bash
 cd www.dsv.com/www.dsv.com
@@ -60,6 +60,6 @@ npm install
 npx vercel dev
 ```
 
-This serves the static site and `/api/*` the same way production does.
+Both serve the static site and `/api/*` against Supabase. Do not use a static-only “Go Live” / Live Server for admin or tracking.
 
 `serve.py` can still be used for static browsing, but create-tracking + address search + DB persistence are meant to run through the Node `/api` routes with Supabase.

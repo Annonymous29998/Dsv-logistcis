@@ -105,24 +105,32 @@
     }, { passive: true });
   }
 
-  function mountNow(container, shipments, options) {
-    options = options || {};
-    if (!container || !global.L) return null;
+  function addBasemap(map) {
+    // Free raster tiles — no API key. OSM first, Esri fallback if OSM fails.
+    var osmTiles = global.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap"
+    });
+    var esriTiles = global.L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri"
+      }
+    );
+    var tileErrors = 0;
+    osmTiles.on("tileerror", function () {
+      tileErrors += 1;
+      if (tileErrors >= 3 && map.hasLayer(osmTiles)) {
+        map.removeLayer(osmTiles);
+        if (!map.hasLayer(esriTiles)) esriTiles.addTo(map);
+      }
+    });
+    osmTiles.addTo(map);
+  }
 
-    var id = container.id || ("map-" + Math.random().toString(36).slice(2, 8));
-    container.id = id;
-    destroy(id);
-
-    var rows = (shipments || []).filter(hasCoords);
-    if (!rows.length) {
-      container.innerHTML = '<div class="map-note">No mapped shipments yet. Create a shipment with addresses to plot the route here.</div>';
-      container.classList.add("map-canvas--empty");
-      return null;
-    }
-    container.classList.remove("map-canvas--empty");
-    container.innerHTML = "";
-
-    var map = global.L.map(container, {
+  function createMap(container) {
+    return global.L.map(container, {
       zoomControl: true,
       attributionControl: true,
       scrollWheelZoom: false,
@@ -132,13 +140,43 @@
       doubleClickZoom: true,
       boxZoom: true
     });
+  }
 
-    global.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
+  function mountNow(container, shipments, options) {
+    options = options || {};
+    if (!container || !global.L) return null;
 
+    var id = container.id || ("map-" + Math.random().toString(36).slice(2, 8));
+    container.id = id;
+    destroy(id);
+
+    var rows = (shipments || []).filter(hasCoords);
+    container.classList.remove("map-canvas--empty");
+    container.innerHTML = "";
+
+    var map = createMap(container);
+    addBasemap(map);
     wireKeyboardPan(container, map);
+
+    // No shipments yet: still show a real map (world overview).
+    if (!rows.length) {
+      maps[id] = {
+        map: map,
+        rows: [],
+        byId: {},
+        focusId: null,
+        options: options,
+        maxZoom: options.maxZoom || 12
+      };
+      map.setView([20, 0], 2);
+      function refreshEmpty() {
+        try { map.invalidateSize({ animate: false }); } catch (e) {}
+      }
+      window.setTimeout(refreshEmpty, 80);
+      window.setTimeout(refreshEmpty, 320);
+      window.setTimeout(refreshEmpty, 800);
+      return map;
+    }
 
     var focus = options.focusId
       ? rows.find(function (r) { return r.id === options.focusId; })
@@ -204,10 +242,15 @@
 
     fitToRow(map, focus, options.maxZoom || 12);
 
-    window.setTimeout(function () {
-      map.invalidateSize();
-      fitToRow(map, focus, options.maxZoom || 12);
-    }, 120);
+    function refreshSize() {
+      try {
+        map.invalidateSize({ animate: false });
+        fitToRow(map, focus, options.maxZoom || 12);
+      } catch (e) {}
+    }
+    window.setTimeout(refreshSize, 80);
+    window.setTimeout(refreshSize, 320);
+    window.setTimeout(refreshSize, 800);
 
     return map;
   }

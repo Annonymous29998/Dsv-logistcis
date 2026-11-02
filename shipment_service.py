@@ -16,9 +16,6 @@ from typing import Any
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE_ROOT = os.path.join(ROOT, "www.dsv.com", "www.dsv.com")
-SHIPMENTS_PATH = os.path.join(SITE_ROOT, "resource", "data", "shipments.json")
-TRACKING_JS_PATH = os.path.join(SITE_ROOT, "resource", "js", "tracking-data.js")
-
 NOMINATIM_SEARCH = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_REVERSE = "https://nominatim.openstreetmap.org/reverse"
 OSRM_ROUTE = "https://router.project-osrm.org/route/v1/driving/"
@@ -37,30 +34,218 @@ def _http_json(url: str, timeout: float = 12.0) -> Any:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def load_shipments() -> dict[str, Any]:
+def _supabase_config() -> tuple[str, str] | tuple[None, None]:
+    url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
+    key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+    if url and key:
+        return url, key
+    return None, None
+
+
+def using_supabase() -> bool:
+    url, key = _supabase_config()
+    return bool(url and key)
+
+
+def _supabase_headers(key: str, *, prefer: str | None = None) -> dict[str, str]:
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+    if prefer:
+        headers["Prefer"] = prefer
+    return headers
+
+
+def _row_to_item(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "status": row.get("status") or "in-transit",
+        "deliveryStatus": row.get("delivery_status"),
+        "previousStatus": row.get("previous_status"),
+        "statusReason": row.get("status_reason"),
+        "holdReason": row.get("hold_reason"),
+        "cancelReason": row.get("cancel_reason"),
+        "heldAt": row.get("held_at"),
+        "cancelledAt": row.get("cancelled_at"),
+        "outForDeliveryToday": bool(row.get("out_for_delivery_today")),
+        "serviceType": row.get("service_type") or "DSV Road",
+        "estimatedDelivery": row.get("estimated_delivery"),
+        "deliveryTime": row.get("delivery_time") or "9:00 PM",
+        "sender": row.get("sender"),
+        "receiver": row.get("receiver"),
+        "packageContent": row.get("package_content"),
+        "signatureRequired": row.get("signature_required") is not False,
+        "fromLocation": row.get("from_location"),
+        "toLocation": row.get("to_location"),
+        "statusNearPlace": row.get("status_near_place"),
+        "labelCreatedDate": row.get("label_created_date"),
+        "deliveryNotice": row.get("delivery_notice"),
+        "timeline": row.get("timeline") or [],
+        "routeStops": row.get("route_stops") or [],
+        "plannedEvents": row.get("planned_events") or [],
+        "adminEvents": row.get("admin_events") or [],
+        "fromLat": row.get("from_lat"),
+        "fromLon": row.get("from_lon"),
+        "toLat": row.get("to_lat"),
+        "toLon": row.get("to_lon"),
+        "routeDistanceM": row.get("route_distance_m"),
+        "routeDurationS": row.get("route_duration_s"),
+        "createdAt": row.get("created_at"),
+        "etaAt": row.get("eta_at"),
+        "progressUpdatedAt": row.get("progress_updated_at"),
+    }
+
+
+def _item_to_row(tracking_id: str, item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": tracking_id,
+        "status": item.get("status") or "in-transit",
+        "delivery_status": item.get("deliveryStatus"),
+        "previous_status": item.get("previousStatus"),
+        "status_reason": item.get("statusReason"),
+        "hold_reason": item.get("holdReason"),
+        "cancel_reason": item.get("cancelReason"),
+        "held_at": item.get("heldAt"),
+        "cancelled_at": item.get("cancelledAt"),
+        "out_for_delivery_today": bool(item.get("outForDeliveryToday")),
+        "service_type": item.get("serviceType") or "DSV Road",
+        "estimated_delivery": item.get("estimatedDelivery"),
+        "delivery_time": item.get("deliveryTime") or "9:00 PM",
+        "sender": item.get("sender"),
+        "receiver": item.get("receiver"),
+        "package_content": item.get("packageContent"),
+        "signature_required": item.get("signatureRequired") is not False,
+        "from_location": item.get("fromLocation"),
+        "to_location": item.get("toLocation"),
+        "status_near_place": item.get("statusNearPlace"),
+        "label_created_date": item.get("labelCreatedDate"),
+        "delivery_notice": item.get("deliveryNotice"),
+        "timeline": item.get("timeline") or [],
+        "route_stops": item.get("routeStops") or [],
+        "planned_events": item.get("plannedEvents") or [],
+        "admin_events": item.get("adminEvents") or [],
+        "from_lat": item.get("fromLat"),
+        "from_lon": item.get("fromLon"),
+        "to_lat": item.get("toLat"),
+        "to_lon": item.get("toLon"),
+        "route_distance_m": item.get("routeDistanceM"),
+        "route_duration_s": item.get("routeDurationS"),
+        "created_at": item.get("createdAt") or datetime.now(timezone.utc).isoformat(),
+        "eta_at": item.get("etaAt"),
+        "progress_updated_at": item.get("progressUpdatedAt"),
+    }
+
+
+def _supabase_request(
+    method: str,
+    path: str,
+    *,
+    payload: Any = None,
+    prefer: str | None = None,
+    query: str = "",
+) -> Any:
+    url, key = _supabase_config()
+    if not url or not key:
+        raise RuntimeError("Supabase is not configured.")
+    target = f"{url}/rest/v1/{path.lstrip('/')}"
+    if query:
+        target = f"{target}?{query}"
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        target,
+        data=body,
+        headers=_supabase_headers(key, prefer=prefer),
+        method=method,
+    )
     try:
-        with open(SHIPMENTS_PATH, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-        return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8")
+            if not raw:
+                return None
+            return json.loads(raw)
+    except urllib.error.HTTPError as err:
+        detail = err.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Supabase {method} {path} failed ({err.code}): {detail[:300]}") from err
+
+
+def _has_coords(item: dict[str, Any]) -> bool:
+    try:
+        return all(
+            isinstance(item.get(key), (int, float)) and abs(float(item.get(key))) > 0
+            for key in ("fromLat", "fromLon", "toLat", "toLon")
+        )
+    except (TypeError, ValueError):
+        return False
+
+
+def repair_missing_coordinates(shipments: dict[str, Any]) -> dict[str, Any]:
+    """Backfill map coords for older rows that only stored address text."""
+    changed = False
+    for _tid, item in shipments.items():
+        if not isinstance(item, dict) or _has_coords(item):
+            continue
+        from_location = str(item.get("fromLocation") or "").strip()
+        to_location = str(item.get("toLocation") or "").strip()
+        if not from_location or not to_location:
+            continue
+        geo_from = geocode_address(from_location)
+        geo_to = geocode_address(to_location)
+        if not geo_from or not geo_to:
+            continue
+        item["fromLat"] = float(geo_from["lat"])
+        item["fromLon"] = float(geo_from["lon"])
+        item["toLat"] = float(geo_to["lat"])
+        item["toLon"] = float(geo_to["lon"])
+        if geo_from.get("label"):
+            item["fromLocation"] = geo_from["label"]
+        if geo_to.get("label"):
+            item["toLocation"] = geo_to["label"]
+        changed = True
+    if changed:
+        save_shipments(shipments)
+    return shipments
+
+
+def load_shipments() -> dict[str, Any]:
+    if not using_supabase():
+        raise RuntimeError(
+            "Supabase is required. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env "
+            "(local JSON demo storage is disabled)."
+        )
+    rows = _supabase_request(
+        "GET",
+        "shipments",
+        query="select=*&order=created_at.desc",
+        prefer="return=representation",
+    )
+    out: dict[str, Any] = {}
+    for row in rows or []:
+        if not isinstance(row, dict) or not row.get("id"):
+            continue
+        out[str(row["id"])] = _row_to_item(row)
+    return repair_missing_coordinates(out)
 
 
 def public_item(item: dict[str, Any]) -> dict[str, Any]:
+    """Public tracking payload (no internal planning geometry)."""
     skip = {
         "routeGeometry",
-        "routeStops",
         "plannedEvents",
+        "adminEvents",
         "createdAt",
         "etaAt",
         "progressUpdatedAt",
-        "fromLat",
-        "fromLon",
-        "toLat",
-        "toLon",
-        "routeDistanceM",
-        "routeDurationS",
+        "previousStatus",
     }
+    return {k: v for k, v in item.items() if k not in skip}
+
+
+def admin_item(item: dict[str, Any]) -> dict[str, Any]:
+    """Admin payload — keeps map coords/route stops for the control panel."""
+    skip = {"routeGeometry", "plannedEvents", "adminEvents"}
     return {k: v for k, v in item.items() if k not in skip}
 
 
@@ -69,20 +254,48 @@ def _public_item(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def save_shipments(shipments: dict[str, Any]) -> None:
-    os.makedirs(os.path.dirname(SHIPMENTS_PATH), exist_ok=True)
-    with open(SHIPMENTS_PATH, "w", encoding="utf-8") as fh:
-        json.dump(shipments, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
+    if not using_supabase():
+        raise RuntimeError(
+            "Supabase is required. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env "
+            "(local JSON demo storage is disabled)."
+        )
+    existing_rows = _supabase_request(
+        "GET",
+        "shipments",
+        query="select=id",
+        prefer="return=representation",
+    ) or []
+    existing_ids = {
+        str(row.get("id"))
+        for row in existing_rows
+        if isinstance(row, dict) and row.get("id")
+    }
+    next_ids = {str(tid) for tid in shipments.keys()}
 
-    public: dict[str, Any] = {}
-    for tid, item in shipments.items():
-        if isinstance(item, dict):
-            public[tid] = _public_item(item)
-    with open(TRACKING_JS_PATH, "w", encoding="utf-8") as fh:
-        fh.write("window.DSV_SHIPMENTS = ")
-        json.dump(public, fh, indent=2, ensure_ascii=False)
-        fh.write(";\n")
+    rows = [
+        _item_to_row(str(tid), item)
+        for tid, item in shipments.items()
+        if isinstance(item, dict)
+    ]
+    if rows:
+        _supabase_request(
+            "POST",
+            "shipments",
+            payload=rows,
+            query="on_conflict=id",
+            prefer="resolution=merge-duplicates,return=minimal",
+        )
 
+    to_delete = sorted(existing_ids - next_ids)
+    if to_delete:
+        # PostgREST "in" filter needs quoted values for text ids.
+        joined = ",".join('"' + tid.replace('"', "") + '"' for tid in to_delete)
+        _supabase_request(
+            "DELETE",
+            "shipments",
+            query=f"id=in.({joined})",
+            prefer="return=minimal",
+        )
 
 def generate_tracking_id(existing: dict[str, Any]) -> str:
     for _ in range(40):
@@ -189,8 +402,38 @@ def search_addresses(query: str, limit: int = 8) -> list[dict[str, Any]]:
 
 
 def geocode_address(query: str) -> dict[str, Any] | None:
-    hits = search_addresses(query, limit=1)
-    return hits[0] if hits else None
+    q = str(query or "").strip()
+    if not q:
+        return None
+    candidates = [q]
+    # Strip unit/apt noise that often makes Nominatim miss.
+    cleaned = re.sub(
+        r"\b(apt|apartment|unit|suite|ste|#)\s*[a-z0-9\-]+\b",
+        "",
+        q,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).replace(" ,", ",").strip(" ,")
+    if cleaned and cleaned.lower() != q.lower():
+        candidates.append(cleaned)
+    # City / region fallback from the last address parts.
+    parts = [p.strip() for p in cleaned.split(",") if p.strip()]
+    if len(parts) >= 2:
+        candidates.append(", ".join(parts[-2:]))
+    if len(parts) >= 3:
+        candidates.append(", ".join(parts[-3:]))
+
+    seen = set()
+    for candidate in candidates:
+        key = candidate.lower()
+        if not candidate or key in seen:
+            continue
+        seen.add(key)
+        hits = search_addresses(candidate, limit=1)
+        if hits:
+            return hits[0]
+        time.sleep(1.05)  # Nominatim polite usage
+    return None
 
 
 def reverse_label(lat: float, lon: float) -> str:
@@ -333,7 +576,7 @@ def find_shipment(shipments: dict[str, Any], tracking_id: str) -> tuple[str | No
         key_u = str(key).upper()
         if key_u == needle:
             return key, value
-        # Allow short display IDs from admin UI (#000001 → DEMO100000001)
+        # Allow short suffix matches from admin UI (#000001 → …000001)
         if needle.isdigit() and key_u.endswith(needle.zfill(6) if len(needle) <= 6 else needle):
             matches.append(key)
         elif len(needle) >= 4 and key_u.endswith(needle):
@@ -368,7 +611,7 @@ def hold_shipment(tracking_id: str, reason: str) -> dict[str, Any]:
     _append_timeline(item, "ON HOLD", why)
     shipments[key] = item
     save_shipments(shipments)
-    return {"id": key, "shipment": public_item(item)}
+    return {"id": key, "shipment": admin_item(item)}
 
 
 def release_hold(tracking_id: str, note: str | None = None) -> dict[str, Any]:
@@ -390,7 +633,7 @@ def release_hold(tracking_id: str, note: str | None = None) -> dict[str, Any]:
     _append_timeline(item, "HOLD RELEASED", note_text or "Shipment released from hold")
     shipments[key] = item
     save_shipments(shipments)
-    return {"id": key, "shipment": public_item(item)}
+    return {"id": key, "shipment": admin_item(item)}
 
 
 def cancel_shipment(tracking_id: str, reason: str) -> dict[str, Any]:
@@ -414,7 +657,7 @@ def cancel_shipment(tracking_id: str, reason: str) -> dict[str, Any]:
     _append_timeline(item, "CANCELLED", why)
     shipments[key] = item
     save_shipments(shipments)
-    return {"id": key, "shipment": public_item(item)}
+    return {"id": key, "shipment": admin_item(item)}
 
 
 def delete_shipment(tracking_id: str) -> dict[str, Any]:
@@ -425,6 +668,13 @@ def delete_shipment(tracking_id: str) -> dict[str, Any]:
     del shipments[key]
     save_shipments(shipments)
     return {"id": key, "deleted": True}
+
+
+def clear_all_shipments() -> dict[str, Any]:
+    shipments = load_shipments()
+    deleted = len(shipments)
+    save_shipments({})
+    return {"deleted": deleted, "shipments": []}
 
 
 def update_shipment(tracking_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -460,12 +710,67 @@ def update_shipment(tracking_id: str, payload: dict[str, Any]) -> dict[str, Any]
             raise ValueError("Use the hold or cancel actions to change to those statuses.")
         item["status"] = status
         item["deliveryStatus"] = delivery_status
+        if status == "out-for-delivery":
+            item["outForDeliveryToday"] = True
+
+    # Apply map coords from admin edit (autocomplete) and rebuild the route when needed.
+    coord_keys = ("fromLat", "fromLon", "toLat", "toLon")
+    coords_provided = any(payload.get(k) is not None for k in coord_keys)
+    route_changed = False
+    if coords_provided:
+        try:
+            new_coords = {
+                "fromLat": float(payload["fromLat"]) if payload.get("fromLat") is not None else float(item.get("fromLat")),
+                "fromLon": float(payload["fromLon"]) if payload.get("fromLon") is not None else float(item.get("fromLon")),
+                "toLat": float(payload["toLat"]) if payload.get("toLat") is not None else float(item.get("toLat")),
+                "toLon": float(payload["toLon"]) if payload.get("toLon") is not None else float(item.get("toLon")),
+            }
+        except (TypeError, ValueError) as err:
+            raise ValueError("Invalid map coordinates for origin/destination.") from err
+
+        old_coords = {
+            "fromLat": item.get("fromLat"),
+            "fromLon": item.get("fromLon"),
+            "toLat": item.get("toLat"),
+            "toLon": item.get("toLon"),
+        }
+        for ck, cv in new_coords.items():
+            item[ck] = cv
+            try:
+                if abs(float(old_coords.get(ck) or 0) - cv) > 1e-6:
+                    route_changed = True
+            except (TypeError, ValueError):
+                route_changed = True
+
+    if route_changed and _has_coords(item):
+        transit_hours = float(payload.get("transitHours") or 72)
+        plan = build_route_plan(
+            str(item.get("fromLocation") or ""),
+            str(item.get("toLocation") or ""),
+            float(item["fromLat"]),
+            float(item["fromLon"]),
+            float(item["toLat"]),
+            float(item["toLon"]),
+            transit_hours=transit_hours,
+        )
+        item["routeStops"] = plan["routeStops"]
+        item["plannedEvents"] = plan["plannedEvents"]
+        item["statusNearPlace"] = plan["statusNearPlace"]
+        item["routeDistanceM"] = plan["distanceM"]
+        item["routeDurationS"] = plan["durationS"]
+        if not payload.get("estimatedDelivery"):
+            item["estimatedDelivery"] = plan["estimatedDelivery"]
+        item["etaAt"] = plan["etaAt"]
+        item["timeline"] = timeline_for_status(plan["plannedEvents"], str(item.get("status") or "in-transit"))
 
     note = str(payload.get("reason") or "Shipment details updated").strip() or "Shipment details updated"
-    _append_timeline(item, "DETAILS UPDATED", note)
+    if not route_changed:
+        _append_timeline(item, "DETAILS UPDATED", note)
+    else:
+        _append_timeline(item, "DETAILS UPDATED", note)
     shipments[key] = item
     save_shipments(shipments)
-    return {"id": key, "shipment": public_item(item)}
+    return {"id": key, "shipment": admin_item(item)}
 
 
 def build_route_plan(
@@ -807,7 +1112,7 @@ def create_shipment(payload: dict[str, Any]) -> dict[str, Any]:
     # Honor the admin-selected starting timeline; later requests advance along the route by time.
     shipments[tracking_id] = item
     save_shipments(shipments)
-    return {"id": tracking_id, "shipment": public_item(item)}
+    return {"id": tracking_id, "shipment": admin_item(item)}
 
 
 def preview_route(payload: dict[str, Any]) -> dict[str, Any]:

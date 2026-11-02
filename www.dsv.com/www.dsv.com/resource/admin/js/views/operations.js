@@ -14,7 +14,12 @@
 
     root.innerHTML =
       '<div class="welcome"><div><h1>Shipments</h1><p>Live consignments from the tracking book.</p></div>' +
-      '<button type="button" class="btn" id="btn-create-shipment">Create shipment</button></div>' +
+      '<div style="display:flex;gap:.55rem;flex-wrap:wrap">' +
+        '<button type="button" class="btn" id="btn-create-shipment">Create shipment</button>' +
+        (ctx.shipments.length
+          ? '<button type="button" class="btn btn-danger" id="btn-clear-all-shipments">Clear all data</button>'
+          : "") +
+      "</div></div>" +
       '<div class="toolbar">' +
         '<select id="filter-status"><option value="all">All statuses</option><option value="in-transit">In Transit</option><option value="out-for-delivery">Out for Delivery</option><option value="delivered">Delivered</option><option value="exception">Pending / Exception</option></select>' +
         '<span style="color:var(--muted);font-weight:600">' + rows.length + " shown</span>" +
@@ -63,6 +68,12 @@
             shipmentsView(root, ctx);
           });
         });
+      });
+    }
+    var clearBtn = document.getElementById("btn-clear-all-shipments");
+    if (clearBtn && typeof ctx.clearAllShipmentData === "function") {
+      clearBtn.addEventListener("click", function () {
+        ctx.clearAllShipmentData();
       });
     }
   }

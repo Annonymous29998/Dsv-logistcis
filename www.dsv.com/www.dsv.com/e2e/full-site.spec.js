@@ -112,6 +112,9 @@ test.describe("Full site E2E after DB clear (Chromium)", () => {
     await expect(page.locator("#route-preview")).toBeVisible({ timeout: 45_000 });
     await expect(page.locator("#route-preview")).toContainText(/LABEL CREATED|IN TRANSIT|km/i);
     await page.locator("#btn-save-shipment").click();
+    await expect(page.locator(".admin-toast--success").filter({ hasText: /Shipment created/i })).toBeVisible({
+      timeout: 45_000
+    });
     await expect(page.locator("#create-shipment-form")).toHaveCount(0, { timeout: 45_000 });
     await expect(page.locator("#view-root")).toContainText(new RegExp(`E2E Sender ${stamp}|E2E Receiver ${stamp}`), {
       timeout: 20_000
@@ -133,20 +136,52 @@ test.describe("Full site E2E after DB clear (Chromium)", () => {
     await expect(page.locator("#drawer.is-open")).toBeVisible();
     await expect(page.locator("#drawer-body")).toContainText(/Scan timeline|LABEL CREATED|IN TRANSIT/i);
 
-    // Hold + release
+    // Edit details + toast
+    await page.locator('[data-shipment-action="edit"]').click();
+    await expect(page.locator("#edit-shipment-form")).toBeVisible();
+    await page.fill("#edit-package", `E2E edited parcel ${stamp}`);
+    await page.locator("#edit-save").click();
+    await expect(page.locator(".admin-toast--success").filter({ hasText: /Changes saved/i })).toBeVisible({
+      timeout: 20_000
+    });
+    await expect(page.locator("#edit-shipment-form")).toHaveCount(0);
+    await expect(page.locator("#drawer-body")).toContainText(`E2E edited parcel ${stamp}`);
+
+    // Hold + toast + reason visible
     await page.locator('[data-shipment-action="hold"]').click();
     await expect(page.locator("#reason-modal")).toBeVisible();
     await page.fill("#reason-modal-input", `E2E hold ${stamp}`);
     await page.click("#reason-modal-confirm");
+    await expect(page.locator(".admin-toast--success").filter({ hasText: /on hold/i })).toBeVisible({
+      timeout: 20_000
+    });
     await expect(page.locator("#drawer-status")).toContainText(/On Hold|Hold/i, { timeout: 20_000 });
+    await expect(page.locator("#drawer-body")).toContainText(`E2E hold ${stamp}`);
 
+    // Release hold
     await page.locator('[data-shipment-action="release-hold"]').click();
     await expect(page.locator("#reason-modal")).toBeVisible();
     await page.fill("#reason-modal-input", `E2E release ${stamp}`);
     await page.click("#reason-modal-confirm");
-    await expect(page.locator("#drawer-status")).toContainText(/In Transit|Out For Delivery|Pending/i, {
+    await expect(page.locator(".admin-toast--success").filter({ hasText: /Hold released/i })).toBeVisible({
       timeout: 20_000
     });
+    await expect(page.locator("#drawer-status")).toContainText(/In Transit|Out For Delivery|Pending|Label Created/i, {
+      timeout: 20_000
+    });
+
+    // Cancel shipment + toast
+    await page.locator('[data-shipment-action="cancel"]').click();
+    await expect(page.locator("#reason-modal")).toBeVisible();
+    await page.fill("#reason-modal-input", `E2E cancel ${stamp}`);
+    await page.click("#reason-modal-confirm");
+    await expect(page.locator(".admin-toast--success").filter({ hasText: /cancelled/i })).toBeVisible({
+      timeout: 20_000
+    });
+    await expect(page.locator("#drawer-status")).toContainText(/Cancelled/i, { timeout: 20_000 });
+    await expect(page.locator("#drawer-body")).toContainText(`E2E cancel ${stamp}`);
+    await expect(page.locator('[data-shipment-action="hold"]')).toHaveCount(0);
+    await expect(page.locator('[data-shipment-action="cancel"]')).toHaveCount(0);
     await page.locator("#drawer-close").click();
 
     // Live Tracking + other nav sections
@@ -165,6 +200,65 @@ test.describe("Full site E2E after DB clear (Chromium)", () => {
       await zoomIn.click();
       await page.getByRole("button", { name: /Zoom out/i }).click();
     }
+  });
+
+  test("API integration: create → edit → hold → release → cancel", async ({ request }) => {
+    await apiLogin(request);
+    const stampApi = Date.now().toString().slice(-6);
+    const create = await request.post("/api/admin/shipments", {
+      data: {
+        sender: `API Sender ${stampApi}`,
+        receiver: `API Receiver ${stampApi}`,
+        fromLocation: "Washington, District of Columbia, United States",
+        toLocation: "Baltimore, Maryland, United States",
+        fromLat: 38.9072,
+        fromLon: -77.0369,
+        toLat: 39.2904,
+        toLon: -76.6122,
+        packageContent: `API parcel ${stampApi}`,
+        serviceType: "DSV Road",
+        status: "in-transit",
+        transitHours: 72
+      }
+    });
+    expect(create.ok(), await create.text()).toBeTruthy();
+    const created = await create.json();
+    const id = created.id;
+    expect(id).toBeTruthy();
+
+    const edited = await request.patch(`/api/admin/shipments/${id}`, {
+      data: { action: "edit", packageContent: `API edited ${stampApi}`, reason: "api edit" }
+    });
+    expect(edited.ok(), await edited.text()).toBeTruthy();
+    expect((await edited.json()).shipment.packageContent).toContain(`API edited ${stampApi}`);
+
+    const held = await request.patch(`/api/admin/shipments/${id}`, {
+      data: { action: "hold", reason: `API hold ${stampApi}` }
+    });
+    expect(held.ok(), await held.text()).toBeTruthy();
+    const heldBody = await held.json();
+    expect(heldBody.shipment.status).toBe("on-hold");
+    expect(heldBody.shipment.holdReason).toBe(`API hold ${stampApi}`);
+
+    const released = await request.patch(`/api/admin/shipments/${id}`, {
+      data: { action: "release-hold", note: `API release ${stampApi}` }
+    });
+    expect(released.ok(), await released.text()).toBeTruthy();
+    expect((await released.json()).shipment.status).not.toBe("on-hold");
+
+    const cancelled = await request.patch(`/api/admin/shipments/${id}`, {
+      data: { action: "cancel", reason: `API cancel ${stampApi}` }
+    });
+    expect(cancelled.ok(), await cancelled.text()).toBeTruthy();
+    const cancelledBody = await cancelled.json();
+    expect(cancelledBody.shipment.status).toBe("cancelled");
+    expect(cancelledBody.shipment.cancelReason).toBe(`API cancel ${stampApi}`);
+
+    const listed = await (await request.get("/api/admin/shipments")).json();
+    const row = (listed.shipments || []).find((s) => s.id === id);
+    expect(row).toBeTruthy();
+    expect(row.status).toBe("cancelled");
+    expect(row.cancelReason).toBe(`API cancel ${stampApi}`);
   });
 
   test("homepage track form + public details for created shipment", async ({ page }) => {

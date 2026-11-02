@@ -77,8 +77,30 @@ async function searchAddresses(query, limit = 8) {
 }
 
 async function geocodeAddress(query) {
-  const hits = await searchAddresses(query, 1);
-  return hits[0] || null;
+  const q = String(query || "").trim();
+  if (!q) return null;
+  const candidates = [q];
+  const cleaned = q
+    .replace(/\b(apt|apartment|unit|suite|ste|#)\s*[a-z0-9\-]+\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/^,+|,+$/g, "")
+    .trim();
+  if (cleaned && cleaned.toLowerCase() !== q.toLowerCase()) candidates.push(cleaned);
+  const parts = cleaned.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) candidates.push(parts.slice(-2).join(", "));
+  if (parts.length >= 3) candidates.push(parts.slice(-3).join(", "));
+
+  const seen = new Set();
+  for (const candidate of candidates) {
+    const key = candidate.toLowerCase();
+    if (!candidate || seen.has(key)) continue;
+    seen.add(key);
+    const hits = await searchAddresses(candidate, 1);
+    if (hits && hits[0]) return hits[0];
+    await new Promise((resolve) => setTimeout(resolve, 1050));
+  }
+  return null;
 }
 
 async function reverseLabel(lat, lon) {

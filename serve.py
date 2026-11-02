@@ -23,7 +23,6 @@ from typing import Any
 PORT = int(os.environ.get("PORT", "8080"))
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE_ROOT = os.path.join(ROOT, "www.dsv.com", "www.dsv.com")
-SHIPMENTS_PATH = os.path.join(SITE_ROOT, "resource", "data", "shipments.json")
 
 
 def _load_dotenv(path: str, *, override: bool = False) -> None:
@@ -257,14 +256,9 @@ def _clear_cookie(handler: http.server.BaseHTTPRequestHandler) -> None:
 
 
 def _load_shipments() -> dict[str, Any]:
-    if shipment_service is not None:
-        return shipment_service.load_shipments()
-    try:
-        with open(SHIPMENTS_PATH, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-        return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
+    if shipment_service is None:
+        raise RuntimeError("Shipment service unavailable (Supabase required).")
+    return shipment_service.load_shipments()
 
 
 def _progress_book() -> None:
@@ -350,6 +344,21 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                 }
             return _json_response(self, 200, {"ok": True, **geo})
 
+        if clean == "/api/public/config":
+            supabase_url = (os.environ.get("SUPABASE_URL") or "").strip()
+            supabase_anon = (os.environ.get("SUPABASE_ANON_KEY") or "").strip()
+            realtime = bool(supabase_url and supabase_anon)
+            return _json_response(
+                self,
+                200,
+                {
+                    "ok": True,
+                    "realtime": realtime,
+                    "supabaseUrl": supabase_url if realtime else None,
+                    "supabaseAnonKey": supabase_anon if realtime else None,
+                },
+            )
+
         if clean.startswith("/api/support/"):
             if support_service is None:
                 return _json_response(self, 500, {"ok": False, "error": "Support service unavailable."})
@@ -430,6 +439,27 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                 )
             return _json_response(self, 200, {"ok": True, "shipments": rows, "count": len(rows)})
 
+        if clean.startswith("/api/admin/shipments/"):
+            session = _require_admin(self)
+            if not session:
+                return
+            tracking_id = urllib.parse.unquote(clean.split("/api/admin/shipments/", 1)[-1].strip().strip("/"))
+            if not tracking_id or tracking_id in {"preview-route"}:
+                return _json_response(self, 400, {"ok": False, "error": "Missing shipment id"})
+            _progress_book()
+            shipments = _load_shipments()
+            key, item = (None, None)
+            if shipment_service is not None:
+                key, item = shipment_service.find_shipment(shipments, tracking_id)
+            if not key or not item:
+                return _json_response(self, 404, {"ok": False, "error": "Shipment not found."})
+            admin_payload = (
+                shipment_service.admin_item(item)
+                if shipment_service is not None
+                else item
+            )
+            return _json_response(self, 200, {"ok": True, "id": key, "shipment": admin_payload})
+
         if clean == "/api/admin/geo/search":
             session = _require_admin(self)
             if not session:
@@ -479,6 +509,8 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                 "delivered": 0,
                 "pending": 0,
                 "exception": 0,
+                "onHold": 0,
+                "cancelled": 0,
             }
             for item in shipments.values():
                 counts["total"] += 1
@@ -489,8 +521,16 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                     counts["outForDelivery"] += 1
                 elif status == "in-transit":
                     counts["inTransit"] += 1
+                elif status == "on-hold":
+                    counts["onHold"] += 1
+                    counts["exception"] += 1
+                    counts["pending"] += 1
+                elif status == "cancelled":
+                    counts["cancelled"] += 1
                 elif status == "exception":
                     counts["exception"] += 1
+                    counts["pending"] += 1
+                elif status in {"pending", "label-created"}:
                     counts["pending"] += 1
                 else:
                     counts["pending"] += 1
@@ -759,6 +799,15 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             support_service.clear_all_chats()
             return _json_response(self, 200, {"ok": True, "chats": []})
 
+        if clean == "/api/admin/shipments":
+            session = _require_admin(self)
+            if not session:
+                return
+            if shipment_service is None:
+                return _json_response(self, 500, {"ok": False, "error": "Shipment service unavailable."})
+            result = shipment_service.clear_all_shipments()
+            return _json_response(self, 200, {"ok": True, **result})
+
         if not clean.startswith("/api/admin/shipments/"):
             self.send_error(404)
             return
@@ -836,6 +885,12 @@ def main() -> None:
     url = "http://127.0.0.1:%s/" % PORT
     print("Serving DSV site from:")
     print("  %s" % SITE_ROOT)
+    if shipment_service is None or not getattr(shipment_service, "using_supabase", lambda: False)():
+        sys.exit(
+            "Supabase is required. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in "
+            "www.dsv.com/www.dsv.com/.env (local JSON demo storage is disabled)."
+        )
+    print("Shipment backend: Supabase (live DB)")
     print("Admin login:")
     print("  http://127.0.0.1:%s/admin/login" % PORT)
     print("Admin credentials (from .env / environment):")

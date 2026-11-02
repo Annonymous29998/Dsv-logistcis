@@ -266,13 +266,25 @@
         if (status !== "on-hold") {
           payload.status = modal.querySelector("#edit-status").value;
         }
-        await AdminAPI.updateShipment(row.id, payload);
+        var result = await AdminAPI.updateShipment(row.id, payload);
+        mergeShipmentIntoState(result && result.shipment);
         closeEdit();
+        renderView();
+        openDrawer(row.id);
+        AdminUtils.toast({
+          title: "Changes saved",
+          message: "Tracking " + row.id + " was updated."
+        });
         await refreshFromServer({ announce: true, id: row.id, eventType: "*" });
         openDrawer(row.id);
       } catch (err) {
         errEl.hidden = false;
         errEl.textContent = (err && err.message) || "Could not save changes.";
+        AdminUtils.toast({
+          type: "error",
+          title: "Save failed",
+          message: (err && err.message) || "Could not save changes."
+        });
         btn.disabled = false;
         btn.textContent = "Save changes";
       }
@@ -304,6 +316,7 @@
         "<div><span>Near</span><strong>" + AdminUtils.escapeHtml(row.statusNearPlace || AdminUtils.shortPlace(row.lastLocation)) + "</strong></div>" +
         "<div><span>Sender</span><strong>" + AdminUtils.escapeHtml(row.sender || "—") + "</strong></div>" +
         "<div><span>Receiver</span><strong>" + AdminUtils.escapeHtml(row.receiver || "—") + "</strong></div>" +
+        '<div class="span-2"><span>Package</span><strong>' + AdminUtils.escapeHtml(row.packageContent || "—") + "</strong></div>" +
         '<div class="span-2"><span>Origin</span><strong>' + AdminUtils.escapeHtml(row.fromLocation || "—") + "</strong></div>" +
         '<div class="span-2"><span>Destination</span><strong>' + AdminUtils.escapeHtml(row.toLocation || "—") + "</strong></div>" +
         (reason ? '<div class="span-2"><span>Status reason</span><strong>' + AdminUtils.escapeHtml(reason) + "</strong></div>" : "") +
@@ -389,6 +402,15 @@
     });
   }
 
+  function mergeShipmentIntoState(shipment) {
+    if (!shipment || !shipment.id) return null;
+    var idx = state.shipments.findIndex(function (item) { return item.id === shipment.id; });
+    var next = Object.assign({}, idx >= 0 ? state.shipments[idx] : {}, shipment);
+    if (idx >= 0) state.shipments[idx] = next;
+    else state.shipments.unshift(next);
+    return next;
+  }
+
   async function runShipmentAction(action) {
     if (!openDrawerId) return;
     var id = openDrawerId;
@@ -396,6 +418,7 @@
     var actions = document.getElementById("drawer-actions");
     var buttons = actions ? Array.prototype.slice.call(actions.querySelectorAll("button")) : [];
     buttons.forEach(function (btn) { btn.disabled = true; });
+    var successToast = null;
     try {
       if (action === "edit") {
         var row = state.shipments.find(function (item) { return item.id === id; });
@@ -414,7 +437,12 @@
           requiredMessage: "A hold reason is required."
         });
         if (reason == null) return;
-        await AdminAPI.holdShipment(id, reason);
+        var holdResult = await AdminAPI.holdShipment(id, reason);
+        mergeShipmentIntoState(holdResult && holdResult.shipment);
+        successToast = {
+          title: "Shipment on hold",
+          message: "Tracking " + id + " is now on hold."
+        };
       } else if (action === "release-hold") {
         reason = await askReason({
           title: "Release hold",
@@ -425,7 +453,12 @@
           required: false
         });
         if (reason == null) return;
-        await AdminAPI.releaseHold(id, String(reason).trim());
+        var releaseResult = await AdminAPI.releaseHold(id, String(reason).trim());
+        mergeShipmentIntoState(releaseResult && releaseResult.shipment);
+        successToast = {
+          title: "Hold released",
+          message: "Tracking " + id + " is moving again."
+        };
       } else if (action === "cancel") {
         reason = await askReason({
           title: "Cancel shipment",
@@ -438,19 +471,31 @@
           requiredMessage: "A cancel reason is required."
         });
         if (reason == null) return;
-        await AdminAPI.cancelShipment(id, reason);
+        var cancelResult = await AdminAPI.cancelShipment(id, reason);
+        mergeShipmentIntoState(cancelResult && cancelResult.shipment);
+        successToast = {
+          title: "Shipment cancelled",
+          message: "Tracking " + id + " was cancelled."
+        };
       } else {
         return;
       }
+      renderView();
+      if (openDrawerId === id) openDrawer(id);
+      if (successToast) AdminUtils.toast(successToast);
       await refreshFromServer({ announce: true, id: id, eventType: "*" });
       if (openDrawerId === id) openDrawer(id);
     } catch (err) {
-      window.alert((err && err.message) || "Action failed.");
+      AdminUtils.toast({
+        type: "error",
+        title: "Action failed",
+        message: (err && err.message) || "Could not update this shipment."
+      });
     } finally {
       buttons.forEach(function (btn) { btn.disabled = false; });
       if (openDrawerId === id) {
-        var row = state.shipments.find(function (item) { return item.id === id; });
-        if (row) renderDrawerActions(row);
+        var latest = state.shipments.find(function (item) { return item.id === id; });
+        if (latest) renderDrawerActions(latest);
       }
     }
   }
@@ -482,7 +527,13 @@
       document.body.classList.add("is-live-updated");
       setTimeout(function () { document.body.classList.remove("is-live-updated"); }, 900);
     } catch (err) {
-      /* keep current state */
+      if (options.announce && AdminUtils.toast) {
+        AdminUtils.toast({
+          type: "error",
+          title: "Refresh failed",
+          message: (err && err.message) || "Could not reload shipments from the server."
+        });
+      }
     }
   }
 
@@ -496,8 +547,60 @@
     });
   }
 
+  async function clearAllShipmentData() {
+    var count = (state.shipments || []).length;
+    if (!count) {
+      AdminUtils.toast({
+        type: "warn",
+        title: "Nothing to clear",
+        message: "The shipment book is already empty."
+      });
+      return false;
+    }
+    var confirmed = await AdminUtils.confirmDangerZone({
+      title: "Danger zone",
+      message:
+        "Clear all shipment data from the live book. Public tracking links will stop working until you create new shipments.",
+      detail: [
+        count + " shipment" + (count === 1 ? "" : "s") + " will be deleted forever",
+        "Hold, cancel, and timeline history will be removed",
+        "This cannot be undone"
+      ],
+      confirmLabel: "Yes",
+      cancelLabel: "No"
+    });
+    if (!confirmed) return false;
+
+    try {
+      var result = await AdminAPI.clearAllShipments();
+      state.shipments = [];
+      closeDrawer();
+      renderView();
+      announceShipmentChange(null, "DELETE");
+      AdminUtils.toast({
+        title: "All data cleared",
+        message:
+          "Removed " +
+          Number((result && result.deleted) || count) +
+          " shipment" +
+          (count === 1 ? "" : "s") +
+          " from the book."
+      });
+      await refreshFromServer({ announce: false });
+      return true;
+    } catch (err) {
+      AdminUtils.toast({
+        type: "error",
+        title: "Clear failed",
+        message: (err && err.message) || "Could not clear shipment data."
+      });
+      return false;
+    }
+  }
+
   state.refreshFromServer = refreshFromServer;
   state.announceShipmentChange = announceShipmentChange;
+  state.clearAllShipmentData = clearAllShipmentData;
 
   var NOTIF_CLEARED_KEY = "dsv-admin-notif-cleared-at";
   var lastChatUnreadTotal = 0;
@@ -736,7 +839,11 @@
       var data = await AdminAPI.supportChats();
       setSupportChats((data && data.chats) || []);
     } catch (e) {
-      /* keep cache */
+      if (e && e.status === 401) {
+        stopPolling();
+        return;
+      }
+      /* keep cache on transient errors */
     }
   }
 
@@ -768,17 +875,27 @@
     }
   }
 
+  var supportPollTimer = null;
+
+  function stopPolling() {
+    if (supportPollTimer) {
+      window.clearInterval(supportPollTimer);
+      supportPollTimer = null;
+    }
+  }
+
   function initChatNotifications() {
+    stopPolling();
     refreshSupportChatsFromApi().then(function () {
       lastChatUnreadTotal = chatUnreadTotal();
       updateChatNotifications({ silent: true, skipViewRefresh: true });
     });
-    window.setInterval(function () {
+    supportPollTimer = window.setInterval(function () {
       refreshSupportChatsFromApi().then(function () {
         var total = chatUnreadTotal();
         if (total !== lastChatUnreadTotal) updateChatNotifications();
         else updateChatNotifications({ silent: true, skipViewRefresh: true });
-      });
+      }).catch(function () {});
     }, 2000);
   }
 
@@ -786,6 +903,7 @@
   window.AdminApp = window.AdminApp || {};
   window.AdminApp.updateChatNotifications = updateChatNotifications;
   window.AdminApp.setSupportChats = setSupportChats;
+  window.AdminApp.stopPolling = stopPolling;
 
   function bind() {
     document.addEventListener("click", function (event) {
@@ -832,6 +950,7 @@
       else renderView();
     });
     async function doLogout() {
+      stopPolling();
       try { await AdminAPI.logout(); } catch (e) {}
       window.location.replace("/admin/login");
     }

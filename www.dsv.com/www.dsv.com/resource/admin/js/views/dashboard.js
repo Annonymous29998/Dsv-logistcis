@@ -22,9 +22,12 @@
     var onRoad = summary.active;
     var available = Math.max(0, summary.total - summary.active);
     var maintenance = summary.exception;
-    var fleetTotal = Math.max(1, onRoad + available + maintenance);
-    var p1 = ((onRoad / fleetTotal) * 100).toFixed(1) + "%";
-    var p2 = (((onRoad + maintenance) / fleetTotal) * 100).toFixed(1) + "%";
+    var fleetUnits = onRoad + available + maintenance;
+    var hasBook = (summary.total || 0) > 0;
+    var fleetTotal = hasBook ? Math.max(fleetUnits, summary.total) : 0;
+    var fleetDenom = Math.max(1, fleetUnits);
+    var p1 = hasBook ? ((onRoad / fleetDenom) * 100).toFixed(1) + "%" : "0%";
+    var p2 = hasBook ? (((onRoad + maintenance) / fleetDenom) * 100).toFixed(1) + "%" : "0%";
     var held = ctx.shipments.filter(function (r) {
       var s = utils().normalizeStatus(r.status);
       return s === "on-hold" || s === "exception";
@@ -87,7 +90,13 @@
     root.innerHTML =
       '<div class="welcome">' +
         "<div><h1>Welcome Back, Admin!</h1><p>Here's what's happening with your logistics operations today.</p></div>" +
-        '<div class="date-pill" id="date-range">Live book · ' + new Date().toLocaleDateString() + "</div>" +
+        '<div class="welcome__actions">' +
+          '<button type="button" class="btn btn-danger-outline" id="btn-clear-all-data">' +
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+            "Clear all data" +
+          "</button>" +
+          '<div class="date-pill" id="date-range">Live book · ' + new Date().toLocaleDateString() + "</div>" +
+        "</div>" +
       "</div>" +
       '<div class="kpi-row">' +
         kpiCard("Total Shipments", summary.total, "blue", iconBox(), '<div class="kpi__trend">Live tracking book</div>') +
@@ -102,7 +111,7 @@
         kpiCard("Book Capacity", fleetTotal, "red", iconCash(), '<div class="kpi__trend">Active + pending slots</div>') +
       "</div>" +
       '<div class="grid-2">' +
-        '<article class="card"><div class="card__head"><h2>Shipment performance</h2><span class="pill">Current book</span></div><div class="card__body"><div class="chart-wrap"><canvas id="shipments-chart"></canvas></div></div></article>' +
+        '<article class="card"><div class="card__head"><h2>Shipment performance</h2><span class="pill">Current book</span></div><div class="card__body"><div class="chart-wrap" id="shipments-chart-wrap"><canvas id="shipments-chart"></canvas><p class="chart-empty" id="shipments-chart-empty" hidden>No shipment data yet. Create a tracking to see performance.</p></div></div></article>' +
         '<article class="card"><div class="card__head"><h2>Live shipment map</h2><span class="pill">' +
           liveMoves.length + " active move" + (liveMoves.length === 1 ? "" : "s") +
         '</span></div><div class="card__body">' +
@@ -122,16 +131,25 @@
           }).join("") +
           "</tbody></table></div></article>" +
         '<article class="card"><div class="card__head"><h2>Fleet status</h2></div><div class="card__body">' +
-          '<div class="donut" style="--p1:' + p1 + ";--p2:" + p2 + ';"><div class="donut__center"><strong>' + fleetTotal + '</strong><span>Derived units</span></div></div>' +
-          '<div class="fleet-legend">' +
-            "<div><span>On road (active moves)</span><strong>" + onRoad + "</strong></div>" +
-            "<div><span>Available (idle book slots)</span><strong>" + available + "</strong></div>" +
-            "<div><span>Exception / hold</span><strong>" + maintenance + "</strong></div>" +
-          '</div><p class="backend-note" style="margin-top:.85rem">Fleet split is calculated from live shipment statuses in your book.</p>' +
+          (hasBook
+            ? '<div class="donut" style="--p1:' + p1 + ";--p2:" + p2 + ';"><div class="donut__center"><strong>' + fleetTotal + '</strong><span>Derived units</span></div></div>' +
+              '<div class="fleet-legend">' +
+                "<div><span>On road (active moves)</span><strong>" + onRoad + "</strong></div>" +
+                "<div><span>Available (idle book slots)</span><strong>" + available + "</strong></div>" +
+                "<div><span>Exception / hold</span><strong>" + maintenance + "</strong></div>" +
+              '</div><p class="backend-note" style="margin-top:.85rem">Fleet split is calculated from live shipment statuses in your book.</p>'
+            : '<div class="fleet-empty"><p class="chart-empty chart-empty--static">No shipment data yet. Create a tracking to see fleet status.</p></div>') +
         "</div></article>" +
       "</div>";
 
     if (typeof ctx.updateChatNotifications === "function") ctx.updateChatNotifications({ silent: true });
+
+    var clearBtn = document.getElementById("btn-clear-all-data");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        if (typeof ctx.clearAllShipmentData === "function") ctx.clearAllShipmentData();
+      });
+    }
 
     root.addEventListener("click", function (event) {
       var prev = event.target.closest("[data-live-prev]");
@@ -166,26 +184,83 @@
       });
     }
 
-    var canvas = document.getElementById("shipments-chart");
-    if (canvas && global.Chart) {
-      if (chartInstance) chartInstance.destroy();
+    function mountPerformanceChart(attempt) {
+      var canvas = document.getElementById("shipments-chart");
+      var emptyEl = document.getElementById("shipments-chart-empty");
+      if (!canvas) return;
+
+      var labels = ["In Transit", "Out for Delivery", "Delivered", "On Hold", "Pending", "Cancelled"];
+      var pendingOnly = Math.max(
+        0,
+        (summary.total || 0) -
+          (summary.inTransit || 0) -
+          (summary.outForDelivery || 0) -
+          (summary.delivered || 0) -
+          (summary.onHold || 0) -
+          (summary.cancelled || 0)
+      );
       var chartData = [
         summary.inTransit || 0,
         summary.outForDelivery || 0,
         summary.delivered || 0,
-        summary.pending || 0
+        summary.onHold || 0,
+        pendingOnly,
+        summary.cancelled || 0
       ];
-      // Empty book still draws a muted ring so the chart area never looks blank.
-      var hasData = chartData.some(function (n) { return n > 0; });
+
+      var hasShipments = (summary.total || 0) > 0;
+      var pairs = labels.map(function (label, i) {
+        return { label: label, value: chartData[i] || 0 };
+      }).filter(function (row) { return row.value > 0; });
+
+      if (!hasShipments) {
+        if (chartInstance) {
+          try { chartInstance.destroy(); } catch (e) {}
+          chartInstance = null;
+        }
+        if (emptyEl) {
+          emptyEl.hidden = false;
+          emptyEl.style.display = "grid";
+        }
+        canvas.style.display = "none";
+        return;
+      }
+      if (emptyEl) {
+        emptyEl.hidden = true;
+        emptyEl.style.display = "none";
+      }
+      canvas.style.display = "block";
+
+      if (!global.Chart) {
+        if ((attempt || 0) < 40) {
+          window.setTimeout(function () { mountPerformanceChart((attempt || 0) + 1); }, 100);
+        }
+        return;
+      }
+
+      if (chartInstance) {
+        try { chartInstance.destroy(); } catch (e) {}
+        chartInstance = null;
+      }
+
       chartInstance = new global.Chart(canvas, {
         type: "doughnut",
         data: {
-          labels: ["In Transit", "Out for Delivery", "Delivered", "Pending / Exception"],
+          labels: pairs.length ? pairs.map(function (p) { return p.label; }) : labels,
           datasets: [{
-            data: hasData ? chartData : [1],
-            backgroundColor: hasData
-              ? ["#0866F5", "#38bdf8", "#10B981", "#F59E0B"]
-              : ["#e2e8f0"],
+            data: pairs.length ? pairs.map(function (p) { return p.value; }) : chartData,
+            backgroundColor: pairs.length
+              ? pairs.map(function (p) {
+                  return ({
+                    "In Transit": "#0866F5",
+                    "Out for Delivery": "#38bdf8",
+                    Delivered: "#10B981",
+                    "On Hold": "#F59E0B",
+                    Pending: "#94a3b8",
+                    Cancelled: "#ef4444"
+                  })[p.label] || "#94a3b8";
+                })
+              : ["#0866F5", "#38bdf8", "#10B981", "#F59E0B", "#94a3b8", "#ef4444"],
             borderWidth: 0
           }]
         },
@@ -196,7 +271,7 @@
           layout: { padding: { top: 8, bottom: 4, left: 8, right: 8 } },
           plugins: {
             legend: {
-              display: hasData,
+              display: true,
               position: "bottom",
               labels: {
                 boxWidth: 10,
@@ -205,7 +280,7 @@
                 font: { size: 11, family: "Manrope, system-ui, sans-serif" }
               }
             },
-            tooltip: { enabled: hasData }
+            tooltip: { enabled: true }
           }
         }
       });
@@ -213,6 +288,8 @@
         try { if (chartInstance) chartInstance.resize(); } catch (e) {}
       });
     }
+
+    mountPerformanceChart(0);
   }
 
   function iconBox() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'; }

@@ -435,12 +435,28 @@
       try {
         var data = await AdminAPI.createShipment(payloadFromForm());
         if (data && data.id) {
+          if (U().toast) {
+            U().toast({
+              title: "Shipment created",
+              message: "Tracking " + data.id + " is ready."
+            });
+          }
           closeModal(true, data.id, onDone);
           return;
         }
         showError("Create failed.");
+        if (U().toast) {
+          U().toast({ type: "error", title: "Create failed", message: "Could not create tracking." });
+        }
       } catch (err) {
         showError(err.message || "Could not create tracking.");
+        if (U().toast) {
+          U().toast({
+            type: "error",
+            title: "Create failed",
+            message: err.message || "Could not create tracking."
+          });
+        }
       } finally {
         if (activeModal) {
           btn.disabled = false;

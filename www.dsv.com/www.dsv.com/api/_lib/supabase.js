@@ -97,24 +97,21 @@ function shipmentToRow(id, item) {
 function publicShipment(item) {
   if (!item) return null;
   const {
-    routeStops,
     plannedEvents,
     adminEvents,
     createdAt,
     etaAt,
     progressUpdatedAt,
-    fromLat,
-    fromLon,
-    toLat,
-    toLon,
-    routeDistanceM,
-    routeDurationS,
     previousStatus,
-    heldAt,
-    cancelledAt,
     ...publicFields
   } = item;
   return publicFields;
 }
 
-module.exports = { getSupabase, rowToShipment, shipmentToRow, publicShipment };
+function adminShipment(item) {
+  if (!item) return null;
+  const { plannedEvents, adminEvents, routeGeometry, ...adminFields } = item;
+  return adminFields;
+}
+
+module.exports = { getSupabase, rowToShipment, shipmentToRow, publicShipment, adminShipment };

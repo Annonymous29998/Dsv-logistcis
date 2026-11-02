@@ -1,24 +1,6 @@
 const { getSupabase } = require("./supabase");
-const fs = require("fs");
-const path = require("path");
 
-const LOCAL_FILE = path.join(__dirname, "..", "..", "resource", "data", "support-chats.json");
 const TYPING_TTL_MS = 6000;
-
-function readLocal() {
-  try {
-    if (!fs.existsSync(LOCAL_FILE)) return [];
-    const raw = JSON.parse(fs.readFileSync(LOCAL_FILE, "utf8"));
-    return Array.isArray(raw) ? raw : [];
-  } catch (err) {
-    return [];
-  }
-}
-
-function writeLocal(chats) {
-  fs.mkdirSync(path.dirname(LOCAL_FILE), { recursive: true });
-  fs.writeFileSync(LOCAL_FILE, JSON.stringify(chats, null, 2));
-}
 
 function emptyChat(id, name) {
   return {
@@ -122,54 +104,31 @@ function chatToRow(chat) {
   };
 }
 
-function chatToLocal(chat) {
-  return normalizeChat(chat);
-}
-
 async function listChats() {
-  try {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from("support_chats")
-      .select("*")
-      .order("updated_at", { ascending: false });
-    if (error) throw error;
-    return (data || []).map(rowToChat).filter(Boolean);
-  } catch (err) {
-    return readLocal()
-      .map(normalizeChat)
-      .filter(Boolean)
-      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  }
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("support_chats")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map(rowToChat).filter(Boolean);
 }
 
 async function getChat(id) {
   const key = String(id || "");
   if (!key) return null;
-  try {
-    const supabase = getSupabase();
-    const { data, error } = await supabase.from("support_chats").select("*").eq("id", key).maybeSingle();
-    if (error) throw error;
-    if (data) return rowToChat(data);
-  } catch (err) {
-    /* fall through */
-  }
-  const local = readLocal().find((c) => c.id === key);
-  return local ? normalizeChat(local) : null;
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("support_chats").select("*").eq("id", key).maybeSingle();
+  if (error) throw error;
+  return data ? rowToChat(data) : null;
 }
 
 async function saveChat(chat) {
   const normalized = normalizeChat(chat);
   const payload = chatToRow(normalized);
-  try {
-    const supabase = getSupabase();
-    const { error } = await supabase.from("support_chats").upsert(payload);
-    if (error) throw error;
-  } catch (err) {
-    const all = readLocal().filter((c) => c.id !== normalized.id);
-    all.unshift(chatToLocal(normalized));
-    writeLocal(all);
-  }
+  const supabase = getSupabase();
+  const { error } = await supabase.from("support_chats").upsert(payload);
+  if (error) throw error;
   return normalized;
 }
 
@@ -274,13 +233,9 @@ async function endChat(id) {
 }
 
 async function clearAllChats() {
-  try {
-    const supabase = getSupabase();
-    const { error } = await supabase.from("support_chats").delete().neq("id", "");
-    if (error) throw error;
-  } catch (err) {
-    writeLocal([]);
-  }
+  const supabase = getSupabase();
+  const { error } = await supabase.from("support_chats").delete().neq("id", "");
+  if (error) throw error;
   return [];
 }
 

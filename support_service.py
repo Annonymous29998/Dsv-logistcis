@@ -1,16 +1,14 @@
-"""Server-backed support chat store (JSON file; same shape as Node api/_lib/support.js)."""
+"""Server-backed support chat store (Supabase; same shape as Node api/_lib/support.js)."""
 
 from __future__ import annotations
 
-import json
-import os
 import threading
 import time
+from datetime import datetime, timezone
 from typing import Any
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-SITE_ROOT = os.path.join(ROOT, "www.dsv.com", "www.dsv.com")
-CHATS_PATH = os.path.join(SITE_ROOT, "resource", "data", "support-chats.json")
+import shipment_service
+
 TYPING_TTL_MS = 6000
 
 _lock = threading.Lock()
@@ -20,24 +18,117 @@ def _now_ms() -> int:
     return int(time.time() * 1000)
 
 
-def _read_all() -> list[dict[str, Any]]:
+def _chat_to_row(chat: dict[str, Any]) -> dict[str, Any]:
+    normalized = normalize_chat(chat)
+    assert normalized is not None
+    return {
+        "id": normalized["id"],
+        "name": normalized["name"],
+        "unread_admin": int(normalized.get("unread") or 0),
+        "unread_customer": int(normalized.get("unreadCustomer") or 0),
+        "messages": normalized.get("messages") or [],
+        "status": normalized.get("status") or "open",
+        "meta": {
+            "awaitingAgent": bool(normalized.get("awaitingAgent")),
+            "agentConnected": bool(normalized.get("agentConnected")),
+            "typingAgentAt": normalized.get("typingAgentAt"),
+            "ip": normalized.get("ip") or "",
+            "city": normalized.get("city") or "",
+            "country": normalized.get("country") or "",
+            "countryCode": normalized.get("countryCode") or "",
+            "geoLabel": normalized.get("geoLabel") or "",
+            "endedAt": normalized.get("endedAt"),
+            "agentConnectedAt": normalized.get("agentConnectedAt"),
+            "status": normalized.get("status") or "open",
+        },
+        "updated_at": datetime.fromtimestamp(
+            int(normalized.get("updatedAt") or _now_ms()) / 1000.0, tz=timezone.utc
+        ).isoformat(),
+        "created_at": normalized.get("createdAt")
+        or datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _row_to_chat(row: dict[str, Any]) -> dict[str, Any] | None:
+    if not row:
+        return None
+    meta = row.get("meta") if isinstance(row.get("meta"), dict) else {}
+    updated = row.get("updated_at")
     try:
-        if not os.path.isfile(CHATS_PATH):
-            return []
-        with open(CHATS_PATH, encoding="utf-8") as handle:
-            raw = json.load(handle)
-        return raw if isinstance(raw, list) else []
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
-        return []
+        updated_ms = int(datetime.fromisoformat(str(updated).replace("Z", "+00:00")).timestamp() * 1000) if updated else _now_ms()
+    except (TypeError, ValueError):
+        updated_ms = _now_ms()
+    return normalize_chat(
+        {
+            "id": row.get("id"),
+            "name": row.get("name") or "Website Visitor",
+            "unread": int(row.get("unread_admin") or 0),
+            "unreadCustomer": int(row.get("unread_customer") or 0),
+            "messages": row.get("messages") or [],
+            "status": row.get("status") or meta.get("status") or "open",
+            "awaitingAgent": meta.get("awaitingAgent") is True,
+            "agentConnected": meta.get("agentConnected") is True,
+            "typingAgentAt": meta.get("typingAgentAt"),
+            "ip": meta.get("ip") or "",
+            "city": meta.get("city") or "",
+            "country": meta.get("country") or "",
+            "countryCode": meta.get("countryCode") or "",
+            "geoLabel": meta.get("geoLabel") or "",
+            "updatedAt": updated_ms,
+            "createdAt": row.get("created_at"),
+            "endedAt": meta.get("endedAt"),
+            "agentConnectedAt": meta.get("agentConnectedAt"),
+        }
+    )
+
+
+def _read_all() -> list[dict[str, Any]]:
+    if not shipment_service.using_supabase():
+        raise RuntimeError("Supabase is required for support chats.")
+    rows = shipment_service._supabase_request(
+        "GET",
+        "support_chats",
+        query="select=*&order=updated_at.desc",
+        prefer="return=representation",
+    ) or []
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if isinstance(row, dict):
+            chat = _row_to_chat(row)
+            if chat:
+                out.append(chat)
+    return out
 
 
 def _write_all(chats: list[dict[str, Any]]) -> None:
-    os.makedirs(os.path.dirname(CHATS_PATH), exist_ok=True)
-    tmp = CHATS_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as handle:
-        json.dump(chats, handle, indent=2)
-        handle.write("\n")
-    os.replace(tmp, CHATS_PATH)
+    if not shipment_service.using_supabase():
+        raise RuntimeError("Supabase is required for support chats.")
+    existing = shipment_service._supabase_request(
+        "GET",
+        "support_chats",
+        query="select=id",
+        prefer="return=representation",
+    ) or []
+    existing_ids = {str(r.get("id")) for r in existing if isinstance(r, dict) and r.get("id")}
+    next_ids = {str(c.get("id")) for c in chats if c.get("id")}
+    rows = [_chat_to_row(c) for c in chats if c.get("id")]
+    if rows:
+        shipment_service._supabase_request(
+            "POST",
+            "support_chats",
+            payload=rows,
+            query="on_conflict=id",
+            prefer="resolution=merge-duplicates,return=minimal",
+        )
+    to_delete = sorted(existing_ids - next_ids)
+    if to_delete:
+        joined = ",".join('"' + cid.replace('"', "") + '"' for cid in to_delete)
+        shipment_service._supabase_request(
+            "DELETE",
+            "support_chats",
+            query=f"id=in.({joined})",
+            prefer="return=minimal",
+        )
 
 
 def empty_chat(chat_id: str, name: str | None = None) -> dict[str, Any]:

@@ -1,4 +1,4 @@
-const { getSupabase, rowToShipment, shipmentToRow, publicShipment } = require("./supabase");
+const { getSupabase, rowToShipment, shipmentToRow, publicShipment, adminShipment } = require("./supabase");
 const {
   geocodeAddress,
   buildRoutePlan,
@@ -119,6 +119,27 @@ function progressShipment(item) {
   return changed;
 }
 
+function hasCoords(item) {
+  return [item.fromLat, item.fromLon, item.toLat, item.toLon].every((n) => Number.isFinite(Number(n)));
+}
+
+async function repairMissingCoordinates(item) {
+  if (!item || hasCoords(item)) return false;
+  const fromLocation = String(item.fromLocation || "").trim();
+  const toLocation = String(item.toLocation || "").trim();
+  if (!fromLocation || !toLocation) return false;
+  const fromGeo = await geocodeAddress(fromLocation);
+  const toGeo = await geocodeAddress(toLocation);
+  if (!fromGeo || !toGeo) return false;
+  item.fromLat = Number(fromGeo.lat);
+  item.fromLon = Number(fromGeo.lon);
+  item.toLat = Number(toGeo.lat);
+  item.toLon = Number(toGeo.lon);
+  if (fromGeo.label) item.fromLocation = fromGeo.label;
+  if (toGeo.label) item.toLocation = toGeo.label;
+  return true;
+}
+
 async function listShipments() {
   const supabase = getSupabase();
   const { data, error } = await supabase.from("shipments").select("*").order("created_at", { ascending: false });
@@ -126,7 +147,9 @@ async function listShipments() {
   const rows = (data || []).map(rowToShipment);
   const updates = [];
   for (const item of rows) {
-    if (progressShipment(item)) updates.push(shipmentToRow(item.id, item));
+    let changed = progressShipment(item);
+    if (await repairMissingCoordinates(item)) changed = true;
+    if (changed) updates.push(shipmentToRow(item.id, item));
   }
   if (updates.length) {
     await supabase.from("shipments").upsert(updates);
@@ -277,7 +300,7 @@ async function createShipment(payload) {
 
   const { error } = await supabase.from("shipments").insert(shipmentToRow(trackingId, item));
   if (error) throw error;
-  return { id: trackingId, shipment: publicShipment(item) };
+  return { id: trackingId, shipment: adminShipment(item) };
 }
 
 async function previewRoute(payload) {
@@ -373,7 +396,7 @@ async function updateShipment(id, payload) {
   editable.forEach((key) => {
     if (payload[key] === undefined) return;
     if (key === "signatureRequired") {
-      existing.signatureRequired = payload.signatureRequired !== false;
+      existing.signatureRequired = !!payload.signatureRequired;
       return;
     }
     existing[key] = payload[key];
@@ -388,13 +411,60 @@ async function updateShipment(id, payload) {
     }
     existing.status = status;
     existing.deliveryStatus = deliveryStatus;
+    if (status === "out-for-delivery") existing.outForDeliveryToday = true;
+  }
+
+  const coordKeys = ["fromLat", "fromLon", "toLat", "toLon"];
+  const coordsProvided = coordKeys.some((k) => payload[k] != null);
+  let routeChanged = false;
+  if (coordsProvided) {
+    const next = {
+      fromLat: payload.fromLat != null ? Number(payload.fromLat) : Number(existing.fromLat),
+      fromLon: payload.fromLon != null ? Number(payload.fromLon) : Number(existing.fromLon),
+      toLat: payload.toLat != null ? Number(payload.toLat) : Number(existing.toLat),
+      toLon: payload.toLon != null ? Number(payload.toLon) : Number(existing.toLon)
+    };
+    if (coordKeys.some((k) => !Number.isFinite(next[k]))) {
+      const err = new Error("Invalid map coordinates for origin/destination.");
+      err.status = 400;
+      throw err;
+    }
+    coordKeys.forEach((k) => {
+      if (Math.abs(Number(existing[k] || 0) - next[k]) > 1e-6) routeChanged = true;
+      existing[k] = next[k];
+    });
+  }
+
+  if (routeChanged) {
+    const plan = await buildRoutePlan(
+      String(existing.fromLocation || ""),
+      String(existing.toLocation || ""),
+      Number(existing.fromLat),
+      Number(existing.fromLon),
+      Number(existing.toLat),
+      Number(existing.toLon),
+      Number(payload.transitHours || 72)
+    );
+    existing.routeStops = plan.routeStops;
+    existing.plannedEvents = plan.plannedEvents;
+    existing.statusNearPlace = plan.statusNearPlace;
+    existing.routeDistanceM = plan.distanceM;
+    existing.routeDurationS = plan.durationS;
+    existing.etaAt = plan.etaAt;
+    if (!payload.estimatedDelivery) existing.estimatedDelivery = plan.estimatedDelivery;
+    existing.timeline = timelineForStatus(plan.plannedEvents, existing.status || "in-transit");
   }
 
   pushAdminEvent(existing, "edit", payload.reason || "Shipment details updated");
+  appendTimeline(existing, "DETAILS UPDATED", payload.reason || "Shipment details updated");
   const supabase = getSupabase();
   const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
-  if (error) throw error;
-  return { id: existing.id, shipment: publicShipment(existing) };
+  if (error) {
+    const err = new Error(error.message || "Could not save shipment changes.");
+    err.status = 500;
+    throw err;
+  }
+  return { id: existing.id, shipment: adminShipment(existing) };
 }
 
 async function holdShipment(id, reason) {
@@ -435,8 +505,12 @@ async function holdShipment(id, reason) {
 
   const supabase = getSupabase();
   const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
-  if (error) throw error;
-  return { id: existing.id, shipment: publicShipment(existing) };
+  if (error) {
+    const err = new Error(error.message || "Could not place shipment on hold.");
+    err.status = 500;
+    throw err;
+  }
+  return { id: existing.id, shipment: adminShipment(existing) };
 }
 
 async function releaseHold(id, note) {
@@ -464,8 +538,12 @@ async function releaseHold(id, note) {
 
   const supabase = getSupabase();
   const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
-  if (error) throw error;
-  return { id: existing.id, shipment: publicShipment(existing) };
+  if (error) {
+    const err = new Error(error.message || "Could not release hold.");
+    err.status = 500;
+    throw err;
+  }
+  return { id: existing.id, shipment: adminShipment(existing) };
 }
 
 async function cancelShipment(id, reason) {
@@ -499,8 +577,12 @@ async function cancelShipment(id, reason) {
 
   const supabase = getSupabase();
   const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
-  if (error) throw error;
-  return { id: existing.id, shipment: publicShipment(existing) };
+  if (error) {
+    const err = new Error(error.message || "Could not cancel shipment.");
+    err.status = 500;
+    throw err;
+  }
+  return { id: existing.id, shipment: adminShipment(existing) };
 }
 
 async function deleteShipment(id) {
@@ -516,6 +598,26 @@ async function deleteShipment(id) {
   return { id: existing.id, deleted: true };
 }
 
+async function clearAllShipments() {
+  const supabase = getSupabase();
+  const { data, error: listError } = await supabase.from("shipments").select("id");
+  if (listError) {
+    const err = new Error(listError.message || "Could not list shipments to clear.");
+    err.status = 500;
+    throw err;
+  }
+  const ids = (data || []).map((row) => row.id).filter(Boolean);
+  if (!ids.length) return { deleted: 0, shipments: [] };
+
+  const { error } = await supabase.from("shipments").delete().in("id", ids);
+  if (error) {
+    const err = new Error(error.message || "Could not clear shipments.");
+    err.status = 500;
+    throw err;
+  }
+  return { deleted: ids.length, shipments: [] };
+}
+
 module.exports = {
   listShipments,
   getShipment,
@@ -525,6 +627,8 @@ module.exports = {
   releaseHold,
   cancelShipment,
   deleteShipment,
+  clearAllShipments,
   previewRoute,
-  publicShipment
+  publicShipment,
+  adminShipment
 };

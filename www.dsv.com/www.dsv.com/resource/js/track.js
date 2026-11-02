@@ -42,7 +42,9 @@
   }
 
   function findShipmentLocal(id) {
-    var map = window.DSV_SHIPMENTS || {};
+    // Memory cache only (filled from /api/tracking).
+    window.DSV_SHIPMENTS = window.DSV_SHIPMENTS || {};
+    var map = window.DSV_SHIPMENTS;
     if (map[id]) return map[id];
     var upper = String(id || "").toUpperCase();
     if (map[upper]) return map[upper];
@@ -57,23 +59,20 @@
     return findShipmentLocal(id);
   }
 
-  function findShipmentAsync(id, options) {
-    options = options || {};
-    var forceNetwork = !!options.forceNetwork;
-    var local = findShipmentLocal(id);
-
-    return fetch("/api/tracking/" + encodeURIComponent(id), { credentials: "same-origin" })
+  function findShipmentAsync(id) {
+    return fetch("/api/tracking/" + encodeURIComponent(id), {
+      credentials: "same-origin",
+      cache: "no-store"
+    })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (!data || !data.ok || !data.shipment) {
-          return forceNetwork ? null : local;
-        }
+        if (!data || !data.ok || !data.shipment) return null;
         window.DSV_SHIPMENTS = window.DSV_SHIPMENTS || {};
         window.DSV_SHIPMENTS[data.id || id] = data.shipment;
         return data.shipment;
       })
       .catch(function () {
-        return forceNetwork ? null : local;
+        return null;
       });
   }
 
@@ -723,7 +722,7 @@
   function reloadDetailsLive(root, id, raw) {
     if (detailsReloadTimer) clearTimeout(detailsReloadTimer);
     detailsReloadTimer = setTimeout(function () {
-      findShipmentAsync(id, { forceNetwork: true }).then(function (shipment) {
+      findShipmentAsync(id).then(function (shipment) {
         if (!shipment) {
           root.innerHTML = notFound(raw || id);
           return;
@@ -775,7 +774,7 @@
     }
 
     var started = Date.now();
-    findShipmentAsync(id, { forceNetwork: true }).then(function (shipment) {
+    findShipmentAsync(id).then(function (shipment) {
       paintDetails(root, id, shipment, raw, started);
     });
 

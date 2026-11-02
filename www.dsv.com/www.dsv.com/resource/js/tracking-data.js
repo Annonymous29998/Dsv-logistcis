@@ -1,1 +1,0 @@
-window.DSV_SHIPMENTS = {};
