@@ -45,9 +45,17 @@ const {
 } = require("./_lib/support");
 
 function pathParts(req) {
-  // Prefer original URL path (preserved across vercel.json rewrite to /api).
+  // vercel.json rewrites /api/:path* -> /api?path=:path* because nested
+  // filesystem catch-alls are unreliable on non-Next Vercel projects.
+  const q = req.query && req.query.path;
+  if (Array.isArray(q)) return q.join("/").split("/").filter(Boolean);
+  if (typeof q === "string" && q.trim()) {
+    return decodeURIComponent(q).split("/").filter(Boolean);
+  }
   try {
     const url = new URL(req.url || "/", "http://localhost");
+    const fromQuery = url.searchParams.get("path");
+    if (fromQuery) return decodeURIComponent(fromQuery).split("/").filter(Boolean);
     return url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
   } catch (err) {
     return [];

@@ -5,13 +5,14 @@
     { "source": "/admin", "destination": "/admin/login.html" },
     { "source": "/admin/login", "destination": "/admin/login.html" },
     { "source": "/admin/login/", "destination": "/admin/login.html" },
-    { "source": "/admin/app", "destination": "/api/admin/guard" },
-    { "source": "/admin/app/", "destination": "/api/admin/guard" },
-    { "source": "/admin/dashboard", "destination": "/api/admin/guard" },
+    { "source": "/admin/app", "destination": "/api?path=admin/guard" },
+    { "source": "/admin/app/", "destination": "/api?path=admin/guard" },
+    { "source": "/admin/dashboard", "destination": "/api?path=admin/guard" },
     { "source": "/new/tracking/shipment-details-public", "destination": "/shipment-details-public.html" },
     { "source": "/tracking/shipment-details-public", "destination": "/shipment-details-public.html" },
     { "source": "/shipment-details-public", "destination": "/shipment-details-public.html" },
-    { "source": "/api/(.*)", "destination": "/api" }
+    { "source": "/api", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api?path=$1" }
   ],
   "headers": [
     {
