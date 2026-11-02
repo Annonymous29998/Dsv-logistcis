@@ -1489,6 +1489,26 @@ body.create-modal-open { overflow: hidden; }
   display: inline-flex !important; align-items: center; gap: .5rem; margin: 0 !important;
 }
 .field-hint { margin: .35rem 0 0; color: var(--muted); font-size: .78rem; }
+.package-image-preview {
+  margin-top: .65rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.package-image-preview img {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+}
+.package-image-preview[hidden] { display: none !important; }
+.create-form .field--package-image input[type="file"] {
+  padding: .55rem .65rem;
+  background: #fff;
+}
 .address-field.is-mapped .field-hint { color: var(--ok); }
 .address-control { position: relative; }
 .address-control input { padding-right: 2.4rem; }

@@ -292,8 +292,12 @@
     var delivery = String(data.deliveryStatus || "").trim();
     var holdReason = String(data.holdReason || data.statusReason || "").trim();
     var cancelReason = String(data.cancelReason || data.statusReason || "").trim();
-    var notice = data.deliveryNotice && (data.deliveryNotice.en || data.deliveryNotice);
-    notice = String(notice || "").trim();
+    var notice = "";
+    if (data.deliveryNotice && typeof data.deliveryNotice === "object") {
+      notice = String(data.deliveryNotice.en || data.deliveryNotice.text || "").trim();
+    } else {
+      notice = String(data.deliveryNotice || "").trim();
+    }
 
     if (status === "on-hold") {
       return (
@@ -549,12 +553,24 @@
       .trim() || "—";
   }
 
+  function packageImageUrl(data) {
+    if (!data) return "";
+    if (data.packageImage && String(data.packageImage).indexOf("data:image/") === 0) {
+      return String(data.packageImage);
+    }
+    if (data.deliveryNotice && typeof data.deliveryNotice === "object" && data.deliveryNotice.packageImage) {
+      return String(data.deliveryNotice.packageImage);
+    }
+    return "";
+  }
+
   function resultCard(trackingNumber, rawData) {
     var progressed = applyScanTimelineProgress(
       applyOutForDeliveryTodayScan(resolveTrackingDataForDisplay(rawData))
     );
     var data = progressed.data;
     var currentIdx = historyStageIndex(data, progressed);
+    var packageImg = packageImageUrl(data);
     var bookingId = data.bookingId || data.bookingNumber || "-";
     var houseBill = data.houseBill || data.houseBillNumber || trackingNumber;
     var kind = modeKind(data.serviceType);
@@ -632,6 +648,9 @@
           "<div>" +
             "<h1>Shipment " + escapeHtml(trackingNumber) + "</h1>" +
             '<p class="mydsv-booking">Booking id: ' + escapeHtml(bookingId) + "</p>" +
+            (packageImg
+              ? '<button type="button" class="mydsv-preview-package">Preview package</button>'
+              : "") +
           "</div>" +
         "</div>" +
         statusAlertHtml(data) +
@@ -694,6 +713,44 @@
     });
   }
 
+  function closePackagePreview() {
+    var existing = document.getElementById("mydsv-package-lightbox");
+    if (existing) existing.remove();
+    document.body.classList.remove("mydsv-lightbox-open");
+  }
+
+  function openPackagePreview(src) {
+    if (!src) return;
+    closePackagePreview();
+    var modal = document.createElement("div");
+    modal.id = "mydsv-package-lightbox";
+    modal.className = "mydsv-package-lightbox";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Package preview");
+    modal.innerHTML =
+      '<button type="button" class="mydsv-package-lightbox__backdrop" data-package-close aria-label="Close preview"></button>' +
+      '<div class="mydsv-package-lightbox__panel">' +
+        '<button type="button" class="mydsv-package-lightbox__close" data-package-close aria-label="Close">&times;</button>' +
+        '<img src="' + escapeHtml(src) + '" alt="Package photo">' +
+      "</div>";
+    document.body.appendChild(modal);
+    document.body.classList.add("mydsv-lightbox-open");
+    modal.addEventListener("click", function (event) {
+      if (event.target.closest("[data-package-close]")) closePackagePreview();
+    });
+  }
+
+  function bindPackagePreview(root, packageImg) {
+    if (!root || !packageImg) return;
+    root.addEventListener("click", function (event) {
+      var btn = event.target.closest(".mydsv-preview-package");
+      if (!btn) return;
+      event.preventDefault();
+      openPackagePreview(packageImg);
+    });
+  }
+
   var detailsUnsub = null;
   var detailsReloadTimer = null;
 
@@ -706,6 +763,7 @@
       }
       root.innerHTML = resultCard(id, shipment);
       bindTabs(root);
+      bindPackagePreview(root, packageImageUrl(shipment));
       if (flashLive) flashLiveUpdate(root);
     }, wait);
   }

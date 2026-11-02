@@ -288,7 +288,8 @@
 
     var state = {
       from: { label: "", lat: null, lon: null },
-      to: { label: "", lat: null, lon: null }
+      to: { label: "", lat: null, lon: null },
+      packageImage: null
     };
 
     var modal = document.createElement("div");
@@ -317,6 +318,15 @@
               addressField("from-location", "From address") +
               addressField("to-location", "To address") +
               field("package-content", "Package content", 'placeholder="What is in the package"') +
+              '<div class="field field--package-image">' +
+                '<label for="package-image">Package photo</label>' +
+                '<input id="package-image" type="file" accept="image/*">' +
+                '<p class="field-hint">Optional. Customers can open it via “Preview package” on tracking.</p>' +
+                '<div class="package-image-preview" id="package-image-preview" hidden>' +
+                  '<img id="package-image-thumb" alt="Package preview">' +
+                  '<button type="button" class="btn" id="package-image-clear">Remove photo</button>' +
+                "</div>" +
+              "</div>" +
               field("delivery-time", "Delivery window", 'value="9:00 PM"') +
               '<div class="field"><label for="transit-hours">Transit window (hours)</label>' +
                 '<input id="transit-hours" type="number" min="6" max="720" value="72"></div>' +
@@ -359,12 +369,70 @@
         toLat: state.to.lat,
         toLon: state.to.lon,
         packageContent: modal.querySelector("#package-content").value.trim(),
+        packageImage: state.packageImage || null,
         serviceType: modal.querySelector("#service-type").value,
         deliveryTime: modal.querySelector("#delivery-time").value.trim(),
         transitHours: Number(modal.querySelector("#transit-hours").value) || 72,
         status: modal.querySelector("#start-status").value,
         signatureRequired: modal.querySelector("#signature-required").checked
       };
+    }
+
+    function compressPackageImage(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file || !/^image\//.test(file.type || "")) {
+          reject(new Error("Choose an image file."));
+          return;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          reject(new Error("Image must be under 8 MB."));
+          return;
+        }
+        var reader = new FileReader();
+        reader.onerror = function () { reject(new Error("Could not read image.")); };
+        reader.onload = function () {
+          var img = new Image();
+          img.onload = function () {
+            var maxSide = 1280;
+            var scale = Math.min(1, maxSide / Math.max(img.width || 1, img.height || 1));
+            var w = Math.max(1, Math.round(img.width * scale));
+            var h = Math.max(1, Math.round(img.height * scale));
+            var canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            var ctx2d = canvas.getContext("2d");
+            ctx2d.drawImage(img, 0, 0, w, h);
+            var dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+            if (dataUrl.length > 1200000) {
+              dataUrl = canvas.toDataURL("image/jpeg", 0.62);
+            }
+            if (dataUrl.length > 1400000) {
+              reject(new Error("Image is still too large after compression."));
+              return;
+            }
+            resolve(dataUrl);
+          };
+          img.onerror = function () { reject(new Error("Invalid image file.")); };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function setPackagePreview(dataUrl) {
+      state.packageImage = dataUrl || null;
+      var wrap = modal.querySelector("#package-image-preview");
+      var thumb = modal.querySelector("#package-image-thumb");
+      if (!wrap || !thumb) return;
+      if (dataUrl) {
+        thumb.src = dataUrl;
+        wrap.hidden = false;
+      } else {
+        thumb.removeAttribute("src");
+        wrap.hidden = true;
+        var input = modal.querySelector("#package-image");
+        if (input) input.value = "";
+      }
     }
 
     function showError(msg) {
@@ -399,6 +467,25 @@
       if (event.key === "Escape") closeModal(false, null, onDone);
     };
     document.addEventListener("keydown", escapeHandler);
+
+    modal.querySelector("#package-image").addEventListener("change", async function (event) {
+      showError("");
+      var file = event.target.files && event.target.files[0];
+      if (!file) {
+        setPackagePreview(null);
+        return;
+      }
+      try {
+        var dataUrl = await compressPackageImage(file);
+        setPackagePreview(dataUrl);
+      } catch (err) {
+        setPackagePreview(null);
+        showError(err.message || "Could not load package photo.");
+      }
+    });
+    modal.querySelector("#package-image-clear").addEventListener("click", function () {
+      setPackagePreview(null);
+    });
 
     modal.querySelector("#btn-preview-route").addEventListener("click", async function () {
       showError("");

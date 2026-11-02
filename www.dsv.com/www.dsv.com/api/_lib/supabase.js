@@ -32,6 +32,11 @@ function rowToShipment(row) {
     sender: row.sender,
     receiver: row.receiver,
     packageContent: row.package_content,
+    packageImage:
+      row.package_image ||
+      (row.delivery_notice && typeof row.delivery_notice === "object"
+        ? row.delivery_notice.packageImage || null
+        : null),
     signatureRequired: !!row.signature_required,
     fromLocation: row.from_location,
     toLocation: row.to_location,
@@ -72,12 +77,22 @@ function shipmentToRow(id, item) {
     sender: item.sender,
     receiver: item.receiver,
     package_content: item.packageContent || null,
+    package_image: item.packageImage || null,
     signature_required: item.signatureRequired !== false,
     from_location: item.fromLocation,
     to_location: item.toLocation,
     status_near_place: item.statusNearPlace || null,
     label_created_date: item.labelCreatedDate || null,
-    delivery_notice: item.deliveryNotice || null,
+    delivery_notice: (function () {
+      const notice =
+        item.deliveryNotice && typeof item.deliveryNotice === "object"
+          ? Object.assign({}, item.deliveryNotice)
+          : item.deliveryNotice
+            ? { en: String(item.deliveryNotice) }
+            : {};
+      if (item.packageImage) notice.packageImage = item.packageImage;
+      return Object.keys(notice).length ? notice : null;
+    })(),
     timeline: item.timeline || [],
     route_stops: item.routeStops || [],
     planned_events: item.plannedEvents || [],

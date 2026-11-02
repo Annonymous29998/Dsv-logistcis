@@ -269,6 +269,12 @@ async function createShipment(payload) {
     }
   }
 
+  const packageImageRaw = String(payload.packageImage || "");
+  const packageImage =
+    packageImageRaw.indexOf("data:image/") === 0 && packageImageRaw.length <= 1400000
+      ? packageImageRaw
+      : null;
+
   const item = {
     id: trackingId,
     status,
@@ -279,6 +285,7 @@ async function createShipment(payload) {
     sender,
     receiver,
     packageContent: String(payload.packageContent || "General cargo").trim() || "General cargo",
+    packageImage,
     signatureRequired: payload.signatureRequired !== false,
     fromLocation,
     toLocation,
@@ -299,7 +306,13 @@ async function createShipment(payload) {
     adminEvents: [{ at: plan.createdAt, action: "create", reason: null }]
   };
 
-  const { error } = await supabase.from("shipments").insert(shipmentToRow(trackingId, item));
+  const row = shipmentToRow(trackingId, item);
+  let { error } = await supabase.from("shipments").insert(row);
+  // Fallback if package_image column is not migrated yet — keep image in delivery_notice.
+  if (error && /package_image/i.test(String(error.message || ""))) {
+    delete row.package_image;
+    ({ error } = await supabase.from("shipments").insert(row));
+  }
   if (error) throw error;
   return { id: trackingId, shipment: adminShipment(item) };
 }
