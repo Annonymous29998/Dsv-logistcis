@@ -761,13 +761,10 @@ def update_shipment(tracking_id: str, payload: dict[str, Any]) -> dict[str, Any]
         if not payload.get("estimatedDelivery"):
             item["estimatedDelivery"] = plan["estimatedDelivery"]
         item["etaAt"] = plan["etaAt"]
-        item["timeline"] = timeline_for_status(plan["plannedEvents"], str(item.get("status") or "in-transit"))
+        # Keep existing scan/admin timeline; only refresh planned future events.
 
     note = str(payload.get("reason") or "Shipment details updated").strip() or "Shipment details updated"
-    if not route_changed:
-        _append_timeline(item, "DETAILS UPDATED", note)
-    else:
-        _append_timeline(item, "DETAILS UPDATED", note)
+    _append_timeline(item, "DETAILS UPDATED", note)
     shipments[key] = item
     save_shipments(shipments)
     return {"id": key, "shipment": admin_item(item)}

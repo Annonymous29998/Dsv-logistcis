@@ -452,7 +452,7 @@ async function updateShipment(id, payload) {
     existing.routeDurationS = plan.durationS;
     existing.etaAt = plan.etaAt;
     if (!payload.estimatedDelivery) existing.estimatedDelivery = plan.estimatedDelivery;
-    existing.timeline = timelineForStatus(plan.plannedEvents, existing.status || "in-transit");
+    // Keep existing scan/admin timeline; only refresh planned future events.
   }
 
   pushAdminEvent(existing, "edit", payload.reason || "Shipment details updated");
