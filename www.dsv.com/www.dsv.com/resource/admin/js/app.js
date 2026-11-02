@@ -308,7 +308,17 @@
     status.textContent = AdminUtils.statusLabel(row.status);
     document.getElementById("drawer-public").href = "/new/tracking/shipment-details-public?id=" + encodeURIComponent(id);
     renderDrawerActions(row);
-    var notice = row.deliveryNotice && (row.deliveryNotice.en || row.deliveryNotice);
+    var noticeText = "";
+    if (typeof row.deliveryNotice === "string") {
+      noticeText = row.deliveryNotice;
+    } else if (row.deliveryNotice && typeof row.deliveryNotice.en === "string") {
+      noticeText = row.deliveryNotice.en;
+    }
+    var packageImage =
+      row.packageImage ||
+      (row.deliveryNotice && typeof row.deliveryNotice === "object"
+        ? row.deliveryNotice.packageImage
+        : null);
     var reason = row.holdReason || row.cancelReason || row.statusReason;
     document.getElementById("drawer-body").innerHTML =
       '<div class="meta-grid">' +
@@ -320,7 +330,12 @@
         '<div class="span-2"><span>Origin</span><strong>' + AdminUtils.escapeHtml(row.fromLocation || "—") + "</strong></div>" +
         '<div class="span-2"><span>Destination</span><strong>' + AdminUtils.escapeHtml(row.toLocation || "—") + "</strong></div>" +
         (reason ? '<div class="span-2"><span>Status reason</span><strong>' + AdminUtils.escapeHtml(reason) + "</strong></div>" : "") +
-        (notice ? '<div class="span-2 backend-note">' + AdminUtils.escapeHtml(notice) + "</div>" : "") +
+        (noticeText ? '<div class="span-2 backend-note">' + AdminUtils.escapeHtml(noticeText) + "</div>" : "") +
+        (packageImage
+          ? '<div class="span-2"><a class="pkg-preview-link" href="' +
+            AdminUtils.escapeHtml(packageImage) +
+            '" target="_blank" rel="noopener">Preview package</a></div>'
+          : "") +
       "</div>" +
       '<h3 style="margin:0 0 .7rem;font-size:.95rem">Scan timeline</h3>' +
       '<ol class="timeline">' +
