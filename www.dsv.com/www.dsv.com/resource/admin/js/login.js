@@ -55,7 +55,7 @@
   if (forgotLink) {
     forgotLink.addEventListener("click", function (event) {
       event.preventDefault();
-      showError("Password recovery is not connected to a mail provider in this environment. Contact your system owner to reset ADMIN_PASSWORD.");
+      showError("Contact your system administrator to reset your password.");
     });
   }
 

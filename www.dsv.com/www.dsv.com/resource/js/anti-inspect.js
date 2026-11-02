@@ -57,7 +57,6 @@
     lastHit = now;
     try {
       console.clear();
-      console.log("%cInspecting is disabled on this site.", "color:#002664;font-size:14px;font-weight:700");
     } catch (e) {}
   }
 
