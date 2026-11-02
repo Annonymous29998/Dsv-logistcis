@@ -9,10 +9,11 @@ create table if not exists public.shipments (
   id text primary key,
 
   -- Operational status
-  -- pending | in-transit | out-for-delivery | delivered | on-hold | cancelled | exception
+  -- pending | label-created | in-transit | out-for-delivery | delivered | on-hold | cancelled | exception
   status text not null default 'in-transit'
     check (status in (
       'pending',
+      'label-created',
       'in-transit',
       'out-for-delivery',
       'delivered',
