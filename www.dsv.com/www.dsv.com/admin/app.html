@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <link rel="stylesheet" href="/resource/admin/css/admin.css?v=20261102chat2">
+  <link rel="stylesheet" href="/resource/admin/css/admin.css?v=20261102chat3">
   <script>
     // Block dashboard until session is confirmed; bounce guests to login.
     (function () {
@@ -135,6 +135,27 @@
     </div>
   </aside>
 
+  <button type="button" class="admin-chat-fab" id="admin-chat-fab" aria-label="Open customer chats" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span class="admin-chat-fab__badge" id="admin-chat-fab-badge" aria-hidden="true">0</span>
+  </button>
+
+  <div class="admin-chat-inbox" id="admin-chat-inbox" hidden>
+    <div class="admin-chat-inbox__backdrop" data-chat-inbox-close></div>
+    <section class="admin-chat-inbox__panel" role="dialog" aria-modal="true" aria-labelledby="admin-chat-inbox-title">
+      <header class="admin-chat-inbox__head">
+        <div>
+          <h2 id="admin-chat-inbox-title">Customer chats</h2>
+          <p id="admin-chat-inbox-sub">Open a conversation to reply</p>
+        </div>
+        <button type="button" class="admin-chat-inbox__close" data-chat-inbox-close aria-label="Close chats">&times;</button>
+      </header>
+      <div class="admin-chat-inbox__list" id="admin-chat-inbox-list"></div>
+    </section>
+  </div>
+
   <script src="/resource/js/realtime.js?v=20261102i"></script>
   <script src="/resource/admin/js/api.js?v=20261102p53"></script>
   <script src="/resource/admin/js/utils.js?v=20261102p54"></script>
@@ -142,7 +163,7 @@
   <script src="/resource/admin/js/views/dashboard.js?v=20261102p55"></script>
   <script src="/resource/admin/js/views/operations.js?v=20261102p47"></script>
   <script src="/resource/admin/js/views/create-shipment.js?v=20261102p44"></script>
-  <script src="/resource/admin/js/views/system.js?v=20261102p44"></script>
-  <script src="/resource/admin/js/app.js?v=20261102p53"></script>
+  <script src="/resource/admin/js/views/system.js?v=20261102p45"></script>
+  <script src="/resource/admin/js/app.js?v=20261102p54"></script>
 </body>
 </html>

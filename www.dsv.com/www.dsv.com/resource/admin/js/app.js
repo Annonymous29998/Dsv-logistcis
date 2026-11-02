@@ -793,10 +793,8 @@
       }
       var chatBtn = event.target.closest("[data-notif-chat]");
       if (chatBtn) {
-        state.selectedChatId = chatBtn.getAttribute("data-notif-chat");
-        state.openChatDrawerId = state.selectedChatId;
         closeNotificationsModal();
-        setView("support");
+        openSupportConversation(chatBtn.getAttribute("data-notif-chat"));
         return;
       }
       var shipBtn = event.target.closest("[data-notif-shipment]");
@@ -847,6 +845,101 @@
     }
   }
 
+  function updateAdminChatFabBadge(total) {
+    var fab = document.getElementById("admin-chat-fab");
+    var badge = document.getElementById("admin-chat-fab-badge");
+    if (badge) {
+      badge.textContent = total > 9 ? "9+" : String(total);
+      badge.classList.toggle("is-on", total > 0);
+      badge.setAttribute("aria-hidden", total > 0 ? "false" : "true");
+    }
+    if (fab) {
+      fab.setAttribute(
+        "aria-label",
+        total > 0
+          ? ("Open customer chats, " + total + " unread")
+          : "Open customer chats"
+      );
+    }
+  }
+
+  function chatInboxListHtml() {
+    var chats = loadSupportChats().slice().sort(function (a, b) {
+      return (Number(b.unread) || 0) - (Number(a.unread) || 0) ||
+        Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
+    });
+    if (!chats.length) {
+      return '<p class="admin-chat-inbox__empty">No customer conversations yet. Messages from the homepage chat will appear here.</p>';
+    }
+    return chats.map(function (c) {
+      var last = c.messages && c.messages.length ? c.messages[c.messages.length - 1] : null;
+      var unread = Number(c.unread) || 0;
+      var preview = last && last.text ? last.text : "No messages yet";
+      var when = c.updatedAt ? new Date(c.updatedAt).toLocaleString() : "";
+      var geo = [c.city, c.country].filter(Boolean).join(", ") || c.geoLabel || "";
+      return (
+        '<button type="button" class="admin-chat-inbox__item' + (unread ? " is-unread" : "") +
+        (c.status === "ended" ? " is-ended" : "") +
+        '" data-open-support-chat="' + AdminUtils.escapeHtml(c.id) + '">' +
+          "<strong>" + AdminUtils.escapeHtml(c.name || "Visitor") +
+            (unread ? '<span class="admin-chat-inbox__unread">' + (unread > 9 ? "9+" : unread) + "</span>" : "") +
+          "</strong>" +
+          "<span>" + AdminUtils.escapeHtml(preview) + "</span>" +
+          "<em>" + AdminUtils.escapeHtml(
+            (c.status === "ended" ? "Ended" : "Open") +
+            (geo ? " · " + geo : "") +
+            (when ? " · " + when : "")
+          ) + "</em>" +
+        "</button>"
+      );
+    }).join("");
+  }
+
+  function refreshAdminChatInbox() {
+    var list = document.getElementById("admin-chat-inbox-list");
+    var sub = document.getElementById("admin-chat-inbox-sub");
+    if (!list) return;
+    list.innerHTML = chatInboxListHtml();
+    if (sub) {
+      var total = chatUnreadTotal();
+      var openCount = loadSupportChats().filter(function (c) { return c.status !== "ended"; }).length;
+      sub.textContent = total
+        ? (total + " unread · " + openCount + " open")
+        : (openCount + " open conversation" + (openCount === 1 ? "" : "s"));
+    }
+  }
+
+  function closeAdminChatInbox() {
+    var inbox = document.getElementById("admin-chat-inbox");
+    var fab = document.getElementById("admin-chat-fab");
+    if (inbox) inbox.hidden = true;
+    if (fab) fab.setAttribute("aria-expanded", "false");
+  }
+
+  function openAdminChatInbox() {
+    var inbox = document.getElementById("admin-chat-inbox");
+    var fab = document.getElementById("admin-chat-fab");
+    refreshSupportChatsFromApi().then(function () {
+      updateChatNotifications({ silent: true, skipViewRefresh: true });
+      refreshAdminChatInbox();
+    });
+    refreshAdminChatInbox();
+    if (inbox) inbox.hidden = false;
+    if (fab) fab.setAttribute("aria-expanded", "true");
+  }
+
+  function openSupportConversation(chatId) {
+    if (!chatId) return;
+    state.selectedChatId = chatId;
+    closeAdminChatInbox();
+    if (window.AdminSupportChat && typeof window.AdminSupportChat.open === "function") {
+      window.AdminSupportChat.open(chatId, state);
+      return;
+    }
+    state.openChatDrawerId = chatId;
+    setView("support");
+  }
+
   function updateChatNotifications(options) {
     options = options || {};
     var total = chatUnreadTotal();
@@ -863,6 +956,7 @@
         total > 0 ? ("Notifications, " + total + " unread customer message" + (total === 1 ? "" : "s")) : "Notifications"
       );
     }
+    updateAdminChatFabBadge(total);
     if (!options.silent && total > lastChatUnreadTotal) {
       playAdminNotifySound();
     }
@@ -873,6 +967,8 @@
     if (document.getElementById("notif-modal")) {
       refreshNotificationsModal();
     }
+    var inbox = document.getElementById("admin-chat-inbox");
+    if (inbox && !inbox.hidden) refreshAdminChatInbox();
   }
 
   var supportPollTimer = null;
@@ -926,6 +1022,33 @@
         event.preventDefault();
         event.stopPropagation();
         openNotificationsModal();
+      });
+    }
+
+    if (window.AdminSupportChat && typeof window.AdminSupportChat.bind === "function") {
+      window.AdminSupportChat.bind(state);
+    }
+
+    var chatFab = document.getElementById("admin-chat-fab");
+    var chatInbox = document.getElementById("admin-chat-inbox");
+    if (chatFab) {
+      chatFab.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (chatInbox && !chatInbox.hidden) closeAdminChatInbox();
+        else openAdminChatInbox();
+      });
+    }
+    if (chatInbox) {
+      chatInbox.addEventListener("click", function (event) {
+        if (event.target.closest("[data-chat-inbox-close]")) {
+          closeAdminChatInbox();
+          return;
+        }
+        var item = event.target.closest("[data-open-support-chat]");
+        if (item) {
+          openSupportConversation(item.getAttribute("data-open-support-chat"));
+        }
       });
     }
 
@@ -996,6 +1119,7 @@
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") {
         closeUserMenu();
+        closeAdminChatInbox();
         closeDrawer();
       }
     });

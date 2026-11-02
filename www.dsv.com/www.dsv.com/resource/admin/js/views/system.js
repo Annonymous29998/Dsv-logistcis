@@ -468,4 +468,14 @@
   global.AdminViews.notifications = { render: notificationsView };
   global.AdminViews.settings = { render: settingsView };
   global.AdminViews.support = { render: helpView };
+
+  // Shared API so the floating chat FAB can open conversations from any view.
+  global.AdminSupportChat = {
+    bind: bindChatDrawerOnce,
+    open: openChatDrawer,
+    close: closeChatDrawer,
+    fill: fillChatDrawer,
+    fetch: fetchSupportChats,
+    load: loadSupportChats
+  };
 })(window);
