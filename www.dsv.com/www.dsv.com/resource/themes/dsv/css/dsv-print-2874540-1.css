@@ -1,0 +1,34 @@
+@media print {
+    .badge,
+    .breadcrumbs,
+    .contact,
+    .context-menu,
+    .dialog,
+    .footer,
+    .header-content-menu,
+    .header-user-menu,
+    .icon,
+    .job-summary__action-container,
+    .job-summary__picture,
+    .main-navigation,
+    .mobile-navigation,
+    .social-media-wrapper,
+    .ticker,
+    .visuallyhidden,
+    button,
+    dialog,
+    input,
+    textarea {
+        display: none
+    }
+    #cookie-information-template-wrapper {
+        opacity: 0
+    }
+    .header-content__logo-icon {
+        height: 32px;
+        width: auto
+    }
+    a[href*="mailto:"]:after {
+        content: " -> " attr(href)
+    }
+}

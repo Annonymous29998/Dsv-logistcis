@@ -1,0 +1,234 @@
+@media only screen and (min-width:1400px) {
+    .content-box {
+        padding-inline: calc(min(1400px, 100%)*.02857)
+    }
+    .limit-within-content-box {
+        inset-inline-start: calc(47.143% + 700px);
+        transform: translateX(calc(Var(--text-direction-modifier)*-100%))
+    }
+    .header-static-line {
+        position: relative;
+        z-index: 1
+    }
+    .header-content {
+        display: flex;
+        gap: 40px
+    }
+    .main-navigation__level-item:has(.main-navigation__teaser) {
+        grid-column: 10/13
+    }
+    .main-navigation__teaser-area-txt {
+        padding: 32px 24px 16px
+    }
+    .grid {
+        gap: 0 calc(min(1400px, 100%)*.01714)
+    }
+    .grid-center--xl-6 {
+        grid-column: 4/10
+    }
+    .grid-center--xl-10 {
+        grid-column: 2/12
+    }
+    .grid-width--xl-6 {
+        grid-column: span 6
+    }
+    .block-spacing {
+        margin-block: 5rem
+    }
+    .cta-list__container {
+        column-gap: calc(min(1400px, 100vw)*.01714);
+        padding-inline: calc(50% - 660.002px);
+        row-gap: 24px
+    }
+    .cta-list__container--two-columns {
+        padding-inline: calc(50% - 436.002px)
+    }
+    .cta-list__item {
+        padding-inline: 40px
+    }
+    .footer__main-section-wrapper {
+        column-gap: calc(min(1400px, 100%)*.01714)
+    }
+    .contact--image {
+        padding-inline: 112px
+    }
+    .connect-widget-item {
+        padding: 32px 24px 24px
+    }
+    .dialog {
+        --dialog-block-spacing: 100px;
+        padding-inline: calc(50% - 324.002px)
+    }
+    .dialog--sidebar {
+        grid-template-columns: 8fr 4fr;
+        padding-inline: 1.6104545455% 0
+    }
+    .dialog--content-box {
+        padding-inline: max(0px, (100vw - 1400px)/2 + 2.857%)
+    }
+    .error {
+        padding-block: 240px 40px
+    }
+    .error__animation {
+        width: 40.6062405871%
+    }
+    .form-grid {
+        gap: 0 calc(min(1400px, 100vw)*.01714)
+    }
+    .form-grid--standalone {
+        max-width: calc(min(1400px, 100%)*.46286)
+    }
+    .tracking-form__container {
+        width: 78.286%
+    }
+    .tracking-form--primary {
+        padding: 40px 100px 60px
+    }
+    .tracking-form--secondary .tracking-form__input {
+        flex-basis: 100%
+    }
+    .job-summary__head {
+        grid-column: 1/9
+    }
+    .job-summary__details {
+        grid-column: 10/13
+    }
+    .image-gallery__slide-container,
+    .image-gallery__title {
+        padding-inline: calc(50% - 436.002px)
+    }
+    .image-gallery__slide-container {
+        gap: 24px
+    }
+    .image-gallery__single-slide-container {
+        padding-inline: calc(50% - 436.002px)
+    }
+    .image-gallery--single .image-gallery__slide--portrait {
+        margin-inline: 20.4378816136%
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait {
+        width: calc(min(1400px, 100vw)*.46286)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape {
+        width: calc(min(1400px, 100vw)*.62286)
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait:first-child {
+        margin-inline-start: calc(min(1400px, 100vw)*.16)
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait:last-child {
+        margin-inline-end: calc(min(1400px, 100vw)*.16)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape:first-child {
+        margin-inline-start: calc(min(1400px, 100vw)*.08)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape:last-child {
+        margin-inline-end: calc(min(1400px, 100vw)*.08)
+    }
+    .search-form--search,
+    .search-result__form-title {
+        width: 66.0607089069%
+    }
+    .search-result__form {
+        padding-block-start: 120px
+    }
+    .regular-stage {
+        --main-min-height: 600px
+    }
+    .regular-stage__area-txt {
+        margin-inline: auto;
+        width: calc(min(1400px, 100%)*.94286)
+    }
+    .regular-stage__txt-wrapper {
+        padding: 40px;
+        width: 49.0910633604%
+    }
+    .hero-stage__area-txt {
+        margin-inline: auto;
+        width: calc(min(1400px, 100%)*.94286)
+    }
+    .hero-stage__txt-wrapper {
+        width: 66.0607089069%
+    }
+    .rte-section--standalone {
+        max-width: calc(min(1400px, 100%)*.94286)
+    }
+    .rte-section--narrow {
+        max-width: calc(min(1400px, 100%)*.62286)
+    }
+    table {
+        border-spacing: calc(min(1400px, 100vw)*.01714) 0;
+        margin-inline-start: calc(min(1400px, 100vw)*-.01714)
+    }
+    .table-wrapper__cell {
+        min-width: calc(min(1400px, 100vw)*.22286)
+    }
+    .self-service-wrapper {
+        padding-inline: calc(50% - 436.002px)
+    }
+    .self-service__area-txt {
+        padding: 40px 32px
+    }
+    .sequence__items-wrapper {
+        gap: calc(min(1400px, 100vw)*.01714);
+        padding-inline: calc(50% - 660.002px)
+    }
+    .sequence__item {
+        width: 32.1214178139%
+    }
+    .tablist-menu--expanded {
+        padding-inline: calc(50vw - 660.002px);
+        scroll-padding-inline: calc(50vw - 660.002px)
+    }
+    .featured-teasers {
+        gap: calc(min(1400px, 100vw)*.01714);
+        padding-inline: calc(50% - 660.002px)
+    }
+    .featured-teaser {
+        width: 23.6365950406%
+    }
+    .tag-teasers-wrapper {
+        column-gap: calc(min(1400px, 100%)*.01714)
+    }
+    .teaser-list-c__container {
+        gap: calc(min(1400px, 100vw)*.01714);
+        padding-inline: calc(50% - 660.002px)
+    }
+    .teaser-list-c__list_item {
+        width: 32.1214178139%
+    }
+    .teaser-list-c__teaser--solo {
+        padding-inline: calc(50% - 324.002px)
+    }
+    .teaser-list-d__container {
+        column-gap: calc(min(1400px, 100vw)*.01714);
+        padding-inline: calc(50% - 660.002px);
+        row-gap: 24px
+    }
+    .teaser-list-d__container--two-columns {
+        padding-inline: calc(50% - 436.002px)
+    }
+    .jobs-teasers__container {
+        gap: calc(min(1400px, 100vw)*.01714);
+        padding-inline: calc(50% - 660.002px);
+        scroll-padding-inline: calc(50% - 660.002px)
+    }
+    .jobs-teasers__solo-container {
+        padding-inline: calc(50% - 324.002px)
+    }
+    .jobs-teasers__slide {
+        width: 32.1214178139%
+    }
+    .testimonials__container {
+        gap: calc(min(1400px, 100%)*.01714);
+        padding-inline: calc(50% - 660.002px)
+    }
+    .testimonials__testimonial {
+        width: 66.0607089069%
+    }
+    .context-menu {
+        inset-inline-end: 2.857%
+    }
+    .banner {
+        padding-inline: 112px
+    }
+}

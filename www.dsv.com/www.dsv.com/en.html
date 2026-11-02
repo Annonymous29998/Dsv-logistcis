@@ -1,0 +1,3418 @@
+<!DOCTYPE html>
+
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Track your shipment | DSV</title>
+    <meta name="description" content="Track DSV shipments in real time. Enter a tracking, booking or consignment number to see status, last scan and estimated arrival.">
+    <meta name="siteimprove-id" content="2628262">
+    <link rel="shortcut icon" href="/resource/crblob/2848294/563987f7055513a6cd93f1bc305a8960/favicon-dsv-ico-data.ico" type="image/ico" sizes="32x32">
+    <link rel="shortcut icon" href="/resource/crblob/2848296/c58192baf1d2571e6013e540d6253b8d/favicon-dsv-svg-data.svg" type="image/svg+xml" sizes="any">
+<link rel="preload" href="/resource/crblob/2478960/ceeb05c72f550a4a5faf51d018ad0305/foundrysterling-book-woff2-data.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/resource/crblob/2478964/8d4bfec1a056b2afb30aa5aaf92ce257/foundrysterling-demi-woff2-data.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/resource/crblob/2478968/6711b2659404f4fc87d9f67c48222a73/foundrysterling-extrabold-woff2-data.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/resource/crblob/2478972/7216f0064bd0a9f9329cdd99f38572bc/foundrysterling-light-woff2-data.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <style>
+        html {
+            --main-font: FoundrySterling, Helvetica, Arial, sans-serif;
+        }
+    </style>
+    <meta name="schenker:chunk-mapping" content="js/8.js:/resource/themes/dsv/js/8-2479032-11.js">
+    <meta name="schenker:chunk-mapping" content="js/13.js:/resource/themes/dsv/js/13-2583024-5.js">
+    <meta name="schenker:chunk-mapping" content="js/16.js:/resource/themes/dsv/js/16-2583028-4.js">
+    <meta name="schenker:chunk-mapping" content="js/5.js:/resource/themes/dsv/js/5-2478212-8.js">
+    <meta name="schenker:chunk-mapping" content="js/4.js:/resource/themes/dsv/js/4-2478210-7.js">
+    <meta name="schenker:chunk-mapping" content="js/15.js:/resource/themes/dsv/js/15-2479030-4.js">
+    <meta name="schenker:chunk-mapping" content="js/10.js:/resource/themes/dsv/js/10-2480152-6.js">
+    <meta name="schenker:chunk-mapping" content="js/12.js:/resource/themes/dsv/js/12-2583022-14.js">
+    <meta name="schenker:chunk-mapping" content="js/7.js:/resource/themes/dsv/js/7-2478216-9.js">
+    <meta name="schenker:chunk-mapping" content="js/11.js:/resource/themes/dsv/js/11-2481738-5.js">
+    <meta name="schenker:chunk-mapping" content="js/14.js:/resource/themes/dsv/js/14-2583026-5.js">
+    <meta name="schenker:chunk-mapping" content="js/2.js:/resource/themes/dsv/js/2-2477488-7.js">
+    <meta name="schenker:chunk-mapping" content="js/3.js:/resource/themes/dsv/js/3-2477490-8.js">
+    <meta name="schenker:chunk-mapping" content="js/28.js:/resource/themes/dsv/js/28-2676320-2.js">
+    <meta name="schenker:chunk-mapping" content="js/1.js:/resource/themes/dsv/js/1-2477486-11.js">
+    <meta name="schenker:chunk-mapping" content="js/6.js:/resource/themes/dsv/js/6-2478214-8.js">
+    <meta name="schenker:chunk-mapping" content="js/9.js:/resource/themes/dsv/js/9-2480156-6.js">
+    <meta name="schenker:chunk-mapping" content="js/0.js:/resource/themes/dsv/js/0-2477484-4.js">
+    <script type="text/javascript">
+        Object.defineProperty(window, 'replaceChunksWithThemeVersion', {
+            value: function(originalSrc) {
+                var metaChunks = Array.from(document.querySelectorAll('meta[name="schenker:chunk-mapping"]'));
+                var themeAssetsMap = new Map(metaChunks.map(chunk => chunk.getAttribute('content').split(':')));
+                var chunkFileName = originalSrc.split('/').slice(-2).join('/');
+                return themeAssetsMap.get(chunkFileName);
+            },
+            configurable: false,
+            writable: false,
+            enumerable: false,
+        });
+    </script>
+    <script type="text/javascript" defer src="/resource/themes/dsv/js/dsv-2477492-28.js"></script>
+    <link rel="stylesheet" media="screen" href="/resource/themes/dsv/css/dsv-2477518-33.css" />
+    <link rel="stylesheet" media="(min-width: 576px)" href="/resource/themes/dsv/css/dsv-S-2477514-21.css" />
+    <link rel="stylesheet" media="(min-width: 768px)" href="/resource/themes/dsv/css/dsv-M-2477512-26.css" />
+    <link rel="stylesheet" media="(min-width: 992px)" href="/resource/themes/dsv/css/dsv-L-2477510-23.css" />
+    <link rel="stylesheet" media="(min-width: 1400px)" href="/resource/themes/dsv/css/dsv-XL-2477516-20.css" />
+    <link rel="stylesheet" media="print" href="/resource/themes/dsv/css/dsv-print-2874540-1.css" />
+    <style>
+        .teaser-list-d__teaser-image {
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        .teaser-list-d__teaser-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        .teaser-list-d__teaser--image .teaser-list-d__teaser-content,
+        .teaser-list-d__teaser--image .teaser-list-d__teaser-button {
+            position: relative;
+            z-index: 1;
+        }
+        .featured-teaser__photo {
+            display: block;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            object-fit: cover;
+            object-position: center;
+            background: #d7dde3;
+        }
+        /* Reliable mobile hamburger menu (theme JS binding is flaky offline) */
+        .mobile-navigation {
+            z-index: 1200 !important;
+            display: block !important;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .mobile-navigation.mobile-navigation__element--hide {
+            display: block !important;
+        }
+        .mobile-navigation.is-open {
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .mobile-navigation__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 20, 50, 0.45);
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.32s ease;
+        }
+        .mobile-navigation.is-open .mobile-navigation__backdrop {
+            opacity: 1;
+        }
+        .mobile-navigation.is-closing .mobile-navigation__backdrop {
+            opacity: 0;
+        }
+        .mobile-navigation__content {
+            z-index: 1;
+            background: #fff;
+            width: min(100%, 420px);
+            max-width: 100%;
+            inset: 0 auto 0 0;
+            right: auto;
+            box-shadow: 8px 0 32px rgba(0, 20, 50, 0.18);
+            transform: translate3d(-104%, 0, 0);
+            transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform;
+        }
+        .mobile-navigation.is-open .mobile-navigation__content {
+            transform: translate3d(0, 0, 0);
+        }
+        .mobile-navigation.is-closing .mobile-navigation__content {
+            transform: translate3d(-104%, 0, 0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .mobile-navigation__backdrop,
+            .mobile-navigation__content {
+                transition: none;
+            }
+        }
+        .mobile-navigation__track-foot {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid #eff0f0;
+            flex-shrink: 0;
+        }
+        .mobile-navigation__track-btn {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+        .mobile-navigation__section-menu {
+            padding: 0.25rem 0 1rem;
+        }
+        .mobile-navigation__section-link {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.95rem 0;
+            color: #001432;
+            text-decoration: none;
+        }
+        .mobile-navigation__section-link:hover,
+        .mobile-navigation__section-link:focus-visible {
+            color: #005eb8;
+        }
+        .header-content-menu--sections {
+            display: none;
+            align-items: center;
+            gap: 0.2rem 1rem;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+        .header-content-menu--sections > li {
+            list-style: none;
+            flex: 0 0 auto;
+        }
+        .header-content-menu--sections .header-content-menu__button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0;
+            color: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+        .header-content-menu--sections .header-content-menu__button:hover,
+        .header-content-menu--sections .header-content-menu__button:focus-visible {
+            color: #0a34a1;
+        }
+        @media (min-width: 992px) {
+            .header-content {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1.25rem;
+                grid-template-areas: none !important;
+            }
+            .header-content__logo {
+                flex: 0 0 auto;
+            }
+            .header-content-menu--sections {
+                display: flex !important;
+                flex: 1 1 auto;
+                justify-content: flex-start;
+                margin: 0;
+            }
+            .header-user-menu {
+                flex: 0 0 auto;
+                margin-left: auto;
+            }
+            /* Hide duplicate Track icon when CTA button is present */
+            .header-user-menu > a.header-user-menu__button[href="#track-shipment"] {
+                display: none !important;
+            }
+        }
+        @media (min-width: 1200px) {
+            .header-content-menu--sections {
+                gap: 0.25rem 1.35rem;
+            }
+            .header-content-menu--sections .header-content-menu__button {
+                font-size: 1rem;
+            }
+        }
+        #track-shipment,
+        #section-overview,
+        #section-track-banner,
+        #section-industries,
+        #section-numbers,
+        #section-testimonials,
+        #section-insights {
+            scroll-margin-top: 6.5rem;
+        }
+        body.mobile-nav-open {
+            overflow: hidden;
+        }
+        .hero-stage.js-hero-rotator .hero-stage__area-cinema {
+            position: relative;
+            overflow: hidden;
+            min-height: clamp(280px, 52vw, 560px);
+        }
+        .hero-slide-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            z-index: 0;
+            transition: opacity 1.1s ease;
+            pointer-events: none;
+        }
+        .hero-slide-bg.is-active {
+            opacity: 1;
+            z-index: 1;
+        }
+        .hero-slide-bg .lazy-placeholder-loader,
+        .hero-slide-bg picture,
+        .hero-slide-bg img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .hero-slide-bg img {
+            object-fit: cover;
+            object-position: center;
+            transform: scale(1);
+            transition: transform 7s ease-out;
+        }
+        .hero-slide-bg.is-active img {
+            transform: scale(1.06);
+        }
+        .hero-slide-copy {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        .hero-slide-copy.is-active {
+            display: block;
+            animation: hero-copy-in 0.85s ease forwards;
+        }
+        @keyframes hero-copy-in {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-stage__title.js-typewriter {
+            min-height: 1.2em;
+        }
+        .hero-stage__title.js-typewriter .typewriter-caret {
+            display: inline-block;
+            width: 0.08em;
+            height: 0.9em;
+            margin-left: 0.08em;
+            background: currentColor;
+            vertical-align: -0.05em;
+            animation: typewriter-blink 0.8s step-end infinite;
+        }
+        .hero-stage__title.js-typewriter.is-done .typewriter-caret {
+            animation: none;
+            opacity: 0;
+            transition: opacity 0.4s ease 0.6s;
+        }
+        @keyframes typewriter-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        /* Hero text stays clear over photos via type weight + shadow — no content panel background */
+        .hero-stage.js-hero-rotator .hero-stage__area-cinema:after {
+            background: linear-gradient(90deg, rgba(0, 18, 48, 0.45) 0%, rgba(0, 18, 48, 0.18) 55%, rgba(0, 18, 48, 0.05) 100%);
+            content: "";
+            inset: 0;
+            position: absolute;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .hero-stage.js-hero-rotator .hero-stage__area-txt {
+            color: #fff;
+            z-index: 3;
+        }
+        .hero-stage.js-hero-rotator .hero-stage__txt-wrapper {
+            max-width: 42rem;
+            background: transparent;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            padding: 0;
+            border-radius: 0;
+        }
+        .hero-stage.js-hero-rotator .hero-stage__title,
+        .hero-stage.js-hero-rotator .hero-stage__title.js-typewriter {
+            color: #fff !important;
+            font-family: "DSV Pro", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.015em;
+            line-height: 1.12;
+            text-shadow:
+                0 1px 0 rgba(0, 0, 0, 0.35),
+                0 2px 10px rgba(0, 0, 0, 0.55),
+                0 0 2px rgba(0, 0, 0, 0.8);
+        }
+        .hero-stage.js-hero-rotator .hero-stage__text-section,
+        .hero-stage.js-hero-rotator .hero-stage__text-section p,
+        .hero-stage.js-hero-rotator .hero-slide-copy p {
+            color: #ffffff !important;
+            opacity: 1 !important;
+            font-family: "DSV Pro", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 600;
+            line-height: 1.45;
+            text-shadow:
+                0 1px 0 rgba(0, 0, 0, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.55);
+        }
+        .hero-stage.js-hero-rotator .hero-stage__btn {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+        }
+        /* Testimonials: text left, portrait right on all sizes (grid) */
+        .testimonials .testimonial {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1.15fr) minmax(120px, 0.85fr);
+            align-items: stretch;
+            gap: 1rem 1.25rem;
+            padding: 3.5rem 1rem 1rem;
+        }
+        .testimonials .testimonial__content {
+            min-width: 0;
+            gap: 0.85rem;
+        }
+        .testimonials .testimonial__description {
+            font-size: clamp(1rem, 3.6vw, 1.35rem);
+            line-height: 1.35;
+        }
+        .testimonials .author__portrait {
+            max-height: none;
+            min-height: 0;
+            min-width: 0;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            overflow: hidden;
+            background: #d7dde3;
+            align-self: stretch;
+        }
+        .testimonials .author__portrait lazy-loaded-image,
+        .testimonials .author__portrait picture,
+        .testimonials .author__portrait .lazy-placeholder-loader {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .testimonials .author__image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            background: #d7dde3;
+        }
+        @media (min-width: 768px) {
+            .testimonials .testimonial {
+                gap: 2rem 3rem;
+                padding: 5.75rem 3rem 3rem;
+            }
+            .testimonials .author__portrait {
+                min-height: 360px;
+                aspect-ratio: auto;
+            }
+        }
+        .testimonials .slider-navigation,
+        .featured-teasers__wrapper .slider-navigation,
+        .sequence-wrapper .slider-navigation {
+            overflow: hidden;
+        }
+        .testimonials__container.js-auto-track,
+        .featured-teasers.js-auto-track,
+        .sequence__items-wrapper.js-auto-track {
+            display: flex !important;
+            overflow: visible !important;
+            scroll-snap-type: none !important;
+            transition: transform 0.7s ease;
+            will-change: transform;
+            touch-action: pan-y;
+            cursor: grab;
+            user-select: none;
+        }
+        .testimonials__container.js-auto-track.is-dragging,
+        .featured-teasers.js-auto-track.is-dragging,
+        .sequence__items-wrapper.js-auto-track.is-dragging {
+            transition: none;
+            cursor: grabbing;
+        }
+        .featured-teasers__wrapper .sliding-pager,
+        .testimonials .sliding-pager,
+        .sequence-wrapper .sliding-pager {
+            touch-action: none;
+            cursor: pointer;
+        }
+        .testimonials__container.js-auto-track {
+            gap: 0;
+            padding-inline: 0;
+        }
+        .featured-teasers.js-auto-track {
+            gap: 1.5rem;
+            padding-inline: 1.5rem;
+        }
+        .sequence__items-wrapper.js-auto-track {
+            gap: 1.5rem;
+        }
+        @media (min-width: 992px) {
+            .sequence-wrapper .sequence__items-wrapper.js-auto-track {
+                /* Match theme desktop rhythm so all three stats sit full-bleed in the content row */
+                padding-inline: calc(50% - min(660px, 50vw - 24px));
+            }
+            .sequence-wrapper .sequence__items-wrapper.js-auto-track > .sequence__item {
+                width: 32%;
+                flex: 1 1 0;
+                min-width: 0;
+            }
+            /* Hide header Track icon/link on desktop (CTA button remains) */
+            .header-user-menu > a.header-user-menu__button[href="#track-shipment"] {
+                display: none !important;
+            }
+        }
+        .testimonials__container.js-auto-track > .testimonials__testimonial,
+        .featured-teasers.js-auto-track > .featured-teaser,
+        .sequence__items-wrapper.js-auto-track > .sequence__item {
+            scroll-snap-align: none;
+            box-sizing: border-box;
+        }
+        .testimonials__container.js-auto-track > .testimonials__testimonial,
+        .featured-teasers.js-auto-track > .featured-teaser {
+            flex-shrink: 0;
+        }
+        @media (max-width: 991px) {
+            .sequence__items-wrapper.js-auto-track > .sequence__item {
+                flex-shrink: 0;
+            }
+        }
+        .featured-teasers__wrapper .sliding-pager__handle,
+        .testimonials .sliding-pager__handle,
+        .sequence-wrapper .sliding-pager__handle {
+            transition: transform 0.7s ease;
+            will-change: transform;
+        }
+        .hero-stage--w-feature-stage .hero-stage.js-hero-rotator .hero-stage__area-txt {
+            padding-block-end: 2.75rem;
+        }
+        .feature-stage--track-only {
+            --content-spacing: 0px;
+        }
+        .feature-stage--track-only .feature-stage__content {
+            margin-top: 1.75rem;
+            margin-bottom: 2.5rem;
+        }
+        .feature-stage--track-only .feature-stage__features {
+            display: flex;
+            justify-content: center;
+            margin-top: 0;
+        }
+        .feature-wrapper--track-only {
+            width: 100%;
+            max-width: 40rem;
+            display: grid;
+            gap: 1.25rem;
+        }
+        .feature-wrapper--track-only .tracking-form,
+        .feature-wrapper--track-only .stage-chatbot {
+            width: 100%;
+        }
+        #dialog-id-stage-chatbot {
+            border: 0;
+            padding: 0;
+            max-width: 420px;
+            width: calc(100% - 1.5rem);
+            max-height: min(92vh, 720px);
+            margin: auto 0.75rem 0.75rem auto;
+            background: transparent;
+            overflow: visible;
+        }
+        #dialog-id-stage-chatbot::backdrop {
+            background: rgba(0, 20, 50, 0.45);
+        }
+        .dsv-support-chat {
+            display: flex;
+            flex-direction: column;
+            height: min(92vh, 720px);
+            background: #fff;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: 0 18px 50px rgba(0, 20, 50, 0.28);
+            font-family: inherit;
+        }
+        .dsv-support-chat__header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.95rem 1rem;
+            background: #002664;
+            color: #fff;
+        }
+        .dsv-support-chat__header-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 0.65rem;
+            background: rgba(255,255,255,0.14);
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+        .dsv-support-chat__header-icon svg {
+            width: 1.15rem;
+            height: 1.15rem;
+        }
+        .dsv-support-chat__header-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .dsv-support-chat__title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .dsv-support-chat__subtitle {
+            margin: 0.15rem 0 0;
+            font-size: 0.78rem;
+            opacity: 0.85;
+        }
+        .dsv-support-chat__close {
+            width: 2rem;
+            height: 2rem;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+        .dsv-support-chat__body {
+            flex: 1;
+            overflow: auto;
+            padding: 1.25rem 1rem 1rem;
+            background: #fff;
+        }
+        .dsv-support-chat__welcome {
+            text-align: center;
+            margin-bottom: 1.1rem;
+        }
+        .dsv-support-chat__welcome-icon {
+            width: 3.4rem;
+            height: 3.4rem;
+            margin: 0 auto 0.85rem;
+            border-radius: 1rem;
+            background: #e8eef8;
+            color: #0a34a1;
+            display: grid;
+            place-items: center;
+        }
+        .dsv-support-chat__welcome-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        .dsv-support-chat__welcome h3 {
+            margin: 0 0 0.4rem;
+            font-size: 1.15rem;
+            color: #002664;
+        }
+        .dsv-support-chat__welcome p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #4a5563;
+            line-height: 1.45;
+        }
+        .dsv-support-chat__label {
+            display: block;
+            margin: 0 0 0.35rem;
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
+            font-weight: 700;
+            color: #6b7280;
+        }
+        .dsv-support-chat__name {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #d7dde3;
+            border-radius: 0.65rem;
+            padding: 0.7rem 0.85rem;
+            font: inherit;
+            margin-bottom: 0.95rem;
+            background: #fff;
+        }
+        .dsv-support-chat__chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .dsv-support-chat__chip {
+            border: 1px solid #d7dde3;
+            background: #fff;
+            color: #002664;
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            font: inherit;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-align: left;
+        }
+        .dsv-support-chat__chip:hover {
+            border-color: #0a34a1;
+            background: #f3f6fb;
+        }
+        .dsv-support-chat__messages {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            margin-top: 0.5rem;
+        }
+        .dsv-support-chat__msg {
+            max-width: 88%;
+            padding: 0.7rem 0.85rem;
+            border-radius: 0.85rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .dsv-support-chat__msg--bot {
+            align-self: flex-start;
+            background: #eef2f8;
+            color: #1a2433;
+            border-bottom-left-radius: 0.25rem;
+        }
+        .dsv-support-chat__msg--user {
+            align-self: flex-end;
+            background: #002664;
+            color: #fff;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .dsv-support-chat__msg--typing {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-width: 3.4rem;
+            padding-block: 0.85rem;
+        }
+        .dsv-support-chat__status {
+            align-self: center;
+            width: 100%;
+            max-width: 92%;
+            margin: 0.55rem auto 0.15rem;
+            padding: 0.15rem 0.5rem;
+            border: 0;
+            background: transparent;
+            color: #6b7a8d;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            text-align: center;
+            font-style: italic;
+        }
+        .dsv-support-chat__status[hidden] { display: none !important; }
+        .dsv-support-chat__typing-dot {
+            width: 0.42rem;
+            height: 0.42rem;
+            border-radius: 999px;
+            background: #5b6b82;
+            opacity: 0.35;
+            animation: dsv-chat-typing 1.05s ease-in-out infinite;
+        }
+        .dsv-support-chat__typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .dsv-support-chat__typing-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes dsv-chat-typing {
+            0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(-3px); }
+        }
+        .dsv-support-chat__ended {
+            margin: 0.85rem 1rem 1rem;
+            padding: 1rem;
+            border-radius: 14px;
+            background: #f3f6fb;
+            border: 1px solid #dbe4f0;
+            text-align: center;
+        }
+        .dsv-support-chat__ended[hidden] { display: none !important; }
+        .dsv-support-chat__ended strong {
+            display: block;
+            font-size: 0.98rem;
+            color: #0b1f3a;
+            margin-bottom: 0.35rem;
+        }
+        .dsv-support-chat__ended p {
+            margin: 0 0 0.85rem;
+            color: #5b6b7c;
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+        .dsv-support-chat__new {
+            border: 0;
+            border-radius: 999px;
+            background: #005eb8;
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            padding: 0.7rem 1.1rem;
+            cursor: pointer;
+        }
+        .dsv-support-chat__new:hover { background: #004a93; }
+        .dsv-support-chat.is-ended .dsv-support-chat__welcome,
+        .dsv-support-chat.is-ended .dsv-support-chat__label,
+        .dsv-support-chat.is-ended .dsv-support-chat__name,
+        .dsv-support-chat.is-ended .dsv-support-chat__chips,
+        .dsv-support-chat.is-ended .dsv-support-chat__footer {
+            display: none !important;
+        }
+        .dsv-support-chat__footer {
+            display: flex;
+            gap: 0.55rem;
+            padding: 0.75rem 0.85rem 0.95rem;
+            border-top: 1px solid #e8edf2;
+            background: #fff;
+        }
+        .dsv-support-chat__input {
+            flex: 1;
+            border: 1px solid #d7dde3;
+            border-radius: 0.75rem;
+            padding: 0.75rem 0.9rem;
+            font: inherit;
+            min-width: 0;
+        }
+        .dsv-support-chat__send {
+            width: 2.75rem;
+            height: 2.75rem;
+            border: 0;
+            border-radius: 0.75rem;
+            background: #0a34a1;
+            color: #fff;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+        .dsv-support-chat__send svg {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+        .dsv-support-chat__send:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+        .dsv-support-fab {
+            position: fixed;
+            right: 1.1rem;
+            bottom: 1.1rem;
+            z-index: 40;
+            width: 3.4rem;
+            height: 3.4rem;
+            border: 0;
+            border-radius: 999px;
+            background: #0a34a1;
+            color: #fff;
+            box-shadow: 0 10px 28px rgba(0, 38, 100, 0.35);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+        }
+        .dsv-support-fab svg {
+            width: 1.35rem;
+            height: 1.35rem;
+        }
+        .dsv-support-fab:hover {
+            background: #002664;
+        }
+        .dsv-support-fab__badge {
+            position: absolute;
+            top: .15rem;
+            right: .15rem;
+            min-width: 1.05rem;
+            height: 1.05rem;
+            padding: 0 .28rem;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: .62rem;
+            font-weight: 800;
+            line-height: 1;
+            display: none;
+            place-items: center;
+            box-shadow: 0 0 0 2px #0a34a1;
+            pointer-events: none;
+        }
+        .dsv-support-fab__badge.is-on {
+            display: grid;
+        }
+        @media (max-width: 575px) {
+            #dialog-id-stage-chatbot {
+                width: 100%;
+                max-width: none;
+                margin: auto 0 0;
+                max-height: 94vh;
+            }
+            .dsv-support-chat {
+                height: 94vh;
+                border-radius: 1.15rem 1.15rem 0 0;
+            }
+        }
+        #track-result:empty {
+            display: none;
+        }
+        .track-notice {
+            margin: 0;
+            padding: 0.85rem 1rem;
+            border-left: 3px solid #002664;
+        }
+        .track-notice--error {
+            border-left-color: #a11919;
+        }
+        .track-panel {
+            padding: 1.5rem;
+        }
+        .track-panel__header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem 1rem;
+            align-items: flex-start;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #d7dde3;
+        }
+        .track-panel__header-main {
+            flex: 1 1 12rem;
+            min-width: 0;
+        }
+        .track-panel__mode {
+            flex: 0 0 2.75rem;
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 50%;
+            background: #002664;
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .track-panel__booking {
+            margin: 0.25rem 0 0;
+        }
+        .track-tabs {
+            display: flex;
+            gap: 0;
+            margin: 0 0 1.5rem;
+            border-bottom: 1px solid #d7dde3;
+        }
+        .track-tabs span {
+            padding: 0.65rem 1rem;
+            border-bottom: 2px solid transparent;
+            color: #5b6770;
+        }
+        .track-tabs span.is-active {
+            color: #002664;
+            border-bottom-color: #002664;
+            font-weight: 600;
+        }
+        .track-progress-title {
+            margin: 0 0 1rem;
+        }
+        .track-progress-list {
+            display: grid;
+            gap: 0;
+            margin: 0 0 1.75rem;
+            padding: 0;
+            list-style: none;
+        }
+        .track-progress-item {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1.25rem 1fr;
+            gap: 0.85rem;
+            padding: 0 0 1.25rem;
+        }
+        .track-progress-item:last-child {
+            padding-bottom: 0;
+        }
+        .track-progress-item__rail {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+        .track-progress-item__rail::before {
+            content: "";
+            position: absolute;
+            top: 0.7rem;
+            bottom: -1.25rem;
+            width: 3px;
+            background: #d7dde3;
+        }
+        .track-progress-item:last-child .track-progress-item__rail::before {
+            display: none;
+        }
+        .track-progress-item.is-done .track-progress-item__rail::before,
+        .track-progress-item.is-current .track-progress-item__rail::before {
+            background: #6bb700;
+        }
+        .track-progress-item__dot {
+            position: relative;
+            z-index: 1;
+            width: 0.85rem;
+            height: 0.85rem;
+            margin-top: 0.2rem;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #002664;
+            box-sizing: border-box;
+        }
+        .track-progress-item.is-done .track-progress-item__dot,
+        .track-progress-item.is-current .track-progress-item__dot {
+            background: #6bb700;
+            border-color: #6bb700;
+        }
+        .track-progress-item.is-current .track-progress-item__dot {
+            width: 1.05rem;
+            height: 1.05rem;
+            margin-top: 0.1rem;
+            box-shadow: 0 0 0 4px rgba(107, 183, 0, 0.2);
+        }
+        .track-progress-item__title {
+            margin: 0 0 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .track-progress-item__meta {
+            margin: 0;
+            color: #5b6770;
+        }
+        .track-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem 1.25rem;
+            margin: 0 0 1.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #d7dde3;
+        }
+        .track-split {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin: 0 0 1.75rem;
+        }
+        .track-split__card {
+            padding: 1rem;
+            background: #f4f6f8;
+        }
+        .track-events {
+            display: grid;
+            gap: 1rem;
+        }
+        .track-event {
+            padding-left: 1rem;
+            border-left: 2px solid #d7dde3;
+        }
+        .track-event--current {
+            border-left-color: #002664;
+        }
+        .track-event__time {
+            margin-bottom: 0.25rem;
+        }
+        .track-loading__bar {
+            margin-top: 1rem;
+            height: 4px;
+            background: #d7dde3;
+            overflow: hidden;
+            border-radius: 999px;
+        }
+        .track-loading__bar span {
+            display: block;
+            width: 40%;
+            height: 100%;
+            background: #002664;
+            animation: track-load 1s ease-in-out infinite;
+        }
+        @keyframes track-load {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(280%); }
+        }
+        .track-status-pill {
+            display: inline-block;
+            flex: 0 0 auto;
+            margin: 0 0 0 auto;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: #002664;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .track-status-pill--delivered { background: #0b6b3a; }
+        .track-status-pill--out-for-delivery { background: #0b4ea2; }
+        .track-status-pill--exception { background: #8a4b08; }
+        .track-status-pill--label-created { background: #4a5563; }
+        .track-hero-msg { margin: 0 0 0.35rem; }
+        .track-near { margin: 0 0 1.25rem; }
+    </style>
+    <script defer>
+        function loadScript(scriptTemplate) {
+            if (!scriptTemplate.initiated) {
+                scriptTemplate.initiated = true
+                document.head.appendChild(scriptTemplate.content.firstElementChild);
+            }
+        }
+        window.addEventListener('CookieInformationConsentGiven', function() {
+            if (CookieInformation.getConsentGivenFor('cookie_cat_statistic')) {
+                loadScript(window.gtmScriptDownload);
+            }
+            if (CookieInformation.getConsentGivenFor('cookie_cat_marketing')) {
+                loadScript(window.gtmScriptDownload);
+            }
+        });
+    </script>
+    <script defer id="CookieConsent" src="https://policy.app.cookieinformation.com/uc.js" data-culture="EN" data-gcm-version="2.0" type="text/javascript"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        window.PageLoadEvent = {
+            'event': 'pageLoad',
+            'page': {
+                'pageInfo': {
+                    'destinationURL': document.URL,
+                    'referringURL': document.referrer,
+                    'hostname': window.location.hostname,
+                    'countryVersion': '',
+                    'languageVersion': 'en',
+                },
+                'category': {
+                    'primaryCategory': 'home',
+                    'secondaryCategory': '',
+                    'portal': 'dbs website',
+                }
+            }
+        };
+        window.dataLayer.push(window.PageLoadEvent);
+
+        function gtagConsent() {
+            dataLayer.push(arguments);
+        }
+        gtagConsent('consent', 'default', {
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            ad_storage: 'denied',
+            analytics_storage: 'denied',
+            wait_for_update: 500,
+        });
+        dataLayer.push({
+            'gtm.start': new Date().getTime(),
+            'event': 'gtm.js'
+        });
+    </script>
+    <template id="gtmScriptDownload">
+    <script type="text/javascript" async src="https://www.googletagmanager.com/gtm.js?id=GTM-TL2Z8N49"></script>
+  </template>
+</head>
+
+<body>
+    <header class="js-header header-box">
+        <div class="header-static-line">
+            <nav class="content-box header-content" aria-label="Header items">
+                <a class="header-content__logo" href="/en" aria-label="DSV Logo">
+<svg class="icon icon--logo header-content__logo-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 100 29">
+<path fill="#002664" d="M87.08 26.986a3.36 3.36 0 0 1-2.958 1.725H77.26c-1.658 0-2.64-1.12-2.935-1.71l-9.291-18.34c-.913-1.727-2.826-2.283-4.424-2.283H43.74c-1.555 0-2.46.969-2.46 2.393 0 1.515 1.01 2.392 2.485 2.392H55.37c4.943 0 9.032 2.904 9.032 8.773 0 5.87-4.13 8.773-9.032 8.773H40.457c-1.353 0-2.477-.761-2.477-2.421v-3.16c0-.538.372-.8.826-.8H52.07c1.376 0 2.477-.803 2.477-2.392s-1.083-2.395-2.472-2.395H39.599c-2.091.003-3.99-.55-5.332-1.408-.688 7.782-6.415 12.578-14.782 12.578H.825c-.458 0-.825-.265-.825-.797v-15.95c0-.529.362-.794.812-.796H7.38c1.75 0 2.53 1.09 2.53 2.38v7.986h.005c0 .529.362.794.81.797h5.696c4.484 0 8.21-2.638 8.21-7.974S20.92 6.38 16.422 6.38H.805C.36 6.374 0 6.11 0 5.58V2.416C0 .625 1.303 0 2.502 0H19.57c4.805 0 9.151 1.727 11.708 4.914C32.668 1.672 35.774 0 39.678 0H64.12c3.004 0 6.403 1.002 8.172 4.37l7.91 16.122c.08.165.243.243.442.243.184 0 .356-.067.438-.234 0 0 9.782-19.999 9.84-20.113.05-.107.252-.386.729-.386h7.522c.459 0 .826.264.826.797 0 .152-.03.281-.08.39L87.083 26.994z"/>
+</svg>
+<span class="visuallyhidden">
+Back to Homepage
+</span>
+</a>
+                <ul class="reset-list header-content-menu js-navigation header-content-menu--sections" aria-label="main navigation" tabindex="0">
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#track-shipment">Track</a>
+                    </li>
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#section-overview">Overview</a>
+                    </li>
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#section-track-banner">Live tracking</a>
+                    </li>
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#section-industries">Industries</a>
+                    </li>
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#section-numbers">Numbers</a>
+                    </li>
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#section-testimonials">Stories</a>
+                    </li>
+                    <li>
+                        <a class="header-content-menu__button reset-link font-h5" href="#section-insights">Insights</a>
+                    </li>
+                </ul>
+                <div class="header-user-menu">
+                    <a class="reset-link header-user-menu__button" href="#track-shipment" aria-label="Track shipment">
+<svg class="icon icon--track header-user-menu__button-icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path fill="currentColor" d="M7.6 13.7V7.75L2.4 4.74v5.95zm.8 0 5.2-3.01V4.74L8.4 7.75zM8 14.85 1.6 11.06V3.78L8 .1l6.4 3.68v7.28zM10.97 5.35l2.15-.98L8 .92 5.84 2.16zm-.4 1.9 2.16-1.26L4.62 3.24 2.46 4.5z"/>
+</svg>
+<span class="header-user-menu__button-text font-caption">
+Track
+</span>
+</a>
+                    <button type="button" class="js-dialog-open region-selection__button icon-button js-locale-select-button header-user-menu__button header-user-menu__button--localization font-caption" data-dialog-id="dialog-id-locale-selector" data-tracking="clickLanguageIcon"
+                        aria-label="Global" aria-description="Change country">
+<svg class="icon icon--country-language region-selection__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M.5 8h15M.5 8A7.5 7.5 0 0 0 8 15.5M.5 8A7.5 7.5 0 0 1 8 .5M15.5 8A7.5 7.5 0 0 1 8 15.5M15.5 8A7.5 7.5 0 0 0 8 .5m0 15C1.963 8.9 5.485 2.75 8 .5m0 15c6.037-6.6 2.515-12.75 0-15"/>
+</svg>
+<span class="region-selection__text">Global</span>
+</button>
+                    <button class="header-mobile-menu reset-button js-header-mobile-menu">
+<svg class="icon icon--menu icon--svg header-mobile-menu__button-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 15">
+<path stroke="currentColor" stroke-linejoin="round" d="M0 .5h18m-18 7h18m-18 7h18"/>
+</svg>
+<span class="visuallyhidden">
+Mobile Menu
+</span>
+</button>
+                    <div class="header-cta-buttons ">
+                        <a class="btn btn--small btn--primary" href="#track-shipment">
+Track
+</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="mobile-navigation mobile-navigation__element--hide js-hide-context-menu" data-nav-current-main="" aria-label="main navigation">
+            <div class="mobile-navigation__backdrop"></div>
+            <div class="mobile-navigation__content">
+                <header class="mobile-navigation__header">
+                    <div class="header-cta-buttons header-cta-buttons--mobile">
+                        <a class="btn btn--small btn--primary" href="#track-shipment">
+Track
+</a>
+                    </div>
+                    <button class="mobile-navigation__close-button reset-button js-mobile-menu-close" aria-haspopup="Close menu navigation">
+<svg class="icon icon--close icon--svg mobile-navigation__header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+<span class="visuallyhidden">
+Close menu navigation
+</span>
+</button>
+                </header>
+                <div class="mobile-user-menu js-mobile-user-menu">
+                    <button type="button" class="js-dialog-open region-selection__button icon-button js-locale-select-button mobile-user-menu__button mobile-user-menu__button--localization font-button" data-dialog-id="dialog-id-locale-selector" data-tracking="clickLanguageIcon"
+                        aria-label="Global" aria-description="Change country">
+<svg class="icon icon--country-language region-selection__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M.5 8h15M.5 8A7.5 7.5 0 0 0 8 15.5M.5 8A7.5 7.5 0 0 1 8 .5M15.5 8A7.5 7.5 0 0 1 8 15.5M15.5 8A7.5 7.5 0 0 0 8 .5m0 15C1.963 8.9 5.485 2.75 8 .5m0 15c6.037-6.6 2.515-12.75 0-15"/>
+</svg>
+<span class="region-selection__text">Global</span>
+</button>
+                </div>
+                <div class="mobile-navigation__all-levels-wrapper">
+                    <div class="mobile-navigation__level-wrapper" data-mobile-nav-level="0">
+                        <div class="mobile-navigation__level-intermediate">
+                            <ul class="reset-list mobile-navigation__level mobile-navigation__level--fading mobile-navigation__section-menu" aria-label="Page sections" tabindex="0">
+                                <li class="js-mobile-menu-item">
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#track-shipment">Track shipment</a>
+                                </li>
+                                <li class="js-mobile-menu-item">
+                                    <hr class="mobile-navigation__divider divider" />
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#section-overview">Shipment overview</a>
+                                </li>
+                                <li class="js-mobile-menu-item">
+                                    <hr class="mobile-navigation__divider divider" />
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#section-track-banner">Live tracking</a>
+                                </li>
+                                <li class="js-mobile-menu-item">
+                                    <hr class="mobile-navigation__divider divider" />
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#section-industries">Industries</a>
+                                </li>
+                                <li class="js-mobile-menu-item">
+                                    <hr class="mobile-navigation__divider divider" />
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#section-numbers">DSV in numbers</a>
+                                </li>
+                                <li class="js-mobile-menu-item">
+                                    <hr class="mobile-navigation__divider divider" />
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#section-testimonials">Customer stories</a>
+                                </li>
+                                <li class="js-mobile-menu-item">
+                                    <hr class="mobile-navigation__divider divider" />
+                                    <a class="reset-link mobile-navigation__section-link font-h5" href="#section-insights">Insights</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="mobile-navigation__track-foot">
+                    <a class="btn btn--primary mobile-navigation__track-btn" href="#track-shipment">Track a shipment</a>
+                </div>
+            </div>
+        </nav>
+        <dialog class="dialog js-menu-tracking-overlay dialog--intrinsic-spacing js-regular-dialog" id="dialog-id-menu-tracking-overlay">
+            <div class="dialog__window">
+                <div class="js-dialog-content dialog__content">
+                    <h2 class="menu-tracking-overlay__header font-h3">
+                        Track your shipment
+                    </h2>
+                    <p class="menu-tracking-overlay__subheader font-h5">
+                        Track DSV shipment
+                    </p>
+                    <form class="form-grid js-tracking-dsv-form" method="get" action="/new/tracking/shipment-details-public">
+                        <div class="form-grid__item menu-tracking-overlay__track">
+                            <label class="control menu-tracking-overlay__track-field">
+<svg class="icon icon--search control__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m15.5 15.5-4.393-4.183m1.768-4.453c0 3.514-2.77 6.363-6.188 6.363S.5 10.378.5 6.864 3.27.5 6.687.5s6.188 2.85 6.188 6.364"/>
+</svg>
+<input
+type="text"
+name="query"
+class="inputfield control__input"
+placeholder="Enter ID number"
+/>
+<span class="control__label">
+Enter ID number
+</span>
+</label>
+                            <button class="menu-tracking-overlay__button btn" type="submit">
+Track
+</button>
+                        </div>
+                    </form>
+                    <p class="menu-tracking-overlay__subheader font-h5">
+                        Track Schenker shipment
+                    </p>
+                    <form class="form-grid js-tracking-schenker-form" method="get" action="/new/tracking/shipment-details-public">
+                        <div class="form-grid__item menu-tracking-overlay__track">
+                            <label class="control menu-tracking-overlay__track-field">
+<svg class="icon icon--search control__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m15.5 15.5-4.393-4.183m1.768-4.453c0 3.514-2.77 6.363-6.188 6.363S.5 10.378.5 6.864 3.27.5 6.687.5s6.188 2.85 6.188 6.364"/>
+</svg>
+<input
+type="text"
+name="query"
+class="inputfield control__input"
+placeholder="Enter ID number"
+/>
+<span class="control__label">
+Enter ID number
+</span>
+</label>
+                            <button class="menu-tracking-overlay__button btn" type="submit">
+Track
+</button>
+                        </div>
+                    </form>
+                </div>
+                <span class="dialog__toolbar dialog__controls--default">
+<button
+type="button"
+class="js-dialog-close icon-button dialog__action"
+data-dialog-id="dialog-id-menu-tracking-overlay"
+title="Close dialog" >
+<svg class="icon icon--close dialog__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+</button>
+</span>
+            </div>
+        </dialog>
+        <div class="navigation-background js-nav-back"></div>
+    </header>
+    <dialog class="dialog js-tracking-overlay js-regular-dialog" id="dialog-id-tracking-overlay">
+        <div class="dialog__window">
+            <div class="js-dialog-content dialog__content">
+                <form action="/en/search" method="get" class="tracking-overlay js-state-encoder js-search-form">
+                    <h2 id="tracking-overlay-title" class="font-h3">
+                        That looks like a track and trace number, do you want to track on this number?
+                    </h2>
+                    <label class="tracking-overlay__tracking-number" tabindex="-1" aria-labelledby="tracking-overlay-title">
+<input type="text" name="query" class="js-tracking-number" readonly/>
+</label>
+                    <div class="tracking-overlay__buttons">
+                        <a href="#track-shipment" class="tracking-overlay__button btn js-tracking-link">Track DSV shipment</a>
+                        <a href="#track-shipment" class="tracking-overlay__button btn js-schenker-tracking-link">Track Schenker shipment</a>
+                    </div>
+                    <button type="submit" class="reset-button cta">
+No, continue with search
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</button>
+                </form>
+            </div>
+            <span class="dialog__toolbar dialog__controls--default">
+<button
+type="button"
+class="js-dialog-close icon-button dialog__action"
+data-dialog-id="dialog-id-tracking-overlay"
+title="Close dialog" >
+<svg class="icon icon--close dialog__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+</button>
+</span>
+        </div>
+    </dialog>
+    <dialog class="dialog js-tracking-overlay-no-search js-regular-dialog" id="dialog-id-tracking-overlay-not-search">
+        <div class="dialog__window">
+            <div class="js-dialog-content dialog__content">
+                <form action="/en/search" method="get" class="tracking-overlay js-state-encoder js-search-form">
+                    <h2 id="tracking-overlay-title" class="font-h3">
+                        How do you want to track your shipment?
+                    </h2>
+                    <label class="tracking-overlay__tracking-number" tabindex="-1" aria-labelledby="tracking-overlay-title">
+<input type="text" name="query" class="js-tracking-number" readonly/>
+</label>
+                    <div class="tracking-overlay__buttons">
+                        <a href="#track-shipment" class="tracking-overlay__button btn js-tracking-link">Track DSV shipment</a>
+                        <a href="#track-shipment" class="tracking-overlay__button btn js-schenker-tracking-link">Track Schenker shipment</a>
+                    </div>
+                </form>
+            </div>
+            <span class="dialog__toolbar dialog__controls--default">
+<button
+type="button"
+class="js-dialog-close icon-button dialog__action"
+data-dialog-id="dialog-id-tracking-overlay-not-search"
+title="Close dialog" >
+<svg class="icon icon--close dialog__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+</button>
+</span>
+        </div>
+    </dialog>
+    <dialog class="dialog dialog--intrinsic-spacing js-regular-dialog" id="dialog-id-search-in-header">
+        <div class="dialog__window">
+            <div class="js-dialog-content dialog__content">
+                <h3 class="font-h3">Find exactly what you are looking for</h3>
+                <form action="/en/search" method="get" role="search" data-k6-search-keyword="/en/search" class="search-form search-form--dialog js-state-encoder js-search-form">
+                    <div class="search-form__input-search">
+                        <label class="control js-suggest" data-suggestion-url="/website-api/search/suggest/content/2639556?query={value}">
+<svg class="icon icon--search control__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m15.5 15.5-4.393-4.183m1.768-4.453c0 3.514-2.77 6.363-6.188 6.363S.5 10.378.5 6.864 3.27.5 6.687.5s6.188 2.85 6.188 6.364"/>
+</svg>
+<input type="text" class="inputfield control__input" placeholder="Search" value="" name="query" autocomplete="off" data-suggestion-input/>
+<span class="control__label">Search</span>
+</label>
+                    </div>
+                    <button type="submit" class="btn search-form__button js-search-button">Search</button>
+                </form>
+                <script type="application/json" data-translations>
+                    {
+                        "form.suggestion.error": "An error occurred",
+                        "form.suggestion.no-results": "No results found"
+                    }
+                </script>
+            </div>
+            <span class="dialog__toolbar dialog__controls--default">
+<button
+type="button"
+class="js-dialog-close icon-button dialog__action"
+data-dialog-id="dialog-id-search-in-header"
+title="Close dialog" >
+<svg class="icon icon--close dialog__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+</button>
+</span>
+        </div>
+    </dialog>
+    <dialog class="dialog dialog--intrinsic-spacing js-regular-dialog" id="dialog-id-locale-selector">
+        <div class="dialog__window">
+            <div class="js-dialog-content dialog__content">
+                <form class="js-locale-selector form-grid" data-url-to-country-list="/resource/themes/dsv/json-data/country-data-2480454-4.js" data-current-country="Global" data-current-lang="en">
+                    <h3 class="form-grid__item">Select your location and language</h3>
+                    <div class="form-grid__item locale-selector-wrapper">
+                        <select class="js-country-select" name="select-country" placeholder="Pick country">
+</select>
+                    </div>
+                    <div class="form-grid__item locale-selector-wrapper">
+                        <select class="js-language-select" name="select-locale" placeholder="Pick language">
+</select>
+                    </div>
+                    <div class="form-grid__item form-grid__item--no-label">
+                        <button class="btn btn--primary" type="submit">Apply</button>
+                    </div>
+                </form>
+            </div>
+            <span class="dialog__toolbar dialog__controls--default">
+<button
+type="button"
+class="js-dialog-close icon-button dialog__action"
+data-dialog-id="dialog-id-locale-selector"
+title="Close dialog" >
+<svg class="icon icon--close dialog__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+</button>
+</span>
+        </div>
+    </dialog>
+    <button type="button" class="js-dialog-open btn hide" data-dialog-id="dialog-id-schenker-redirect-overlay" id="schenker-redirect-overlay-btn">
+</button>
+    <script type="module">
+        if (window.location.search.includes("utm_source=schenker")) { window["schenker-redirect-overlay-btn"].dispatchEvent(new MouseEvent("click")); }
+    </script>
+    <dialog class="dialog dialog--overlay js-regular-dialog" id="dialog-id-schenker-redirect-overlay">
+        <div class="dialog__window">
+            <div class="js-dialog-content dialog__content">
+                <h2 class="font-h3">DSV and Schenker have joined forces</h2>
+                <p>dbschenker.com has been merged into DSV.com. Go to your Schenker self-services or close this message to visit DSV.com. </p>
+                <p>PLEASE UPDATE YOUR FAVOURITES / BOOKMARKS.</p>
+                <a href="javascript:void(0)" class="reset-link btn ">
+<span class="visuallyhidden"></span>
+Schenker self-service tools
+</a>
+                <a href="javascript:void(0)" class="cta arrow-hover-parent cta--inverted">
+<span class="visuallyhidden"></span>
+Read more about the Schenker acquisition
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</a>
+            </div>
+            <span class="dialog__toolbar dialog__controls--default">
+<button
+type="button"
+class="js-dialog-close icon-button dialog__action"
+data-dialog-id="dialog-id-schenker-redirect-overlay"
+title="Close dialog" >
+<svg class="icon icon--close dialog__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+<polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+</button>
+</span>
+        </div>
+    </dialog>
+    <article>
+        <header>
+            <section class="">
+                <div class=" hero-stage--w-feature-stage">
+                    <div class="hero-stage js-hero-rotator" data-hero-interval="3000">
+                        <div class="cinemagraph hero-stage__area-cinema">
+                            <div class="hero-slide-bg is-active" data-hero-bg="0">
+                                <lazy-loaded-image class="cinemagraph__thumbnail ">
+                                    <picture class="lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="">
+                                        <img src="/resource/unsplash/airplane.jpg" alt="Cargo airplane on the tarmac ready for air freight tracking" class="hero-stage__picture lazy-placeholder-loader__content cover-image">
+                                    </picture>
+                                </lazy-loaded-image>
+                            </div>
+                            <div class="hero-slide-bg" data-hero-bg="1">
+                                <lazy-loaded-image class="cinemagraph__thumbnail ">
+                                    <picture class="lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="">
+                                        <img src="/resource/unsplash/cargo-ship.jpg" alt="Container ship moving freight across the ocean" class="hero-stage__picture lazy-placeholder-loader__content cover-image">
+                                    </picture>
+                                </lazy-loaded-image>
+                            </div>
+                            <div class="hero-slide-bg" data-hero-bg="2">
+                                <lazy-loaded-image class="cinemagraph__thumbnail ">
+                                    <picture class="lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="">
+                                        <img src="/resource/unsplash/hero-highway.jpg" alt="Freight truck delivering packages on an open highway" class="hero-stage__picture lazy-placeholder-loader__content cover-image">
+                                    </picture>
+                                </lazy-loaded-image>
+                            </div>
+                        </div>
+                        <div class="hero-stage__area-txt">
+                            <div class="hero-stage__txt-wrapper">
+                                <div class="hero-slide-copy is-active" data-hero-copy="0">
+                                    <h1 class="hero-stage__title font-h2 js-typewriter" data-typewriter="Track your package in real time" aria-label="Track your package in real time"></h1>
+                                    <div class="hero-stage__text-section font-body-1">
+                                        <p class="c1-font-id font-body-2 rte-section">
+                                            Enter a tracking, booking or consignment number to see status, last scan and estimated arrival.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="hero-slide-copy" data-hero-copy="1">
+                                    <h1 class="hero-stage__title font-h2 js-typewriter" data-typewriter="Follow every mile of your shipment" aria-label="Follow every mile of your shipment"></h1>
+                                    <div class="hero-stage__text-section font-body-1">
+                                        <p class="c1-font-id font-body-2 rte-section">
+                                            See hub stops, customs updates and ocean or air progress in one clear timeline.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="hero-slide-copy" data-hero-copy="2">
+                                    <h1 class="hero-stage__title font-h2 js-typewriter" data-typewriter="Delivery updates you can trust" aria-label="Delivery updates you can trust"></h1>
+                                    <div class="hero-stage__text-section font-body-1">
+                                        <p class="c1-font-id font-body-2 rte-section">
+                                            Get out-for-delivery alerts and proof of delivery when your package reaches the door.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="hero-stage__btn-section">
+                                    <a href="#track-shipment" class="reset-link btn hero-stage__btn">
+<span class="visuallyhidden"></span>
+Track a shipment
+</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="feature-stage feature-stage--track-only">
+                <div class="feature-stage__content content-box">
+                    <div class="feature-stage__features">
+                        <div class="feature-stage__feature-wrapper feature-wrapper--secondary feature-wrapper--track-only">
+                            <form method="get" action="/new/tracking/shipment-details-public" id="track-shipment" class="tracking-form tracking-form--secondary paper js-tracking-form">
+                                <p class="font-h4">Track your shipment</p>
+                                <fieldset class="tracking-form__fields">
+                                    <label class="control tracking-form__input">
+<input type="text" name="id" class="control__input inputfield" placeholder="Enter ID number" autocomplete="off"/>
+<span class="control__label">Enter ID number</span>
+</label>
+                                    <button class="tracking-form__button btn btn--primary" type="submit">
+Track
+</button>
+                                </fieldset>
+                            </form>
+                            <div class="stage-chatbot" data-stage-chatbot="dialog-id-stage-chatbot">
+                                <div class="chatbot__text--wrapper">
+                                    <p class="stage-chatbot__title font-h4">Need help?</p>
+                                    <p class="stage-chatbot__text font-body-2">
+                                        Chat with our virtual assistant, and get the help you need right away.
+                                    </p>
+                                </div>
+                                <button type="button" class="js-dialog-open stage-chatbot__btn btn btn--primary btn--with-icon" data-dialog-id="dialog-id-stage-chatbot" data-tracking="clickChatbot" data-tracking-type="stage.primary-button">
+<svg class="icon icon--bot chatbot-option__icon stage-chatbot__btn-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+<g fill="none">
+<path stroke="currentColor" stroke-width=".9" d="M16.41 15.275h-4.728L10 16.795l-1.682-1.52H3.59V6.538h12.82z"/>
+<circle cx="7.821" cy="9.359" r=".769" fill="currentColor"/>
+<circle cx="12.179" cy="9.359" r=".769" fill="currentColor"/>
+<circle cx="10" cy="4.103" r=".897" stroke="currentColor" stroke-width=".9"/>
+<path stroke="currentColor" stroke-width=".9" d="M6.41 11.667c2.364 1.538 4.816 1.538 7.18 0"/>
+<path stroke="currentColor" stroke-width=".9" d="M10 6.474V5"/>
+<rect width="1.667" height="3.077" x="16.41" y="9.103" stroke="currentColor" stroke-width=".9"/>
+<rect width="1.667" height="3.077" x="1.923" y="9.103" stroke="currentColor" stroke-width=".9"/>
+</g>
+</svg>
+Ask our chatbot
+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </header>
+        <div id="section-overview"></div>
+        <section class="block-spacing featured-teasers__wrapper">
+            <slider-component>
+                <div class="slider" role="region" aria-labelledby="featured-teasers-title-17-cyl5e1suijpnune45zc79yh29" data-slider>
+                    <div class="module__header content-box">
+                        <div class="module__title-wrapper">
+                            <h2 id="featured-teasers-title-17-cyl5e1suijpnune45zc79yh29" class="module__title font-h3">
+                                Track every shipment from pickup to delivery </h2>
+                        </div>
+                    </div>
+                    <div class="slider-navigation">
+                        <div id="featured-teasers-16-eudp5320coj3kfz8j9ko910b2" class="featured-teasers slider-content" data-slider-content>
+                            <teaser-component class="featured-teaser " role="group" aria-roledescription="slide">
+                                <img class="featured-teaser__photo" src="/resource/unsplash/office.jpg" alt="Two colleagues working together">
+                                <h2 id="featured-teaser-18-8zmcppyyise46v1wjsef9pt07" class="featured-teaser__title font-h4">
+                                    <a href="#track-shipment" class="reset-link js-teaser-link" aria-describedby="featured-teaser-link-19-wcs1iceet9zfpbctupp43mmx">
+Track a shipment live
+</a>
+                                </h2>
+                                <span class="cta arrow-hover-parent featured-teaser__link" id="featured-teaser-link-19-wcs1iceet9zfpbctupp43mmx">
+Enter a tracking ID
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </teaser-component>
+                            <teaser-component class="featured-teaser " role="group" aria-roledescription="slide">
+                                <img class="featured-teaser__photo" src="/resource/unsplash/warehouse-aisle.jpg" alt="Warehouse aisle with pallet racking">
+                                <h2 id="featured-teaser-20-cvjjnklkz6nbfk3oxc24vdz0l" class="featured-teaser__title font-h4">
+                                    <a href="#track-shipment" class="reset-link js-teaser-link" aria-describedby="featured-teaser-link-21-d3zcln6rnq842v04px7j85ym">
+See every scan and hub stop
+</a>
+                                </h2>
+                                <span class="cta arrow-hover-parent featured-teaser__link" id="featured-teaser-link-21-d3zcln6rnq842v04px7j85ym">
+View tracking history
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </teaser-component>
+                            <teaser-component class="featured-teaser " role="group" aria-roledescription="slide">
+                                <img class="featured-teaser__photo" src="/resource/unsplash/cargo-ship.jpg" alt="Container ship from above">
+                                <h2 id="featured-teaser-22-74xdmcmk7rf8mqe79i2bk7ccd" class="featured-teaser__title font-h4">
+                                    <a href="#track-shipment" class="reset-link js-teaser-link" aria-describedby="featured-teaser-link-23-6w1b9ithmq4lwhajpkf1zfqor">
+Follow air, sea and road cargo
+</a>
+                                </h2>
+                                <span class="cta arrow-hover-parent featured-teaser__link" id="featured-teaser-link-23-6w1b9ithmq4lwhajpkf1zfqor">
+Track by mode
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </teaser-component>
+                            <teaser-component class="featured-teaser " role="group" aria-roledescription="slide">
+                                <img class="featured-teaser__photo" src="/resource/unsplash/warehouse.jpg" alt="Warehouse inventory ready to be processed">
+                                <h2 id="featured-teaser-24-9wfqsz2l70u350jwzixyuyjvs" class="featured-teaser__title font-h4">
+                                    <a href="#track-shipment" class="reset-link js-teaser-link" aria-describedby="featured-teaser-link-25-edfgbtoqqwv191r0nvwx5yeae">
+Get delivery confirmation
+</a>
+                                </h2>
+                                <span class="cta arrow-hover-parent featured-teaser__link" id="featured-teaser-link-25-edfgbtoqqwv191r0nvwx5yeae">
+See proof of delivery
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </teaser-component>
+                            <teaser-component class="featured-teaser " role="group" aria-roledescription="slide">
+                                <img class="featured-teaser__photo" src="/resource/unsplash/team.jpg" alt="Team connecting systems on laptops">
+                                <h2 id="featured-teaser-26-6ptc52ppuotmufdm6u8qumwxc" class="featured-teaser__title font-h4">
+                                    <a href="#track-shipment" class="reset-link js-teaser-link" aria-describedby="featured-teaser-link-27-bbbx7jvruvmyla2avdudmavzo">
+Track from pickup to door
+</a>
+                                </h2>
+                                <span class="cta arrow-hover-parent featured-teaser__link" id="featured-teaser-link-27-bbbx7jvruvmyla2avdudmavzo">
+Open tracker
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </teaser-component>
+                        </div>
+                        <ul class="reset-list " aria-label="slider controls">
+                            <li>
+                                <button class="slider-navigation__previous" data-slider-action="previous" aria-controls="featured-teasers-16-eudp5320coj3kfz8j9ko910b2">
+<svg class="icon icon--chevron-left slider-navigation__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 17">
+<path fill="currentColor" d="M8.817.91 10 2.093 3.138 8.955 10 15.817 8.817 17 .773 8.955z"/>
+</svg>
+<span class="visuallyhidden">Previous slide</span>
+</button>
+                            </li>
+                            <li>
+                                <button class="slider-navigation__next" data-slider-action="next" aria-controls="featured-teasers-16-eudp5320coj3kfz8j9ko910b2">
+<svg class="icon icon--chevron-right slider-navigation__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 17">
+<path fill="currentColor" d="M1.183 16.09 0 14.907l6.862-6.862L0 1.183 1.183 0l8.044 8.045z"/>
+</svg>
+<span class="visuallyhidden">Next slide</span>
+</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="sliding-pager featured-teasers__pager">
+                        <button role="button" class="sliding-pager__handle" data-slider-handle tabindex="-1"></button>
+                    </div>
+                </div>
+            </slider-component>
+        </section>
+        <div id="section-track-banner"></div>
+        <section class="content-box block-spacing">
+            <div class="banner ">
+                <lazy-loaded-image class="">
+                    <picture class="banner__background cover-image lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="">
+                        <source media="(max-width: 575px)" srcset="/resource/unsplash/hero-highway.jpg" data-srcset="/resource/unsplash/hero-highway.jpg">
+                        <source media="(max-width: 767px)" srcset="/resource/unsplash/hero-highway.jpg" data-srcset="/resource/unsplash/hero-highway.jpg">
+                        <source media="(max-width: 991px)" srcset="/resource/unsplash/hero-highway.jpg" data-srcset="/resource/unsplash/hero-highway.jpg">
+                        <source media="(max-width: 1399px)" srcset="/resource/unsplash/hero-highway.jpg" data-srcset="/resource/unsplash/hero-highway.jpg">
+                        <source media="(min-width: 1400px)" srcset="/resource/unsplash/hero-highway.jpg" data-srcset="/resource/unsplash/hero-highway.jpg">
+                        <img src="/resource/unsplash/hero-highway.jpg" alt="Logistics freight truck on an open highway"
+                            class="cover-image lazy-placeholder-loader__content">
+                    </picture>
+                </lazy-loaded-image>                 <span class="banner__title font-h3">See where your shipment is</span>
+                <div class="banner__text font-body-2">
+                    <p class="c1-font-id font-body-2 rte-section">Track air, sea and road consignments from pickup to delivery. Enter a DSV ID to see the latest scan, estimated arrival and full movement history.</p>
+                </div>
+                <a href="#track-shipment" class="banner__button btn">
+Track now
+</a>
+            </div>
+        </section>
+        <div id="section-industries"></div>
+        <section class="teaser-list-d-wrapper block-spacing" aria-labelledby="teaser-list-d-title-29-91f45fwzdkhj5srqs7s0kgyh">
+            <div class="teaser-list-d">
+                <div class="module__header content-box">
+                    <div class="module__title-wrapper">
+                        <h2 id="teaser-list-d-title-29-91f45fwzdkhj5srqs7s0kgyh" class="module__title font-h3">
+                            Track freight across every industry </h2>
+                    </div>
+                    <a href="javascript:void(0)" class="cta arrow-hover-parent module__button">
+<span class="visuallyhidden"></span>
+Read more
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</a>
+                </div>
+                <ul class="teaser-list-d__container reset-list " id="teaser-list-d-28-755ow129z00qbex255ef4uyr8" tabindex="0">
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--svg teaser-list-d__teaser--hoverable arrow-hover-parent ">
+                            <lazy-loaded-image>
+                                <picture class="teaser-list-d__teaser-media lazy-placeholder-loader " aria-labelledby="">
+                                    <img data-src="/resource/crblob/2848324/fdd67747196f2298614b5a15fbc92fc8/automotive-svg-data.svg" alt="" class="teaser-list-d__teaser-svg lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-30-90jk8oaqna1tlfe76ghxoh924" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Automotive
+</a>
+                                </h3>
+                                <div class="teaser-list-d__teaser-description font-body-2">
+                                    <p>
+                                        Transportation and logistics services to optimise supply chains and meet tighter production schedules.
+                                    </p>
+                                </div>
+                                <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </div>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--svg teaser-list-d__teaser--hoverable arrow-hover-parent ">
+                            <lazy-loaded-image>
+                                <picture class="teaser-list-d__teaser-media lazy-placeholder-loader " aria-labelledby="">
+                                    <img data-src="/resource/crblob/2481638/fba870d9b54224da51e8061a913832a2/technology-svg-data.svg" alt="" class="teaser-list-d__teaser-svg lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-31-cuzuwecxe0bp7smadzv6resl8" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Technology
+</a>
+                                </h3>
+                                <div class="teaser-list-d__teaser-description font-body-2">
+                                    <p>
+                                        End-to-end, integrated and reliable supply chain solutions to link production sites with distribution channels across the world.
+                                    </p>
+                                </div>
+                                <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </div>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--svg teaser-list-d__teaser--hoverable arrow-hover-parent ">
+                            <lazy-loaded-image>
+                                <picture class="teaser-list-d__teaser-media lazy-placeholder-loader " aria-labelledby="">
+                                    <img data-src="/resource/crblob/2481268/0989ee7d3dc5b073bf02d53207785efa/healthcare-svg-data.svg" alt="" class="teaser-list-d__teaser-svg lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-32-atyz0733rioatv1mp9bse5413" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Healthcare
+</a>
+                                </h3>
+                                <div class="teaser-list-d__teaser-description font-body-2">
+                                    <p>
+                                        Dedicated teams and a wide range of solutions to ensure compliance with quality standards and regulations.
+                                    </p>
+                                </div>
+                                <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </div>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--svg teaser-list-d__teaser--hoverable arrow-hover-parent ">
+                            <lazy-loaded-image>
+                                <picture class="teaser-list-d__teaser-media lazy-placeholder-loader " aria-labelledby="">
+                                    <img data-src="/resource/crblob/2848598/46153d2c05cb4bbcc343bc9722e8761e/industrial-svg-data.svg" alt="" class="teaser-list-d__teaser-svg lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-33-5p8w14iu5m5m9b9ycdqk3ahlv" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Industrial
+</a>
+                                </h3>
+                                <div class="teaser-list-d__teaser-description font-body-2">
+                                    <p>
+                                        Tailor-made solutions to manage complex demands and make supply chains leaner and more agile.
+                                    </p>
+                                </div>
+                                <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </div>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--svg teaser-list-d__teaser--hoverable arrow-hover-parent ">
+                            <lazy-loaded-image>
+                                <picture class="teaser-list-d__teaser-media lazy-placeholder-loader " aria-labelledby="">
+                                    <img data-src="/resource/crblob/2480976/4c7b42c9319b2134c50e99eb21c53e3b/consumer-icon-svg-data.svg" alt="" class="teaser-list-d__teaser-svg lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-34-e25avow48ey6ewcdzqy2d4e84" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Consumer
+</a>
+                                </h3>
+                                <div class="teaser-list-d__teaser-description font-body-2">
+                                    <p>
+                                        Transport from production, warehousing, and distribution directly to retailers and consumers, including a wide range of value-added services.
+                                    </p>
+                                </div>
+                                <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </div>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--svg teaser-list-d__teaser--hoverable arrow-hover-parent ">
+                            <lazy-loaded-image>
+                                <picture class="teaser-list-d__teaser-media lazy-placeholder-loader " aria-labelledby="">
+                                    <img data-src="/resource/crblob/2480882/4d26f71064d60765495132c13dc19326/aerospace-svg-data.svg" alt="" class="teaser-list-d__teaser-svg lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-35-3oasx7hhdpmokyjkjj3wjynai" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Aerospace
+</a>
+                                </h3>
+                                <div class="teaser-list-d__teaser-description font-body-2">
+                                    <p>
+                                        Dedicated teams to move your aerospace cargo around the globe in the safest fashion.
+                                    </p>
+                                </div>
+                                <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                            </div>
+                        </teaser-component>
+                    </li>
+                </ul>
+            </div>
+        </section>
+        <div id="section-numbers"></div>
+        <section class="block-spacing sequence-wrapper">
+            <slider-component>
+                <div class="slider" role="region" aria-labelledby="sequence-title-36-3i1k1zr14ytvaw7jdp5n1oanx">
+                    <div class="module__header content-box">
+                        <div class="module__title-wrapper">
+                            <h2 id="sequence-title-36-3i1k1zr14ytvaw7jdp5n1oanx" class="module__title font-h3">
+                                DSV in numbers </h2>
+                        </div>
+                        <a href="javascript:void(0)" class="cta arrow-hover-parent module__button">
+<span class="visuallyhidden"></span>
+Read more
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</a>
+                    </div>
+                    <div class="sequence slider-navigation">
+                        <div class="sequence__container">
+                            <ul class="sequence__items-wrapper slider-content" data-slider-content id="sequence-37-auq1fl4f6l1kkn1i3gien1sl6" tabindex="0">
+                                <li class="sequence__item " role="group" aria-roledescription="slide">
+                                    <p class="sequence__item-header font-h1">
+                                        <b>
++3,000 </b>
+                                    </p>
+                                    <b class="sequence__item-title font-h4">
+Offices and logistics facilities </b>
+                                </li>
+                                <li class="sequence__item " role="group" aria-roledescription="slide">
+                                    <p class="sequence__item-header font-h1">
+                                        <b>
++90 </b>
+                                    </p>
+                                    <b class="sequence__item-title font-h4">
+Countries worldwide </b>
+                                </li>
+                                <li class="sequence__item " role="group" aria-roledescription="slide">
+                                    <p class="sequence__item-header font-h1">
+                                        <b>
+&sim;150,000 </b>
+                                    </p>
+                                    <b class="sequence__item-title font-h4">
+Employees </b>
+                                </li>
+                            </ul>
+                        </div>
+                        <ul class="reset-list " aria-label="slider controls">
+                            <li>
+                                <button class="slider-navigation__previous" data-slider-action="previous" aria-controls="sequence-37-auq1fl4f6l1kkn1i3gien1sl6">
+<svg class="icon icon--chevron-left slider-navigation__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 17">
+<path fill="currentColor" d="M8.817.91 10 2.093 3.138 8.955 10 15.817 8.817 17 .773 8.955z"/>
+</svg>
+<span class="visuallyhidden">Previous slide</span>
+</button>
+                            </li>
+                            <li>
+                                <button class="slider-navigation__next" data-slider-action="next" aria-controls="sequence-37-auq1fl4f6l1kkn1i3gien1sl6">
+<svg class="icon icon--chevron-right slider-navigation__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 17">
+<path fill="currentColor" d="M1.183 16.09 0 14.907l6.862-6.862L0 1.183 1.183 0l8.044 8.045z"/>
+</svg>
+<span class="visuallyhidden">Next slide</span>
+</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="sliding-pager sequence__pager">
+                        <button role="button" class="sliding-pager__handle" data-slider-handle tabindex="-1"></button>
+                    </div>
+                </div>
+            </slider-component>
+        </section>
+        <div id="section-testimonials"></div>
+        <section class="testimonials block-spacing">
+            <div class="module__header content-box">
+                <div class="module__title-wrapper">
+                    <h2 id="testimonials-title-47-6osrqmw0msd9hzc4pmg2qfagv" class="module__title font-h3">
+                        What our customers say </h2>
+                </div>
+            </div>
+            <slider-component class="js-testimonials-slider">
+                <div class="slider" role="region" aria-labelledby="testimonials-title-47-6osrqmw0msd9hzc4pmg2qfagv" data-slider>
+                    <div class="slider-navigation">
+                        <ul class="testimonials__container slider-content reset-list" data-slider-content id="testimonials-46-1stn66sy9f8vjgwbrgwftuwaw" tabindex="0">
+                            <li class="testimonials__testimonial testimonial" role="group" aria-roledescription="slide">
+                                <div class="testimonial__content">
+                                    <p class="testimonial__description">
+                                        Packages arrive faster than we expected, and live tracking means our buyers always know where their order is. Delivery confirmation is usually the same day. </p>
+                                    <div class="author__details">
+                                        <p id="testimonial-author-48-a8n56u25gci1qiqs2kxedufpc" class="font-body-2">
+                                            Sophie Andersen
+                                        </p>
+                                        <p class="font-body-2">
+                                            Online retailer, Copenhagen
+                                        </p>
+                                    </div>
+                                </div>
+                                <figure class="author__portrait">
+                                    <lazy-loaded-image class="">
+                                        <picture class=" lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="testimonial-author-48-a8n56u25gci1qiqs2kxedufpc">
+                                            <source media="(max-width: 575px)" srcset="/resource/unsplash/person-7.jpg" data-srcset="/resource/unsplash/person-7.jpg">
+                                            <source media="(max-width: 767px)" srcset="/resource/unsplash/person-7.jpg" data-srcset="/resource/unsplash/person-7.jpg">
+                                            <source media="(max-width: 991px)" srcset="/resource/unsplash/person-7.jpg" data-srcset="/resource/unsplash/person-7.jpg">
+                                            <source media="(max-width: 1399px)" srcset="/resource/unsplash/person-7.jpg" data-srcset="/resource/unsplash/person-7.jpg">
+                                            <source media="(min-width: 1400px)" srcset="/resource/unsplash/person-7.jpg" data-srcset="/resource/unsplash/person-7.jpg">
+                                            <img src="/resource/unsplash/person-7.jpg" alt="Sophie Andersen, customer" class="author__image lazy-placeholder-loader__content">
+                                        </picture>
+                                    </lazy-loaded-image>
+                                </figure>
+                            </li>
+                            <li class="testimonials__testimonial testimonial" role="group" aria-roledescription="slide">
+                                <div class="testimonial__content">
+                                    <p class="testimonial__description">
+                                        I shipped urgent samples overseas and they were delivered in under three days. Being able to follow every scan gave me real peace of mind. </p>
+                                    <div class="author__details">
+                                        <p id="testimonial-author-49-dhypg91d2yr1fvbm8tegv8f64" class="font-body-2">
+                                            Marie Dubois
+                                        </p>
+                                        <p class="font-body-2">
+                                            Small business owner, Amsterdam
+                                        </p>
+                                    </div>
+                                </div>
+                                <figure class="author__portrait">
+                                    <lazy-loaded-image class="">
+                                        <picture class=" lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="testimonial-author-49-dhypg91d2yr1fvbm8tegv8f64">
+                                            <source media="(max-width: 575px)" srcset="/resource/unsplash/person-2.jpg" data-srcset="/resource/unsplash/person-2.jpg">
+                                            <source media="(max-width: 767px)" srcset="/resource/unsplash/person-2.jpg" data-srcset="/resource/unsplash/person-2.jpg">
+                                            <source media="(max-width: 991px)" srcset="/resource/unsplash/person-2.jpg" data-srcset="/resource/unsplash/person-2.jpg">
+                                            <source media="(max-width: 1399px)" srcset="/resource/unsplash/person-2.jpg" data-srcset="/resource/unsplash/person-2.jpg">
+                                            <source media="(min-width: 1400px)" srcset="/resource/unsplash/person-2.jpg" data-srcset="/resource/unsplash/person-2.jpg">
+                                            <img src="/resource/unsplash/person-2.jpg" alt="Marie Dubois, customer" class="author__image lazy-placeholder-loader__content">
+                                        </picture>
+                                    </lazy-loaded-image>
+                                </figure>
+                            </li>
+                            <li class="testimonials__testimonial testimonial" role="group" aria-roledescription="slide">
+                                <div class="testimonial__content">
+                                    <p class="testimonial__description">
+                                        Clear ETAs and out-for-delivery updates cut our support calls in half. Customers trust us more because they can track the shipment themselves. </p>
+                                    <div class="author__details">
+                                        <p id="testimonial-author-50-1jad5twekpsh37ohb98dxb9r0" class="font-body-2">
+                                            Lukas Weber
+                                        </p>
+                                        <p class="font-body-2">
+                                            E-commerce founder, Berlin
+                                        </p>
+                                    </div>
+                                </div>
+                                <figure class="author__portrait">
+                                    <lazy-loaded-image class="">
+                                        <picture class=" lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="testimonial-author-50-1jad5twekpsh37ohb98dxb9r0">
+                                            <source media="(max-width: 575px)" srcset="/resource/unsplash/person-3.jpg" data-srcset="/resource/unsplash/person-3.jpg">
+                                            <source media="(max-width: 767px)" srcset="/resource/unsplash/person-3.jpg" data-srcset="/resource/unsplash/person-3.jpg">
+                                            <source media="(max-width: 991px)" srcset="/resource/unsplash/person-3.jpg" data-srcset="/resource/unsplash/person-3.jpg">
+                                            <source media="(max-width: 1399px)" srcset="/resource/unsplash/person-3.jpg" data-srcset="/resource/unsplash/person-3.jpg">
+                                            <source media="(min-width: 1400px)" srcset="/resource/unsplash/person-3.jpg" data-srcset="/resource/unsplash/person-3.jpg">
+                                            <img src="/resource/unsplash/person-3.jpg" alt="Lukas Weber, customer" class="author__image lazy-placeholder-loader__content">
+                                        </picture>
+                                    </lazy-loaded-image>
+                                </figure>
+                            </li>
+                            <li class="testimonials__testimonial testimonial" role="group" aria-roledescription="slide">
+                                <div class="testimonial__content">
+                                    <p class="testimonial__description">
+                                        From pickup to doorstep the journey is transparent. We had a same-week delivery across EU hubs and the tracking page made it easy to share with our client. </p>
+                                    <div class="author__details">
+                                        <p id="testimonial-author-51-1ai3gurzatp6sitr9bd229wo4" class="font-body-2">
+                                            Elena Rossi
+                                        </p>
+                                        <p class="font-body-2">
+                                            Procurement lead, Milan
+                                        </p>
+                                    </div>
+                                </div>
+                                <figure class="author__portrait">
+                                    <lazy-loaded-image class="">
+                                        <picture class=" lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="testimonial-author-51-1ai3gurzatp6sitr9bd229wo4">
+                                            <source media="(max-width: 575px)" srcset="/resource/unsplash/person-4.jpg" data-srcset="/resource/unsplash/person-4.jpg">
+                                            <source media="(max-width: 767px)" srcset="/resource/unsplash/person-4.jpg" data-srcset="/resource/unsplash/person-4.jpg">
+                                            <source media="(max-width: 991px)" srcset="/resource/unsplash/person-4.jpg" data-srcset="/resource/unsplash/person-4.jpg">
+                                            <source media="(max-width: 1399px)" srcset="/resource/unsplash/person-4.jpg" data-srcset="/resource/unsplash/person-4.jpg">
+                                            <source media="(min-width: 1400px)" srcset="/resource/unsplash/person-4.jpg" data-srcset="/resource/unsplash/person-4.jpg">
+                                            <img src="/resource/unsplash/person-4.jpg" alt="Elena Rossi, customer" class="author__image lazy-placeholder-loader__content">
+                                        </picture>
+                                    </lazy-loaded-image>
+                                </figure>
+                            </li>
+                            <li class="testimonials__testimonial testimonial" role="group" aria-roledescription="slide">
+                                <div class="testimonial__content">
+                                    <p class="testimonial__description">
+                                        Reliable and quick. My last consignment hit every hub on schedule and arrived a day early. That kind of consistency keeps us coming back. </p>
+                                    <div class="author__details">
+                                        <p id="testimonial-author-52-bk2hffmfnx49rf837h3ec6y1e" class="font-body-2">
+                                            Thomas Dubois
+                                        </p>
+                                        <p class="font-body-2">
+                                            Importer, Lyon
+                                        </p>
+                                    </div>
+                                </div>
+                                <figure class="author__portrait">
+                                    <lazy-loaded-image class="">
+                                        <picture class=" lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="testimonial-author-52-bk2hffmfnx49rf837h3ec6y1e">
+                                            <source media="(max-width: 575px)" srcset="/resource/unsplash/person-5.jpg" data-srcset="/resource/unsplash/person-5.jpg">
+                                            <source media="(max-width: 767px)" srcset="/resource/unsplash/person-5.jpg" data-srcset="/resource/unsplash/person-5.jpg">
+                                            <source media="(max-width: 991px)" srcset="/resource/unsplash/person-5.jpg" data-srcset="/resource/unsplash/person-5.jpg">
+                                            <source media="(max-width: 1399px)" srcset="/resource/unsplash/person-5.jpg" data-srcset="/resource/unsplash/person-5.jpg">
+                                            <source media="(min-width: 1400px)" srcset="/resource/unsplash/person-5.jpg" data-srcset="/resource/unsplash/person-5.jpg">
+                                            <img src="/resource/unsplash/person-5.jpg" alt="Thomas Dubois, customer" class="author__image lazy-placeholder-loader__content">
+                                        </picture>
+                                    </lazy-loaded-image>
+                                </figure>
+                            </li>
+                            <li class="testimonials__testimonial testimonial" role="group" aria-roledescription="slide">
+                                <div class="testimonial__content">
+                                    <p class="testimonial__description">
+                                        Simple tracking, fast delivery, and proof of delivery when we need it. Our customers feel safer ordering because they can follow the package in real time. </p>
+                                    <div class="author__details">
+                                        <p id="testimonial-author-53-4u3u6cjwod4gdjn21qt0xlv8m" class="font-body-2">
+                                            Anna Kowalski
+                                        </p>
+                                        <p class="font-body-2">
+                                            Customer success, Warsaw
+                                        </p>
+                                    </div>
+                                </div>
+                                <figure class="author__portrait">
+                                    <lazy-loaded-image class="">
+                                        <picture class=" lazy-placeholder-loader lazy-placeholder-loader--loaded" aria-labelledby="testimonial-author-53-4u3u6cjwod4gdjn21qt0xlv8m">
+                                            <source media="(max-width: 575px)" srcset="/resource/unsplash/person-6.jpg" data-srcset="/resource/unsplash/person-6.jpg">
+                                            <source media="(max-width: 767px)" srcset="/resource/unsplash/person-6.jpg" data-srcset="/resource/unsplash/person-6.jpg">
+                                            <source media="(max-width: 991px)" srcset="/resource/unsplash/person-6.jpg" data-srcset="/resource/unsplash/person-6.jpg">
+                                            <source media="(max-width: 1399px)" srcset="/resource/unsplash/person-6.jpg" data-srcset="/resource/unsplash/person-6.jpg">
+                                            <source media="(min-width: 1400px)" srcset="/resource/unsplash/person-6.jpg" data-srcset="/resource/unsplash/person-6.jpg">
+                                            <img src="/resource/unsplash/person-6.jpg" alt="Anna Kowalski, customer" class="author__image lazy-placeholder-loader__content">
+                                        </picture>
+                                    </lazy-loaded-image>
+                                </figure>
+                            </li>
+                        </ul>
+                        <ul class="reset-list " aria-label="slider controls">
+                            <li>
+                                <button class="slider-navigation__previous" data-slider-action="previous" aria-controls="testimonials-46-1stn66sy9f8vjgwbrgwftuwaw">
+<svg class="icon icon--chevron-left slider-navigation__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 17">
+<path fill="currentColor" d="M8.817.91 10 2.093 3.138 8.955 10 15.817 8.817 17 .773 8.955z"/>
+</svg>
+<span class="visuallyhidden">Previous slide</span>
+</button>
+                            </li>
+                            <li>
+                                <button class="slider-navigation__next" data-slider-action="next" aria-controls="testimonials-46-1stn66sy9f8vjgwbrgwftuwaw">
+<svg class="icon icon--chevron-right slider-navigation__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 17">
+<path fill="currentColor" d="M1.183 16.09 0 14.907l6.862-6.862L0 1.183 1.183 0l8.044 8.045z"/>
+</svg>
+<span class="visuallyhidden">Next slide</span>
+</button>
+                            </li>
+                        </ul>
+                        <div class="sliding-pager testimonials__pager">
+                            <button role="button" class="sliding-pager__handle" data-slider-handle tabindex="-1"></button>
+                        </div>
+                    </div>
+                </div>
+            </slider-component>
+        </section>
+        <div id="section-insights"></div>
+        <section class="teaser-list-d-wrapper block-spacing" aria-labelledby="teaser-list-d-title-55-e0k39xv0e80ovqxygy08pt9dg">
+            <div class="teaser-list-d">
+                <div class="module__header content-box">
+                    <div class="module__title-wrapper">
+                        <h2 id="teaser-list-d-title-55-e0k39xv0e80ovqxygy08pt9dg" class="module__title font-h3">
+                            Learn about transport and logistics </h2>
+                    </div>
+                </div>
+                <ul class="teaser-list-d__container reset-list " id="teaser-list-d-54-6id4srtx9ki33xknxsppqklt7" tabindex="0">
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--image teaser-list-d__teaser--hoverable ">
+                            <lazy-loaded-image class="teaser-list-d__teaser-media">
+                                <picture class="teaser-list-d__teaser-image cover-image lazy-placeholder-loader" aria-labelledby="">
+                                    <source media="(max-width: 575px)" srcset="/resource/unsplash/packages.jpg" data-srcset="/resource/unsplash/packages.jpg">
+                                    <source media="(max-width: 767px)" srcset="/resource/unsplash/packages.jpg" data-srcset="/resource/unsplash/packages.jpg">
+                                    <source media="(max-width: 991px)" srcset="/resource/unsplash/packages.jpg" data-srcset="/resource/unsplash/packages.jpg">
+                                    <source media="(max-width: 1399px)" srcset="/resource/unsplash/packages.jpg" data-srcset="/resource/unsplash/packages.jpg">
+                                    <source media="(min-width: 1400px)" srcset="/resource/unsplash/packages.jpg" data-srcset="/resource/unsplash/packages.jpg">
+                                    <img src="/resource/unsplash/packages.jpg" alt="Advisories" class="cover-image lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-56-1rougffugjwz2phmipaclmxt6" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Advisories
+</a>
+                                </h3>
+                            </div>
+                            <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--image teaser-list-d__teaser--hoverable ">
+                            <lazy-loaded-image class="teaser-list-d__teaser-media">
+                                <picture class="teaser-list-d__teaser-image cover-image lazy-placeholder-loader" aria-labelledby="">
+                                    <source media="(max-width: 575px)" srcset="/resource/unsplash/office.jpg" data-srcset="/resource/unsplash/office.jpg">
+                                    <source media="(max-width: 767px)" srcset="/resource/unsplash/office.jpg" data-srcset="/resource/unsplash/office.jpg">
+                                    <source media="(max-width: 991px)" srcset="/resource/unsplash/office.jpg" data-srcset="/resource/unsplash/office.jpg">
+                                    <source media="(max-width: 1399px)" srcset="/resource/unsplash/office.jpg" data-srcset="/resource/unsplash/office.jpg">
+                                    <source media="(min-width: 1400px)" srcset="/resource/unsplash/office.jpg" data-srcset="/resource/unsplash/office.jpg">
+                                    <img src="/resource/unsplash/office.jpg" alt="Expert opinions" class="cover-image lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-57-5xq8gve2bxqpvixjfnvtcytk1" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Expert opinions
+</a>
+                                </h3>
+                            </div>
+                            <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--image teaser-list-d__teaser--hoverable ">
+                            <lazy-loaded-image class="teaser-list-d__teaser-media">
+                                <picture class="teaser-list-d__teaser-image cover-image lazy-placeholder-loader" aria-labelledby="">
+                                    <source media="(max-width: 575px)" srcset="/resource/unsplash/warehouse.jpg" data-srcset="/resource/unsplash/warehouse.jpg">
+                                    <source media="(max-width: 767px)" srcset="/resource/unsplash/warehouse.jpg" data-srcset="/resource/unsplash/warehouse.jpg">
+                                    <source media="(max-width: 991px)" srcset="/resource/unsplash/warehouse.jpg" data-srcset="/resource/unsplash/warehouse.jpg">
+                                    <source media="(max-width: 1399px)" srcset="/resource/unsplash/warehouse.jpg" data-srcset="/resource/unsplash/warehouse.jpg">
+                                    <source media="(min-width: 1400px)" srcset="/resource/unsplash/warehouse.jpg" data-srcset="/resource/unsplash/warehouse.jpg">
+                                    <img src="/resource/unsplash/warehouse.jpg" alt="Case Studies" class="cover-image lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-58-eszdh5776wm6vb9lzgo37eqhk" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Case studies
+</a>
+                                </h3>
+                            </div>
+                            <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--image teaser-list-d__teaser--hoverable ">
+                            <lazy-loaded-image class="teaser-list-d__teaser-media">
+                                <picture class="teaser-list-d__teaser-image cover-image lazy-placeholder-loader" aria-labelledby="">
+                                    <source media="(max-width: 575px)" srcset="/resource/unsplash/forest-road.jpg" data-srcset="/resource/unsplash/forest-road.jpg">
+                                    <source media="(max-width: 767px)" srcset="/resource/unsplash/forest-road.jpg" data-srcset="/resource/unsplash/forest-road.jpg">
+                                    <source media="(max-width: 991px)" srcset="/resource/unsplash/forest-road.jpg" data-srcset="/resource/unsplash/forest-road.jpg">
+                                    <source media="(max-width: 1399px)" srcset="/resource/unsplash/forest-road.jpg" data-srcset="/resource/unsplash/forest-road.jpg">
+                                    <source media="(min-width: 1400px)" srcset="/resource/unsplash/forest-road.jpg" data-srcset="/resource/unsplash/forest-road.jpg">
+                                    <img src="/resource/unsplash/forest-road.jpg" alt="Truck on a road through a forest" class="cover-image lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-59-dj9kgy3prppr7hxzmextnqiji" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Road market update
+</a>
+                                </h3>
+                            </div>
+                            <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                        </teaser-component>
+                    </li>
+                    <li>
+                        <teaser-component class="teaser-list-d__teaser teaser-list-d__teaser--image teaser-list-d__teaser--hoverable ">
+                            <lazy-loaded-image class="teaser-list-d__teaser-media">
+                                <picture class="teaser-list-d__teaser-image cover-image lazy-placeholder-loader" aria-labelledby="">
+                                    <source media="(max-width: 575px)" srcset="/resource/unsplash/tunnel.jpg" data-srcset="/resource/unsplash/tunnel.jpg">
+                                    <source media="(max-width: 767px)" srcset="/resource/unsplash/tunnel.jpg" data-srcset="/resource/unsplash/tunnel.jpg">
+                                    <source media="(max-width: 991px)" srcset="/resource/unsplash/tunnel.jpg" data-srcset="/resource/unsplash/tunnel.jpg">
+                                    <source media="(max-width: 1399px)" srcset="/resource/unsplash/tunnel.jpg" data-srcset="/resource/unsplash/tunnel.jpg">
+                                    <source media="(min-width: 1400px)" srcset="/resource/unsplash/tunnel.jpg" data-srcset="/resource/unsplash/tunnel.jpg">
+                                    <img src="/resource/unsplash/tunnel.jpg" alt="The view from inside a tunnel, capturing a long and narrow passage illuminated by spaced-out overhead lights"
+                                        class="cover-image lazy-placeholder-loader__content">
+                                </picture>
+                            </lazy-loaded-image>
+                            <div class="teaser-list-d__teaser-content">
+                                <h3 id="teaser-list-d-60-2hamyyt4dxekblrbe8vjs7oc0" class="teaser-list-d__teaser-title font-h4">
+                                    <a href="javascript:void(0)" class="reset-link js-teaser-link">
+Innovation
+</a>
+                                </h3>
+                            </div>
+                            <span class="teaser-list-d__teaser-button">
+<svg class="icon icon--arrow-cta arrow-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15">
+<g stroke="currentColor" stroke-linecap="square" stroke-width="1.">
+<line x1="1" x2="12" y1="8" y2="8"/>
+<line x1="8" x2="13" y1="3" y2="8"/>
+<line x1="8" x2="13" y1="13" y2="8"/>
+</g>
+</svg>
+</span>
+                        </teaser-component>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </article>
+    <footer class="footer js-footer js-hide-context-menu">
+        <nav class="content-box footer__content" aria-label="Footer">
+            <div aria-label="DSV Logo">
+                <svg class="icon icon--logo footer__logo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 100 29">
+<path fill="#fff" d="M87.08 26.986a3.36 3.36 0 0 1-2.958 1.725H77.26c-1.658 0-2.64-1.12-2.935-1.71l-9.291-18.34c-.913-1.727-2.826-2.283-4.424-2.283H43.74c-1.555 0-2.46.969-2.46 2.393 0 1.515 1.01 2.392 2.485 2.392H55.37c4.943 0 9.032 2.904 9.032 8.773 0 5.87-4.13 8.773-9.032 8.773H40.457c-1.353 0-2.477-.761-2.477-2.421v-3.16c0-.538.372-.8.826-.8H52.07c1.376 0 2.477-.803 2.477-2.392s-1.083-2.395-2.472-2.395H39.599c-2.091.003-3.99-.55-5.332-1.408-.688 7.782-6.415 12.578-14.782 12.578H.825c-.458 0-.825-.265-.825-.797v-15.95c0-.529.362-.794.812-.796H7.38c1.75 0 2.53 1.09 2.53 2.38v7.986h.005c0 .529.362.794.81.797h5.696c4.484 0 8.21-2.638 8.21-7.974S20.92 6.38 16.422 6.38H.805C.36 6.374 0 6.11 0 5.58V2.416C0 .625 1.303 0 2.502 0H19.57c4.805 0 9.151 1.727 11.708 4.914C32.668 1.672 35.774 0 39.678 0H64.12c3.004 0 6.403 1.002 8.172 4.37l7.91 16.122c.08.165.243.243.442.243.184 0 .356-.067.438-.234 0 0 9.782-19.999 9.84-20.113.05-.107.252-.386.729-.386h7.522c.459 0 .826.264.826.797 0 .152-.03.281-.08.39L87.083 26.994z"/>
+</svg>
+            </div>
+            <hr class="footer__divider divider" />
+            <div class="footer__main-section-wrapper">
+                <div class="footer__main-section">
+                    <h2 class="footer__section-title font-caption">Online Tools</h2>
+                    <ul class="footer__link-list reset-list" tabindex="0">
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="#track-shipment">
+Track
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Get a quote
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Self services
+</a> </li>
+                    </ul>
+                </div>
+                <div class="footer__main-section">
+                    <h2 class="footer__section-title font-caption">Our Solutions</h2>
+                    <ul class="footer__link-list reset-list" tabindex="0">
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Industry solutions
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Air freight
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Sea freight
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Road transport
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Project Logistics
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Contract logistics
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Decarbonising Logistics
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Our solutions
+</a> </li>
+                    </ul>
+                </div>
+                <div class="footer__main-section">
+                    <h2 class="footer__section-title font-caption">DSV</h2>
+                    <ul class="footer__link-list reset-list" tabindex="0">
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Help and contact
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+About DSV and our services
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Careers
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Investor
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Press
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Sustainability ESG
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Support
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Report concerns
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Social Media House Rules
+</a> </li>
+                    </ul>
+                </div>
+                <div class="footer__main-section">
+                    <h2 class="footer__section-title font-caption">Legal</h2>
+                    <ul class="footer__link-list reset-list" tabindex="0">
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Legal notice
+</a> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Data privacy
+</a> </li>
+                        <li>
+                            <button class="footer__link reset-button js-open-cookies font-h5">
+Cookies
+</button> </li>
+                        <li>
+                            <a class="footer__link reset-link font-h5" href="javascript:void(0)">
+Standard terms and conditions
+</a> </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer__region-stock-section">
+                <button type="button" class="js-dialog-open region-selection__button icon-button js-locale-select-button footer__region font-button" data-dialog-id="dialog-id-locale-selector" data-tracking="clickLanguageIcon" aria-label="Global" aria-description="Change country">
+<svg class="icon icon--country-language region-selection__icon icon-button__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M.5 8h15M.5 8A7.5 7.5 0 0 0 8 15.5M.5 8A7.5 7.5 0 0 1 8 .5M15.5 8A7.5 7.5 0 0 1 8 15.5M15.5 8A7.5 7.5 0 0 0 8 .5m0 15C1.963 8.9 5.485 2.75 8 .5m0 15c6.037-6.6 2.515-12.75 0-15"/>
+</svg>
+<span class="region-selection__text">Global</span>
+</button>
+            </div>
+            <hr class="footer__divider divider" />
+            <div class="footer__bottom-section-wrapper">
+                <p class="footer__copyright font-body-2">© DSV 2026 - All rights reserved</p>
+            </div>
+        </nav>
+    </footer> <template class="js-select-component-remove-icon">
+
+  <svg class="icon icon--close icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+  <polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 1 17, 9 9, 17 1, 9 9, 17 17"/>
+</svg>
+
+  </template>
+    <template class="js-select-component-dropdown-icon">
+
+  <svg class="icon icon--chevron-down dropdown-listbox__dropdown-icon icon--svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 10">
+  <polyline fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="1 1, 9 9, 17 1"/>
+</svg>
+
+  </template>
+    <template class="js-select-component-filter-icon">
+
+  <svg class="icon icon--search control__icon icon--svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m15.5 15.5-4.393-4.183m1.768-4.453c0 3.514-2.77 6.363-6.188 6.363S.5 10.378.5 6.864 3.27.5 6.687.5s6.188 2.85 6.188 6.364"/>
+</svg>
+
+  </template>
+
+    <script type="application/json" data-translations>
+        {
+            "form.select.clear-selection": "Clear selection",
+            "form.select.open": "Open selection",
+            "form.select.clear-filter": "Clear filter input",
+            "form.select.close": "Close selection",
+            "form.select.search": "Search",
+            "countries.AF": "Afghanistan",
+            "countries.AL": "Albania",
+            "countries.AS": "American Samoa",
+            "countries.AD": "Andorra",
+            "countries.AO": "Angola",
+            "countries.AI": "Anguilla",
+            "countries.AG": "Antigua & Barbuda",
+            "countries.AR": "Argentina",
+            "countries.AM": "Armenia",
+            "countries.AW": "Aruba",
+            "countries.AC": "Ascension Island",
+            "countries.AU": "Australia",
+            "countries.AT": "Austria",
+            "countries.AZ": "Azerbaijan",
+            "countries.BS": "Bahamas",
+            "countries.BH": "Bahrain",
+            "countries.BD": "Bangladesh",
+            "countries.BB": "Barbados",
+            "countries.BY": "Belarus",
+            "countries.BE": "Belgium",
+            "countries.BZ": "Belize",
+            "countries.BJ": "Benin",
+            "countries.BM": "Bermuda",
+            "countries.BT": "Bhutan",
+            "countries.BO": "Bolivia",
+            "countries.BQ": "Caribbean Netherlands",
+            "countries.BA": "Bosnia & Herzegovina",
+            "countries.BW": "Botswana",
+            "countries.BV": "Bouvet Island",
+            "countries.BR": "Brazil",
+            "countries.IO": "British Indian Ocean Territory",
+            "countries.BN": "Brunei",
+            "countries.BG": "Bulgaria",
+            "countries.BF": "Burkina Faso",
+            "countries.BI": "Burundi",
+            "countries.KH": "Cambodia",
+            "countries.CM": "Cameroon",
+            "countries.CA": "Canada",
+            "countries.CV": "Cape Verde",
+            "countries.KY": "Cayman Islands",
+            "countries.CF": "Central African Republic",
+            "countries.TD": "Chad",
+            "countries.CL": "Chile",
+            "countries.CN": "China",
+            "countries.CX": "Christmas Island",
+            "countries.CC": "Cocos (Keeling) Islands",
+            "countries.CO": "Colombia",
+            "countries.KM": "Comoros",
+            "countries.CD": "Congo Democratic Republic",
+            "countries.CG": "Congo - Brazzaville",
+            "countries.CK": "Cook Islands",
+            "countries.CR": "Costa Rica",
+            "countries.HR": "Croatia",
+            "countries.CU": "Cuba",
+            "countries.CW": "Curaçao",
+            "countries.CY": "Cyprus",
+            "countries.CZ": "Czech Republic",
+            "countries.DK": "Denmark",
+            "countries.DJ": "Djibouti",
+            "countries.DM": "Dominica",
+            "countries.DO": "Dominican Republic",
+            "countries.TL": "Timor-Leste",
+            "countries.EC": "Ecuador",
+            "countries.EG": "Egypt",
+            "countries.SV": "El Salvador",
+            "countries.GQ": "Equatorial Guinea",
+            "countries.ER": "Eritrea",
+            "countries.EE": "Estonia",
+            "countries.ET": "Ethiopia",
+            "countries.FK": "Falkland Islands",
+            "countries.FO": "Faroe Islands",
+            "countries.FJ": "Fiji",
+            "countries.FI": "Finland",
+            "countries.FR": "France",
+            "countries.GF": "French Guiana",
+            "countries.PF": "French Polynesia",
+            "countries.TF": "French Southern Territories",
+            "countries.GA": "Gabon",
+            "countries.GM": "Gambia",
+            "countries.GE": "Georgia",
+            "countries.DE": "Germany",
+            "countries.GH": "Ghana",
+            "countries.GI": "Gibraltar",
+            "countries.GR": "Greece",
+            "countries.GL": "Greenland",
+            "countries.GD": "Grenada",
+            "countries.GP": "Guadeloupe",
+            "countries.GU": "Guam",
+            "countries.GT": "Guatemala",
+            "countries.GG": "Guernsey",
+            "countries.GN": "Guinea",
+            "countries.GW": "Guinea-Bissau",
+            "countries.GY": "Guyana",
+            "countries.HT": "Haiti",
+            "countries.HM": "Heard & McDonald Islands",
+            "countries.VA": "Vatican City",
+            "countries.HN": "Honduras",
+            "countries.HK": "Hong Kong S.A.R.",
+            "countries.HU": "Hungary",
+            "countries.IS": "Iceland",
+            "countries.IN": "India",
+            "countries.ID": "Indonesia",
+            "countries.IR": "Iran",
+            "countries.IQ": "Iraq",
+            "countries.IE": "Ireland",
+            "countries.IM": "Isle of Man",
+            "countries.IL": "Israel",
+            "countries.IT": "Italy",
+            "countries.CI": "Côte d’Ivoire",
+            "countries.JM": "Jamaica",
+            "countries.JP": "Japan",
+            "countries.JE": "Jersey",
+            "countries.JO": "Jordan",
+            "countries.KZ": "Kazakhstan",
+            "countries.KE": "Kenya",
+            "countries.KI": "Kiribati",
+            "countries.KP": "Democratic People's Republic of Korea",
+            "countries.KR": "Republic of Korea",
+            "countries.XK": "Kosovo",
+            "countries.KW": "Kuwait",
+            "countries.KG": "Kyrgyzstan",
+            "countries.LA": "Laos",
+            "countries.LV": "Latvia",
+            "countries.LB": "Lebanon",
+            "countries.LS": "Lesotho",
+            "countries.LR": "Liberia",
+            "countries.LY": "Libya",
+            "countries.LI": "Liechtenstein",
+            "countries.LT": "Lithuania",
+            "countries.LU": "Luxembourg",
+            "countries.MO": "Macau SAR China",
+            "countries.MK": "Macedonia",
+            "countries.MG": "Madagascar",
+            "countries.MW": "Malawi",
+            "countries.MY": "Malaysia",
+            "countries.MV": "Maldives",
+            "countries.ML": "Mali",
+            "countries.MT": "Malta",
+            "countries.MH": "Marshall Islands",
+            "countries.MQ": "Martinique",
+            "countries.MR": "Mauritania",
+            "countries.MU": "Mauritius",
+            "countries.YT": "Mayotte",
+            "countries.MX": "Mexico",
+            "countries.FM": "Micronesia",
+            "countries.MC": "Monaco",
+            "countries.MN": "Mongolia",
+            "countries.ME": "Montenegro",
+            "countries.MS": "Montserrat",
+            "countries.MA": "Morocco",
+            "countries.MZ": "Mozambique",
+            "countries.MM": "Myanmar (Burma)",
+            "countries.NA": "Namibia",
+            "countries.NR": "Nauru",
+            "countries.NP": "Nepal",
+            "countries.AN": "Netherlands Antilles",
+            "countries.NL": "Netherlands",
+            "countries.NC": "New Caledonia",
+            "countries.NZ": "New Zealand",
+            "countries.NI": "Nicaragua",
+            "countries.NE": "Niger",
+            "countries.NG": "Nigeria",
+            "countries.NU": "Niue",
+            "countries.NF": "Norfolk Island",
+            "countries.MP": "Northern Mariana Islands",
+            "countries.NO": "Norway",
+            "countries.OM": "Oman",
+            "countries.PK": "Pakistan",
+            "countries.PW": "Palau",
+            "countries.PS": "Palestinian Territory",
+            "countries.PA": "Panama",
+            "countries.PG": "Papua New Guinea",
+            "countries.PY": "Paraguay",
+            "countries.PE": "Peru",
+            "countries.PH": "Philippines",
+            "countries.PN": "Pitcairn",
+            "countries.PL": "Poland",
+            "countries.PT": "Portugal",
+            "countries.PR": "Puerto Rico",
+            "countries.QA": "Qatar",
+            "countries.MD": "Moldavia",
+            "countries.RE": "Réunion",
+            "countries.RO": "Romania",
+            "countries.RU": "Russia",
+            "countries.RW": "Rwanda",
+            "countries.WS": "Samoa",
+            "countries.SM": "San Marino",
+            "countries.ST": "São Tomé & Príncipe",
+            "countries.SA": "Saudi Arabia",
+            "countries.SN": "Senegal",
+            "countries.RS": "Serbia",
+            "countries.SC": "Seychelles",
+            "countries.SL": "Sierra Leone",
+            "countries.SG": "Singapore",
+            "countries.SX": "Sint Maarten",
+            "countries.SK": "Slovakia",
+            "countries.SI": "Slovenia",
+            "countries.SB": "Solomon Islands",
+            "countries.SO": "Somalia",
+            "countries.ZA": "South Africa",
+            "countries.GS": "South Georgia & South Sandwich Islands",
+            "countries.SS": "South Sudan",
+            "countries.ES": "Spain",
+            "countries.LK": "Sri Lanka",
+            "countries.BL": "St. Barthélemy",
+            "countries.SH": "Saint Helena",
+            "countries.KN": "Saint Kitts and Nevis",
+            "countries.LC": "Saint Lucia",
+            "countries.MF": "St. Martin",
+            "countries.PM": "Saint Pierre and Miquelon",
+            "countries.VC": "Saint Vincent and the Grenadines",
+            "countries.SD": "Sudan",
+            "countries.SR": "Suriname",
+            "countries.SJ": "Svalbard & Jan Mayen",
+            "countries.SZ": "Swaziland",
+            "countries.SE": "Sweden",
+            "countries.CH": "Switzerland",
+            "countries.SY": "Syria",
+            "countries.TW": "Taiwan",
+            "countries.TJ": "Tajikistan",
+            "countries.TZ": "Tanzania",
+            "countries.TH": "Thailand",
+            "countries.TG": "Togo",
+            "countries.TK": "Tokelau",
+            "countries.TO": "Tonga",
+            "countries.TT": "Trinidad & Tobago",
+            "countries.TN": "Tunisia",
+            "countries.TR": "Turkey",
+            "countries.TM": "Turkmenistan",
+            "countries.TC": "Turks & Caicos Islands",
+            "countries.TV": "Tuvalu",
+            "countries.UG": "Uganda",
+            "countries.UA": "Ukraine",
+            "countries.AE": "United Arab Emirates",
+            "countries.GB": "United Kingdom",
+            "countries.UY": "Uruguay",
+            "countries.UM": "U.S. Minor Outlying Islands",
+            "countries.US": "United States",
+            "countries.UZ": "Uzbekistan",
+            "countries.VU": "Vanuatu",
+            "countries.VE": "Venezuela",
+            "countries.VN": "Viet Nam",
+            "countries.VG": "British Virgin Islands",
+            "countries.VI": "U.S. Virgin Islands",
+            "countries.WF": "Wallis & Futuna",
+            "countries.EH": "Western Sahara",
+            "countries.YE": "Yemen",
+            "countries.ZM": "Zambia",
+            "countries.ZW": "Zimbabwe",
+            "countries.Global": "Global",
+            "countries.NorthIE": "Northern Ireland",
+            "languages.af": "Afrikaans",
+            "languages.ar": "Arabic",
+            "languages.bg": "Bulgarian",
+            "languages.bs": "Bosnian",
+            "languages.ca": "Catalan",
+            "languages.zh": "Chinese",
+            "languages.zf": "Chinese trad.",
+            "languages.hr": "Croatian",
+            "languages.cs": "Czech",
+            "languages.da": "Danish",
+            "languages.nl": "Dutch",
+            "languages.en": "English",
+            "languages.et": "Estonian",
+            "languages.fi": "Finnish",
+            "languages.fr": "French",
+            "languages.de": "German",
+            "languages.el": "Greek",
+            "languages.he": "Hebrew",
+            "languages.hu": "Hungarian",
+            "languages.is": "Icelandic",
+            "languages.id": "Indonesian",
+            "languages.it": "Italian",
+            "languages.ja": "Japanese",
+            "languages.ko": "Korean",
+            "languages.lv": "Latvian",
+            "languages.lt": "Lithuanian",
+            "languages.ms": "Malay",
+            "languages.mk": "Macedonian",
+            "languages.no": "Norwegian",
+            "languages.pl": "Polish",
+            "languages.pt": "Portuguese",
+            "languages.ro": "Romanian",
+            "languages.ru": "Russian",
+            "languages.sr": "Serbian",
+            "languages.sk": "Slovak",
+            "languages.sl": "Slovenian",
+            "languages.es": "Spanish",
+            "languages.sv": "Swedish",
+            "languages.th": "Thai",
+            "languages.tr": "Turkish",
+            "languages.uk": "Ukrainian"
+        }
+    </script>
+    <script class="js-lazy-loading-fallback-image" type="application/json">
+        "/resource/crblob/2476984/2849fb6b78c904f1af829e944404228e/missing-image-fallback-svg-data.svg"
+    </script>
+    <dialog class="dialog dialog--content-box js-regular-dialog" id="dialog-id-stage-chatbot">
+        <div class="dsv-support-chat" role="dialog" aria-label="DSV Support">
+            <div class="dsv-support-chat__header">
+                <div class="dsv-support-chat__header-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="dsv-support-chat__header-text">
+                    <p class="dsv-support-chat__title">DSV Support</p>
+                    <p class="dsv-support-chat__subtitle" id="dsv-chat-subtitle">Instant answers, 24/7</p>
+                </div>
+                <button type="button" class="dsv-support-chat__close js-dsv-chat-close" aria-label="Close chat">&times;</button>
+            </div>
+            <div class="dsv-support-chat__body">
+                <div class="dsv-support-chat__welcome">
+                    <div class="dsv-support-chat__welcome-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <h3>Need a hand?</h3>
+                    <p>Ask me anything about tracking your shipment — or pick a question below to get started.</p>
+                </div>
+                <label class="dsv-support-chat__label" for="dsv-chat-name">YOUR NAME (OPTIONAL)</label>
+                <input id="dsv-chat-name" class="dsv-support-chat__name" type="text" placeholder="Anonymous" autocomplete="name">
+                <div class="dsv-support-chat__chips" id="dsv-chat-chips">
+                    <button type="button" class="dsv-support-chat__chip" data-q="How do I track a shipment?">How do I track a shipment?</button>
+                    <button type="button" class="dsv-support-chat__chip" data-q="Where do I enter my tracking number?">Where do I enter my tracking number?</button>
+                    <button type="button" class="dsv-support-chat__chip" data-q="What number can I use?">What number can I use?</button>
+                    <button type="button" class="dsv-support-chat__chip" data-q="Why is my shipment delayed?">Why is my shipment delayed?</button>
+                    <button type="button" class="dsv-support-chat__chip" data-q="How do delivery updates work?">How do delivery updates work?</button>
+                    <button type="button" class="dsv-support-chat__chip" data-q="What is proof of delivery?">What is proof of delivery?</button>
+                </div>
+                <div class="dsv-support-chat__messages" id="dsv-chat-messages" aria-live="polite"></div>
+                <p class="dsv-support-chat__status" id="dsv-chat-status" hidden></p>
+                <div class="dsv-support-chat__ended" id="dsv-chat-ended" hidden>
+                    <strong>This conversation has ended</strong>
+                    <p>Support closed this chat. You can open a new conversation anytime.</p>
+                    <button type="button" class="dsv-support-chat__new" id="dsv-chat-new">Open a new conversation</button>
+                </div>
+            </div>
+            <form class="dsv-support-chat__footer" id="dsv-chat-form">
+                <input class="dsv-support-chat__input" id="dsv-chat-input" type="text" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" class="dsv-support-chat__send" aria-label="Send message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </form>
+        </div>
+    </dialog>
+    <button type="button" class="dsv-support-fab js-dsv-chat-open" aria-label="Open DSV Support chat">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="dsv-support-fab__badge" id="dsv-chat-unread" aria-hidden="true">0</span>
+    </button>
+
+    <script>
+        document.querySelectorAll(".lazy-placeholder-loader").forEach(function(el) {
+            el.classList.add("lazy-placeholder-loader--loaded");
+            el.classList.remove("lazy-placeholder-loader--loading");
+        });
+
+        (function () {
+            var nav = document.querySelector(".mobile-navigation[data-nav-current-main]");
+            var openBtns = Array.prototype.slice.call(document.querySelectorAll(".js-header-mobile-menu"));
+            if (!nav || !openBtns.length) return;
+            var panel = nav.querySelector(".mobile-navigation__content");
+            var closeTimer = null;
+            var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            function isOpen() {
+                return nav.classList.contains("is-open") && !nav.classList.contains("is-closing");
+            }
+
+            function closeNested() {
+                nav.querySelectorAll(".mobile-navigation__level-wrapper[data-mobile-nav-level='1']").forEach(function (el) {
+                    el.classList.add("mobile-navigation__element--hide");
+                });
+                nav.setAttribute("data-nav-current-main", "");
+            }
+
+            function openMenu() {
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+                nav.classList.remove("mobile-navigation__element--hide", "is-closing");
+                // Force layout so the slide-in transition always runs.
+                void nav.offsetWidth;
+                nav.classList.add("is-open");
+                document.body.classList.add("mobile-nav-open", "prevent-scroll");
+                closeNested();
+                var closeBtn = nav.querySelector(".js-mobile-menu-close");
+                if (closeBtn) {
+                    try { closeBtn.focus(); } catch (e) {}
+                }
+            }
+
+            function finishClose() {
+                nav.classList.remove("is-open", "is-closing");
+                nav.classList.add("mobile-navigation__element--hide");
+                document.body.classList.remove("mobile-nav-open", "prevent-scroll");
+                closeNested();
+                closeTimer = null;
+            }
+
+            function closeMenu() {
+                if (!nav.classList.contains("is-open") || nav.classList.contains("is-closing")) return;
+                if (reduceMotion) {
+                    finishClose();
+                    return;
+                }
+                nav.classList.add("is-closing");
+                var done = false;
+                function onEnd(event) {
+                    if (event.target !== panel || event.propertyName !== "transform") return;
+                    done = true;
+                    panel.removeEventListener("transitionend", onEnd);
+                    finishClose();
+                }
+                if (panel) panel.addEventListener("transitionend", onEnd);
+                closeTimer = setTimeout(function () {
+                    if (!done) {
+                        if (panel) panel.removeEventListener("transitionend", onEnd);
+                        finishClose();
+                    }
+                }, 450);
+            }
+
+            openBtns.forEach(function (btn) {
+                btn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (isOpen()) closeMenu();
+                    else openMenu();
+                });
+            });
+
+            nav.querySelectorAll(".js-mobile-menu-close").forEach(function (btn) {
+                btn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    closeMenu();
+                });
+            });
+
+            var backdrop = nav.querySelector(".mobile-navigation__backdrop");
+            if (backdrop) {
+                backdrop.addEventListener("click", closeMenu);
+            }
+
+            nav.querySelectorAll(".js-mobile-nav-button").forEach(function (btn) {
+                btn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    var item = btn.closest(".js-mobile-menu-item");
+                    var level = item && item.querySelector(".mobile-navigation__level-wrapper[data-mobile-nav-level='1']");
+                    if (!level) return;
+                    level.classList.remove("mobile-navigation__element--hide");
+                    var label = btn.querySelector(".js-navigation-point-text");
+                    nav.setAttribute("data-nav-current-main", label ? label.textContent.trim() : "menu");
+                });
+            });
+
+            nav.querySelectorAll(".js-mobile-menu-previous").forEach(function (btn) {
+                btn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    var level = btn.closest(".mobile-navigation__level-wrapper[data-mobile-nav-level='1']");
+                    if (level) level.classList.add("mobile-navigation__element--hide");
+                    nav.setAttribute("data-nav-current-main", "");
+                });
+            });
+
+            nav.querySelectorAll('a[href^="#"]').forEach(function (link) {
+                link.addEventListener("click", function () {
+                    closeMenu();
+                });
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && isOpen()) {
+                    closeMenu();
+                }
+            });
+        })();
+    </script>
+    <script src="/resource/js/support-widget.js?v=20261102chat1"></script>
+    <script>
+        (function () {
+            var root = document.querySelector(".js-hero-rotator");
+            if (!root) return;
+            var bgs = Array.prototype.slice.call(root.querySelectorAll("[data-hero-bg]"));
+            var copies = Array.prototype.slice.call(root.querySelectorAll("[data-hero-copy]"));
+            var index = 0;
+            var timer = null;
+            var typingTimer = null;
+            var interval = Number(root.getAttribute("data-hero-interval")) || 6500;
+
+            function typeTitle(title) {
+                if (!title) return;
+                if (typingTimer) clearTimeout(typingTimer);
+                var full = title.getAttribute("data-typewriter") || "";
+                var textNode = document.createElement("span");
+                var caret = document.createElement("span");
+                caret.className = "typewriter-caret";
+                caret.setAttribute("aria-hidden", "true");
+                title.classList.remove("is-done");
+                title.textContent = "";
+                title.appendChild(textNode);
+                title.appendChild(caret);
+                var i = 0;
+                function tick() {
+                    if (i >= full.length) {
+                        title.classList.add("is-done");
+                        return;
+                    }
+                    textNode.textContent = full.slice(0, i + 1);
+                    i += 1;
+                    typingTimer = setTimeout(tick, 48);
+                }
+                typingTimer = setTimeout(tick, 220);
+            }
+
+            function show(i) {
+                index = ((i % bgs.length) + bgs.length) % bgs.length;
+                bgs.forEach(function (el, n) {
+                    var on = n === index;
+                    el.classList.toggle("is-active", on);
+                    var img = el.querySelector("img");
+                    if (img) {
+                        img.style.transition = "none";
+                        img.style.transform = "scale(1)";
+                        if (on) {
+                            void img.offsetWidth;
+                            img.style.transition = "transform 7s ease-out";
+                            img.style.transform = "scale(1.06)";
+                        }
+                    }
+                });
+                copies.forEach(function (el, n) {
+                    el.classList.toggle("is-active", n === index);
+                });
+                var activeCopy = copies[index];
+                if (activeCopy) typeTitle(activeCopy.querySelector(".js-typewriter"));
+            }
+
+            function start() {
+                if (timer) clearInterval(timer);
+                timer = setInterval(function () { show(index + 1); }, interval);
+            }
+
+            root.addEventListener("mouseenter", function () {
+                if (timer) clearInterval(timer);
+            });
+            root.addEventListener("mouseleave", function () { start(); });
+
+            show(0);
+            start();
+        })();
+
+        (function () {
+            function initAutoSlider(track, options) {
+                if (!track) return;
+                options = options || {};
+                track.classList.add("js-auto-track");
+                var section = options.section || track.closest("section") || track;
+                var sliderRoot = track.closest(".slider") || section;
+                var navRoot = track.closest(".slider-navigation") || section;
+                var dragSurface = track.parentElement || track;
+                var prevBtn = navRoot.querySelector('[data-slider-action="previous"]');
+                var nextBtn = navRoot.querySelector('[data-slider-action="next"]');
+                var pager = sliderRoot.querySelector(".sliding-pager");
+                var pagerHandle = sliderRoot.querySelector("[data-slider-handle]");
+                var paused = false;
+                var timer = null;
+                var index = 0;
+                var gap = typeof options.gap === "number" ? options.gap : 24;
+                var interval = options.interval || 3500;
+                var mode = options.mode || "page";
+                var drag = null;
+
+                function slides() {
+                    return Array.prototype.slice.call(track.children || []).filter(function (el) {
+                        return el.nodeType === 1;
+                    });
+                }
+
+                function viewportWidth() {
+                    var viewport = track.parentElement || track;
+                    return viewport.clientWidth || 0;
+                }
+
+                function visibleCount() {
+                    if (mode === "page") return 1;
+                    var vw = window.innerWidth || viewportWidth();
+                    var count = 3;
+                    if (vw < 576) count = 1;
+                    else if (vw < 992) count = 2;
+                    if (typeof options.maxVisible === "number") {
+                        count = Math.min(count, options.maxVisible);
+                    }
+                    var total = slides().length;
+                    if (total) count = Math.min(count, total);
+                    return Math.max(1, count);
+                }
+
+                function cardWidth() {
+                    var vw = viewportWidth();
+                    var count = visibleCount();
+                    if (!vw || !count) return 0;
+                    return Math.max(160, Math.floor((vw - gap * (count - 1)) / count));
+                }
+
+                function stepSize() {
+                    return cardWidth() + gap;
+                }
+
+                function maxIndex() {
+                    var items = slides();
+                    var count = visibleCount();
+                    return Math.max(0, items.length - count);
+                }
+
+                function maxOffset() {
+                    return maxIndex() * stepSize();
+                }
+
+                function setOffset(px, withTransition) {
+                    var max = maxOffset();
+                    var clamped = Math.max(0, Math.min(max, px));
+                    if (withTransition === false) track.classList.add("is-dragging");
+                    else track.classList.remove("is-dragging");
+                    track.style.transform = "translateX(-" + clamped + "px)";
+                    updatePagerFromOffset(clamped);
+                    return clamped;
+                }
+
+                function updatePagerFromOffset(offsetPx) {
+                    if (!pager || !pagerHandle) return;
+                    var max = maxOffset();
+                    if (max === 0) {
+                        pager.style.display = "none";
+                        pagerHandle.style.transform = "translateX(0px)";
+                        return;
+                    }
+                    pager.style.display = "";
+                    var progress = offsetPx / max;
+                    progress = Math.max(0, Math.min(1, progress));
+                    var trackWidth = pager.clientWidth || 0;
+                    var handleWidth = pagerHandle.offsetWidth || 80;
+                    var travel = Math.max(0, trackWidth - handleWidth);
+                    pagerHandle.style.transform = "translateX(" + Math.round(travel * progress) + "px)";
+                }
+
+                function layout() {
+                    var width = cardWidth();
+                    if (!width) return;
+                    var count = visibleCount();
+                    var total = slides().length;
+                    var fillsRow = total <= count;
+                    if (fillsRow) {
+                        // Let theme CSS size all stats across the desktop row.
+                        slides().forEach(function (item) {
+                            item.style.flex = "";
+                            item.style.width = "";
+                            item.style.maxWidth = "";
+                            item.style.minWidth = "";
+                        });
+                        track.style.gap = "";
+                        track.style.paddingInline = "";
+                        track.style.transform = "translateX(0px)";
+                        index = 0;
+                        updatePagerFromOffset(0);
+                        return;
+                    }
+                    slides().forEach(function (item) {
+                        item.style.flex = "0 0 " + width + "px";
+                        item.style.width = width + "px";
+                        item.style.maxWidth = width + "px";
+                        item.style.minWidth = width + "px";
+                    });
+                    track.style.gap = gap + "px";
+                    track.style.paddingInline = "0px";
+                    if (index > maxIndex()) index = maxIndex();
+                    setOffset(index * stepSize(), true);
+                }
+
+                function goTo(i, wrap) {
+                    var items = slides();
+                    if (!items.length) return;
+                    var max = maxIndex();
+                    if (wrap !== false) {
+                        if (i > max) index = 0;
+                        else if (i < 0) index = max;
+                        else index = i;
+                    } else {
+                        index = Math.max(0, Math.min(max, i));
+                    }
+                    setOffset(index * stepSize(), true);
+                }
+
+                function advance() {
+                    if (paused || drag) return;
+                    if (maxIndex() === 0) return;
+                    goTo(index + 1);
+                }
+
+                function start() {
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(advance, interval);
+                }
+
+                function pointerX(event) {
+                    if (event.touches && event.touches[0]) return event.touches[0].clientX;
+                    if (event.changedTouches && event.changedTouches[0]) return event.changedTouches[0].clientX;
+                    return event.clientX;
+                }
+
+                function beginDrag(event, fromPager) {
+                    if (event.button != null && event.button !== 0) return;
+                    var startX = pointerX(event);
+                    drag = {
+                        startX: startX,
+                        origin: index * stepSize(),
+                        fromPager: !!fromPager,
+                        moved: false,
+                        pointerId: event.pointerId
+                    };
+                    paused = true;
+                    track.classList.add("is-dragging");
+                    if (event.pointerId != null && event.currentTarget.setPointerCapture) {
+                        try { event.currentTarget.setPointerCapture(event.pointerId); } catch (e) {}
+                    }
+                }
+
+                function moveDrag(event) {
+                    if (!drag) return;
+                    var x = pointerX(event);
+                    var dx = x - drag.startX;
+                    if (Math.abs(dx) > 4) drag.moved = true;
+                    if (drag.fromPager && pager) {
+                        var handleWidth = pagerHandle ? pagerHandle.offsetWidth : 80;
+                        var travel = Math.max(1, (pager.clientWidth || 0) - handleWidth);
+                        var max = maxOffset();
+                        var startProgress = max === 0 ? 0 : drag.origin / max;
+                        var progress = startProgress + dx / travel;
+                        setOffset(progress * max, false);
+                    } else {
+                        setOffset(drag.origin - dx, false);
+                    }
+                    if (event.cancelable) event.preventDefault();
+                }
+
+                function endDrag(event) {
+                    if (!drag) return;
+                    var step = stepSize() || 1;
+                    var current = 0;
+                    var match = /translateX\(-?([0-9.]+)px\)/.exec(track.style.transform || "");
+                    if (match) current = Number(match[1]) || 0;
+                    var nearest = Math.round(current / step);
+                    if (!drag.fromPager && drag.moved) {
+                        var dx = pointerX(event) - drag.startX;
+                        if (dx < -40) nearest = Math.ceil(current / step);
+                        if (dx > 40) nearest = Math.floor(current / step);
+                    }
+                    drag = null;
+                    track.classList.remove("is-dragging");
+                    goTo(nearest, false);
+                    paused = false;
+                    start();
+                }
+
+                function onSurfaceDown(event) {
+                    if (event.target.closest && event.target.closest("a, button")) return;
+                    beginDrag(event, false);
+                }
+
+                dragSurface.addEventListener("pointerdown", onSurfaceDown);
+                track.addEventListener("pointerdown", onSurfaceDown);
+                window.addEventListener("pointermove", moveDrag, { passive: false });
+                window.addEventListener("pointerup", endDrag);
+                window.addEventListener("pointercancel", endDrag);
+
+                if (pager) {
+                    pager.addEventListener("pointerdown", function (event) {
+                        beginDrag(event, true);
+                        if (event.cancelable) event.preventDefault();
+                    });
+                }
+
+                if (nextBtn) {
+                    nextBtn.addEventListener("click", function (event) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        goTo(index + 1);
+                        start();
+                    }, true);
+                }
+                if (prevBtn) {
+                    prevBtn.addEventListener("click", function (event) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        goTo(index - 1);
+                        start();
+                    }, true);
+                }
+
+                section.addEventListener("mouseenter", function () { if (!drag) paused = true; });
+                section.addEventListener("mouseleave", function () { if (!drag) paused = false; });
+                section.addEventListener("focusin", function () { paused = true; });
+                section.addEventListener("focusout", function () { if (!drag) paused = false; });
+
+                window.addEventListener("resize", function () { layout(); });
+                layout();
+                start();
+                requestAnimationFrame(function () { layout(); });
+            }
+
+            initAutoSlider(document.getElementById("featured-teasers-16-eudp5320coj3kfz8j9ko910b2"), {
+                mode: "peek",
+                gap: 24,
+                interval: 2000,
+                section: document.querySelector(".featured-teasers__wrapper")
+            });
+
+            initAutoSlider(document.getElementById("testimonials-46-1stn66sy9f8vjgwbrgwftuwaw"), {
+                mode: "page",
+                gap: 0,
+                interval: 3000,
+                section: document.querySelector(".testimonials")
+            });
+
+            initAutoSlider(document.getElementById("sequence-37-auq1fl4f6l1kkn1i3gien1sl6"), {
+                mode: "peek",
+                gap: 24,
+                interval: 3000,
+                section: document.querySelector(".sequence-wrapper")
+            });
+        })();
+    </script>
+    <script src="/resource/js/tracking-data.js?v=20261102k"></script>
+    <script src="/resource/js/realtime.js?v=20261102k"></script>
+    <script src="/resource/js/track.js?v=20261102k"></script>
+    <script type="application/json" data-maplibre>
+        {
+            "styleUrl": "https://api.dbschenker.com/mapservice/v1/styles/osm-bright/style.json",
+            "apiKey": "1bb0eba0-3eb0-47ce-9d60-9e4a92a7bb15",
+            "workerUrl": "/resource/themes/dsv/js/maplibre-worker-2477496-3.js",
+            "workerUrlOld": "/resource/themes/dsv/js/maplibre-worker-old-2477494-3.js"
+        }
+    </script>
+
+    <script>
+        (function () {
+            function isAllowedLocal(href) {
+                try {
+                    var url = new URL(href, window.location.origin);
+                    if (url.origin !== window.location.origin) return false;
+                    var path = url.pathname.replace(/\/$/, "") || "/";
+                    return path === "/" || path === "/en" || path.indexOf("/new/tracking/shipment-details-public") === 0 || path.indexOf("/shipment-details-public") === 0;
+                } catch (e) {
+                    return false;
+                }
+            }
+            function isBlockedUrl(href) {
+                if (!href) return false;
+                var low = String(href).toLowerCase();
+                if (low.indexOf("javascript:") === 0) return true;
+                if (/dsv\.com|mydsv\.com|investor\.dsv|docs\.dsv|whistleblowernetwork\.net/.test(low)) return true;
+                if (low.indexOf("http://") === 0 || low.indexOf("https://") === 0 || low.indexOf("//") === 0) {
+                    return !isAllowedLocal(href);
+                }
+                if (low.charAt(0) === "/" && !isAllowedLocal(href)) return true;
+                return false;
+            }
+            document.addEventListener("click", function (event) {
+                var link = event.target.closest && event.target.closest("a[href]");
+                if (!link) return;
+                var href = link.getAttribute("href") || "";
+                var allow = isAllowedLocal(href) || isAllowedLocal(link.href);
+                if (!allow && (link.closest("footer") || isBlockedUrl(href) || isBlockedUrl(link.href))) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }, true);
+        })();
+    </script>
+
+</body>
+
+</html>

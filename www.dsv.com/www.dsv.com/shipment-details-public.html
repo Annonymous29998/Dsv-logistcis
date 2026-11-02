@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>myDSV</title>
+  <link rel="shortcut icon" href="/resource/crblob/2848294/563987f7055513a6cd93f1bc305a8960/favicon-dsv-ico-data.ico" type="image/ico" sizes="32x32">
+  <style>
+    :root {
+      --dsv-blue: #002664;
+      --dsv-tab: #0056b8;
+      --dsv-green: #78b820;
+      --page-bg: #eceff3;
+      --card: #ffffff;
+      --line: #dde1e6;
+      --muted: #6a737c;
+      --text: #1a1a1a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--page-bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    .mydsv-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      height: 52px;
+      background: var(--dsv-blue);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+    }
+    .mydsv-logo {
+      font-weight: 800;
+      font-size: 1.65rem;
+      letter-spacing: 0.01em;
+      line-height: 1;
+    }
+    .mydsv-menu {
+      width: 24px;
+      height: 18px;
+      display: grid;
+      gap: 4px;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+    .mydsv-menu span {
+      display: block;
+      height: 2px;
+      background: #fff;
+    }
+
+    .mydsv-shell {
+      max-width: 640px;
+      margin: 0 auto;
+      padding-bottom: 2.5rem;
+    }
+    .mydsv-crumb {
+      padding: 0.75rem 1rem 0.5rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      background: #fff;
+    }
+    .mydsv-crumb a:hover { text-decoration: underline; }
+    .mydsv-crumb .is-current { color: #333; font-weight: 600; }
+
+    #track-result { padding: 0; }
+    #track-result.is-live-updated {
+      outline: 2px solid rgba(0, 86, 184, 0.35);
+      outline-offset: 4px;
+      transition: outline-color 1s ease;
+    }
+
+    .mydsv-top {
+      background: #fff;
+      padding: 0.25rem 0 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mydsv-shipment-head {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      padding: 0.85rem 1rem 1rem;
+    }
+    .mydsv-mode {
+      width: 2.65rem;
+      height: 2.65rem;
+      border-radius: 999px;
+      background: var(--dsv-blue);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .mydsv-mode svg { width: 1.35rem; height: 1.35rem; fill: currentColor; }
+    .mydsv-shipment-head h1 {
+      margin: 0.15rem 0 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .mydsv-booking {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mydsv-alert {
+      margin: 0 1rem 0.85rem;
+      padding: 0.85rem 1rem;
+      border-left: 4px solid #0056b8;
+      background: #f3f8ff;
+      color: #17324d;
+    }
+    .mydsv-alert strong {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+    .mydsv-alert p {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+    .mydsv-alert--hold {
+      border-left-color: #c47b16;
+      background: #fff8ec;
+      color: #5c3b00;
+    }
+    .mydsv-alert--cancel {
+      border-left-color: #b42318;
+      background: #fff1f0;
+      color: #7a1f16;
+    }
+    .mydsv-alert--ok {
+      border-left-color: #0056b8;
+      background: #f3f8ff;
+      color: #17324d;
+    }
+
+    .mydsv-progress-wrap {
+      padding: 0.35rem 1rem 0.25rem;
+      border-top: 1px solid var(--line);
+    }
+    .mydsv-progress-wrap h2 {
+      margin: 0.85rem 0 1.1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .mydsv-progress {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0.5rem;
+    }
+    .mydsv-progress__item {
+      display: grid;
+      grid-template-columns: 1.5rem 1fr;
+      gap: 0.9rem;
+      position: relative;
+      padding: 0 0 1.35rem;
+      min-height: 3.5rem;
+    }
+    .mydsv-progress__item:last-child { padding-bottom: 1rem; }
+    .mydsv-progress__rail {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    .mydsv-progress__rail::before {
+      content: "";
+      position: absolute;
+      top: 0.95rem;
+      bottom: -1.35rem;
+      width: 3px;
+      background: #cfd5db;
+    }
+    .mydsv-progress__item:last-child .mydsv-progress__rail::before { display: none; }
+    .mydsv-progress__item.is-done .mydsv-progress__rail::before,
+    .mydsv-progress__item.is-current .mydsv-progress__rail::before {
+      background: var(--dsv-green);
+    }
+    .mydsv-progress__dot {
+      position: relative;
+      z-index: 1;
+      width: 0.55rem;
+      height: 0.55rem;
+      margin-top: 0.35rem;
+      border-radius: 999px;
+      background: var(--dsv-blue);
+      box-sizing: border-box;
+    }
+    .mydsv-progress__item.is-endpoint .mydsv-progress__dot,
+    .mydsv-progress__item.is-current .mydsv-progress__dot {
+      width: 1.05rem;
+      height: 1.05rem;
+      margin-top: 0.12rem;
+      background: var(--dsv-green);
+      border: 0;
+      box-shadow: none;
+    }
+    .mydsv-progress__item.is-future .mydsv-progress__dot {
+      background: #fff;
+      border: 2px solid #9aa3ad;
+      width: 0.65rem;
+      height: 0.65rem;
+    }
+    .mydsv-progress__title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+    }
+    .mydsv-progress__meta {
+      margin: 0.12rem 0 0;
+      color: #333;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      font-weight: 400;
+    }
+
+    .mydsv-tabs {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      margin: 0;
+    }
+    .mydsv-tabs button {
+      flex: 1;
+      appearance: none;
+      border: 0;
+      background: transparent;
+      padding: 0.95rem 0.5rem 0.85rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #8a939c;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+    }
+    .mydsv-tabs button.is-active {
+      color: var(--dsv-tab);
+      border-bottom-color: var(--dsv-tab);
+    }
+
+    .mydsv-panel { padding: 0.75rem 0.75rem 0; }
+    .mydsv-panel[hidden] { display: none !important; }
+
+    .mydsv-card {
+      background: var(--card);
+      border-radius: 4px;
+      margin-bottom: 0.65rem;
+      overflow: hidden;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.03);
+    }
+    .mydsv-section-title {
+      margin: 0;
+      padding: 1rem 1rem 0.85rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+    }
+    .mydsv-fields {
+      padding: 0.15rem 0 0.35rem;
+      display: grid;
+      gap: 0;
+    }
+    .mydsv-field {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid #f0f2f4;
+    }
+    .mydsv-field:last-child { border-bottom: 0; }
+    .mydsv-field__label {
+      margin: 0 0 0.25rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+    .mydsv-field__value {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #2b2b2b;
+      line-height: 1.4;
+      font-weight: 400;
+    }
+    .mydsv-field__value--party {
+      display: grid;
+      gap: 0.2rem;
+    }
+    .mydsv-field__name {
+      font-weight: 700;
+      color: #111;
+    }
+    .mydsv-field__address {
+      color: #4b5563;
+      font-size: 0.9rem;
+    }
+
+    .mydsv-trace-list {
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.15rem 0 0.5rem;
+    }
+    .mydsv-trace-item {
+      background: #fff;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .mydsv-trace-item summary {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1.55rem 1fr 1rem;
+      gap: 0.75rem;
+      align-items: start;
+      padding: 0.95rem 0.95rem;
+      cursor: pointer;
+    }
+    .mydsv-trace-item summary::-webkit-details-marker { display: none; }
+    .mydsv-trace-check {
+      width: 1.2rem;
+      height: 1.2rem;
+      border-radius: 999px;
+      background: var(--dsv-green);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      margin-top: 0.12rem;
+    }
+    .mydsv-trace-check svg { width: 0.72rem; height: 0.72rem; }
+    .mydsv-trace-check.is-pending {
+      background: #fff;
+      border: 2px solid #b0b7bf;
+    }
+    .mydsv-trace-title {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a1a1a;
+    }
+    .mydsv-trace-sub {
+      margin: 0.18rem 0 0;
+      color: #222;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+    .mydsv-trace-chevron {
+      color: #7a848e;
+      font-size: 0.85rem;
+      margin-top: 0.15rem;
+      text-align: right;
+      transition: transform 0.15s ease;
+    }
+    .mydsv-trace-item[open] .mydsv-trace-chevron { transform: rotate(180deg); }
+    .mydsv-trace-body {
+      padding: 0 1rem 1rem 3.45rem;
+      color: #333;
+      font-size: 0.9rem;
+      border-top: 1px solid #f0f2f4;
+      margin-top: -0.15rem;
+      padding-top: 0.75rem;
+    }
+    .mydsv-trace-body p { margin: 0 0 0.45rem; }
+    .mydsv-trace-body p:last-child { margin-bottom: 0; }
+
+    .mydsv-loading,
+    .mydsv-empty {
+      background: #fff;
+      margin: 0.75rem;
+      padding: 1.25rem 1rem;
+      border-radius: 4px;
+    }
+    .mydsv-loading h2,
+    .mydsv-empty h2 {
+      margin: 0 0 0.4rem;
+      font-size: 1.1rem;
+    }
+    .mydsv-loading p,
+    .mydsv-empty p {
+      margin: 0;
+      color: var(--muted);
+    }
+    .mydsv-loading__bar {
+      margin-top: 1rem;
+      height: 4px;
+      background: #e5e7eb;
+      overflow: hidden;
+      border-radius: 999px;
+    }
+    .mydsv-loading__bar span {
+      display: block;
+      width: 40%;
+      height: 100%;
+      background: var(--dsv-blue);
+      animation: mydsv-load 1s ease-in-out infinite;
+    }
+    @keyframes mydsv-load {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(280%); }
+    }
+  </style>
+</head>
+<body>
+  <header class="mydsv-header">
+    <a class="mydsv-logo" href="/" aria-label="DSV home">DSV</a>
+    <button class="mydsv-menu" type="button" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <div class="mydsv-shell">
+    <nav class="mydsv-crumb" aria-label="Breadcrumb">
+      <a href="/">Homepage</a> /
+      <a href="/#track-shipment">Public track and trace</a> /
+      <span class="is-current">Details</span>
+    </nav>
+    <div id="track-result" aria-live="polite"></div>
+  </div>
+
+  <script src="/resource/js/tracking-data.js?v=20261102k"></script>
+  <script src="/resource/js/realtime.js?v=20261102k"></script>
+  <script src="/resource/js/track.js?v=20261102l"></script>
+</body>
+</html>

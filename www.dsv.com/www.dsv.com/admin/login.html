@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administrator Portal · DSV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/resource/admin/css/admin.css?v=20261102p7">
+</head>
+<body>
+  <div class="login">
+    <section class="login-hero" aria-label="Administrator portal">
+      <div class="login-hero__inner">
+        <div class="login-topbar">
+          <div class="login-brand">
+            <div class="login-brand__mark">DSV</div>
+            <div>
+              <strong>DSV</strong>
+              <span>Logistics Solutions</span>
+            </div>
+          </div>
+          <p class="login-slogan">Smarter Logistics. A Stronger Tomorrow.</p>
+        </div>
+        <div class="login-hero__copy">
+          <h1>Administrator Portal</h1>
+          <p>Manage operations, track shipments and keep your logistics business on the move.</p>
+          <div class="login-features">
+            <div class="login-feature">
+              <div class="login-feature__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h13v10H3z"/><path d="M16 10h4l1 3v4h-5V10z"/></svg>
+              </div>
+              <strong>Track Shipments</strong>
+            </div>
+            <div class="login-feature">
+              <div class="login-feature__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 17V9M12 17v-6M16 17V7"/></svg>
+              </div>
+              <strong>View Analytics</strong>
+            </div>
+            <div class="login-feature">
+              <div class="login-feature__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8 2 2 0 1 1-2.8 2.8 1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3 2 2 0 1 1-2.8-2.8 1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8 2 2 0 1 1 2.8-2.8 1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3 2 2 0 1 1 2.8 2.8 1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+              </div>
+              <strong>Manage Operations</strong>
+            </div>
+            <div class="login-feature">
+              <div class="login-feature__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <strong>Control Users</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="login-form" novalidate>
+        <div class="login-card__badge" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h2>Welcome Back</h2>
+        <p class="login-lead">Sign in to access the administration dashboard.</p>
+        <p class="login-error" id="login-error" hidden></p>
+
+        <div class="field">
+          <label for="login-email">Admin Email Address</label>
+          <div class="field-control">
+            <svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+            <input id="login-email" name="email" type="email" required autocomplete="username" placeholder="Enter your email">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <div class="field-control">
+            <svg class="leading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="login-password" name="password" type="password" required autocomplete="current-password" placeholder="Enter your password">
+            <button type="button" class="toggle-pass" id="toggle-pass" aria-label="Show password">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-row">
+          <label class="remember"><input type="checkbox" id="remember-device" checked> Remember this device</label>
+          <a class="forgot" href="#" id="forgot-link">Forgot password?</a>
+        </div>
+
+        <button class="btn-solid" type="submit" id="login-submit">
+          <span id="login-submit-label" style="display:inline-flex;align-items:center;gap:.55rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Secure Login
+          </span>
+        </button>
+
+        <div class="login-secure">
+          <div class="login-secure__line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Authorized Personnel Only
+          </div>
+          <div class="login-secure__banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            This is a secured area. Unauthorized access is prohibited.
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <script src="/resource/admin/js/api.js?v=20261102p7"></script>
+  <script src="/resource/admin/js/login.js?v=20261102p7"></script>
+</body>
+</html>

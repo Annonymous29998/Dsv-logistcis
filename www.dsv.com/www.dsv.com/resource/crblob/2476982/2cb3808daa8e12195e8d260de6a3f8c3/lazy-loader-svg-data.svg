@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -50 150 150">
+  <path fill="none" stroke="#ec0016" stroke-linecap="round" stroke-width="10" d="M75 75a53 53 0 0 0 53-53">
+    <animateTransform attributeName="transform" calcMode="spline" dur="2s" keySplines="0 0 .59 1; 0.42 0 1 1; 0 0 0 0" keyTimes="0;0.5;0.9;1" repeatCount="indefinite" type="rotate" values="0 75 22; -370 75 22; -360 75 22; -360 75 22"/>
+  </path>
+  <g>
+    <path fill="none" stroke="#fff" stroke-linecap="round" stroke-width="10" d="M22 21a53 53 0 0 0 106 0"/>
+    <path fill="none" stroke="#d2d1d8" stroke-linecap="round" stroke-width="10" d="M75 75a53 53 0 0 0 53-53"/>
+    <animateTransform attributeName="transform" calcMode="spline" dur="2s" keySplines="0 0 .59 1; 0.42 0 1 1; 0 0 0 0" keyTimes="0;0.5;0.9;1" repeatCount="indefinite" type="rotate" values="0 75 22; 370 75 22; 360 75 22; 360 75 22"/>
+  </g>
+</svg>

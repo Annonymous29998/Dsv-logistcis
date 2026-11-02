@@ -1,0 +1,23 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/en.html" },
+    { "source": "/en", "destination": "/en.html" },
+    { "source": "/admin", "destination": "/admin/login.html" },
+    { "source": "/admin/login", "destination": "/admin/login.html" },
+    { "source": "/admin/login/", "destination": "/admin/login.html" },
+    { "source": "/admin/app", "destination": "/api/admin/guard" },
+    { "source": "/admin/app/", "destination": "/api/admin/guard" },
+    { "source": "/admin/dashboard", "destination": "/api/admin/guard" },
+    { "source": "/new/tracking/shipment-details-public", "destination": "/shipment-details-public.html" },
+    { "source": "/tracking/shipment-details-public", "destination": "/shipment-details-public.html" },
+    { "source": "/shipment-details-public", "destination": "/shipment-details-public.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
+}

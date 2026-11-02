@@ -1,0 +1,318 @@
+@media only screen and (min-width:576px) {
+    .content-box {
+        padding-inline: calc(min(1400px, 100%)*.05)
+    }
+    .font-h1 {
+        font-size: 4rem
+    }
+    .font-h2 {
+        font-size: 3rem
+    }
+    .font-h3 {
+        font-size: 2.25rem
+    }
+    .header-content__logo-icon {
+        font-size: 80px
+    }
+    .header-user-menu__button-text {
+        display: block;
+        text-align: left
+    }
+    .mobile-navigation__content {
+        left: 20%;
+        padding: 24px 24px 32px
+    }
+    .mobile-navigation__backdrop {
+        background-color: rgba(24, 24, 24, .5);
+        inset: 0;
+        position: absolute
+    }
+    .mobile-navigation__level--inner {
+        row-gap: 24px
+    }
+    .mobile-navigation__divider--inner {
+        margin-block-end: 24px
+    }
+    .main-navigation__teaser {
+        margin-block-start: 66px
+    }
+    .menu-tracking-overlay__track {
+        align-items: flex-end;
+        flex-direction: row;
+        gap: 24px
+    }
+    .grid {
+        gap: 0 calc(min(1400px, 100%)*.025)
+    }
+    .grid-center--s-8 {
+        grid-column: 3/11
+    }
+    .cta-list__container {
+        column-gap: calc(min(1400px, 100vw)*.025);
+        grid-template-columns: repeat(2, 1fr);
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .cta-list__container.cta-list__container--one-column {
+        grid-template-columns: 1fr
+    }
+    .cta-list__container.cta-list__container--one-column .cta-list__button {
+        width: fit-content
+    }
+    .cta-list__item {
+        padding-inline: 20px
+    }
+    .blog {
+        padding-block: 80px
+    }
+    .contact--image {
+        padding: 48px 40px
+    }
+    .contact-list-single-element {
+        padding-block: 80px
+    }
+    .dialog {
+        --dialog-block-spacing: 80px;
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .dialog--overlay .dialog__content {
+        padding-inline: 32px
+    }
+    .dialog--sidebar {
+        grid-template-columns: 3fr 9fr;
+        padding-inline: 4.3181818182% 0
+    }
+    .dialog__footer {
+        margin: 40px
+    }
+    .dialog--content-box {
+        padding-inline: 5%
+    }
+    .error {
+        padding-block: 160px 30px
+    }
+    .error__animation {
+        margin-block-start: 100px;
+        margin-inline-end: 0;
+        width: 40.0462242766%
+    }
+    .form-grid {
+        gap: 0 calc(min(1400px, 100vw)*.025)
+    }
+    .form-grid--standalone {
+        max-width: calc(min(1400px, 100%)*.7458)
+    }
+    .tracking-form__container {
+        width: 74.58%
+    }
+    .tracking-form__title {
+        margin-block-end: 30px
+    }
+    .job-summary__details {
+        grid-column: 7/13
+    }
+    .job-summary__action-container {
+        flex-direction: row
+    }
+    .image-gallery__slide-container {
+        gap: 16px
+    }
+    .image-gallery__single-slide-container,
+    .image-gallery__slide-container {
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .image-gallery--single .image-gallery__slide--portrait {
+        margin-inline: 8.5648251033%
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait {
+        width: 65.7406995866%
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape {
+        width: 100%
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait:first-child {
+        margin-inline-start: calc(min(1400px, 100vw)*.15416)
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait:last-child {
+        margin-inline-end: calc(min(1400px, 100vw)*.15416)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape:first-child {
+        margin-inline-start: calc(min(1400px, 100vw)*.07708)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape:last-child {
+        margin-inline-end: calc(min(1400px, 100vw)*.07708)
+    }
+    .search-filter-dialog__content {
+        padding: 40px
+    }
+    .search-form--dialog,
+    .search-form--search {
+        column-gap: 24px;
+        grid-template-areas: "src btn";
+        grid-template-columns: auto fit-content(30%)
+    }
+    .search-form__button {
+        margin-block-start: 0;
+        width: auto
+    }
+    .search-result__header-text {
+        margin-block-start: 9px
+    }
+    .search-result-header__text-filters {
+        grid-template-areas: "num flt btn"
+    }
+    .regular-stage__area-txt {
+        margin-block: 32px
+    }
+    .hero-stage__txt-wrapper,
+    .regular-stage__txt-wrapper {
+        padding-inline: calc(min(1400px, 100%)*.05)
+    }
+    .rte-section--narrow,
+    .rte-section--standalone {
+        max-width: calc(min(1400px, 100%)*.89996)
+    }
+    table {
+        border-spacing: calc(min(1400px, 100vw)*.025) 0;
+        margin-inline-start: calc(min(1400px, 100vw)*-.025)
+    }
+    .table-wrapper__cell {
+        min-width: calc(min(1400px, 100vw)*.32186)
+    }
+    .self-service-wrapper {
+        padding-block: 60px;
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .self-service-teaser {
+        grid-template-areas: "icn tit nav" "icn bod nav";
+        grid-template-columns: min-content auto 1fr;
+        grid-template-rows: auto 1fr;
+        padding: 24px 20px
+    }
+    .self-service__area-txt {
+        padding: 32px 24px
+    }
+    .self-service-teaser__icon {
+        align-self: center;
+        display: inline-block;
+        font-size: 30px;
+        margin-inline-end: 24px
+    }
+    .self-service-teaser__title {
+        margin-inline: 0
+    }
+    .self-service-teaser__text {
+        margin-block-start: 12px
+    }
+    .self-service-teaser__nav {
+        align-self: center;
+        margin-inline-start: 24px
+    }
+    .sequence__items-wrapper {
+        gap: calc(min(1400px, 100vw)*.025);
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .sequence__item {
+        width: 65.7406995866%
+    }
+    .tags-panel {
+        margin-block-end: 60px
+    }
+    .tablist-wrapper {
+        padding-block-start: 80px
+    }
+    .tablist-title {
+        margin-block-end: 56px
+    }
+    .tablist-menu--expanded {
+        padding-inline: calc(min(1400px, 100vw)*.05002);
+        scroll-padding-inline: calc(min(1400px, 100vw)*.05002)
+    }
+    .featured-teasers {
+        gap: calc(min(1400px, 100vw)*.025);
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .featured-teaser {
+        width: 40.0462242766%
+    }
+    .tag-teasers-wrapper {
+        column-gap: calc(min(1400px, 100%)*.025);
+        grid-template-columns: repeat(2, 1fr)
+    }
+    .tag-teasers__pagination {
+        margin-block-start: 60px
+    }
+    .teaser-list-c-wrapper {
+        padding-block: 80px
+    }
+    .teaser-list-c__container {
+        gap: calc(min(1400px, 100vw)*.025);
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .teaser-list-c__list_item {
+        width: 65.7406995866%
+    }
+    .teaser-list-c__teaser--solo {
+        padding-inline: calc(min(1400px, 100%)*.20418)
+    }
+    .teaser-list-d {
+        padding-block: 80px
+    }
+    .teaser-list-d__container {
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .teaser-list-d__teaser {
+        padding: 24px
+    }
+    .jobs-teasers__container {
+        gap: calc(min(1400px, 100vw)*.025);
+        scroll-padding-inline: calc(min(1400px, 100%)*.20418)
+    }
+    .jobs-teasers__container,
+    .jobs-teasers__solo-container {
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .jobs-teasers__slide {
+        width: 65.7406995866%
+    }
+    .testimonials__container {
+        gap: calc(min(1400px, 100%)*.025);
+        padding-inline: calc(min(1400px, 100%)*.05002)
+    }
+    .testimonials__testimonial {
+        width: 100%
+    }
+    .ticker__container {
+        grid-template-areas: "icn inf nav" "icn bod bod";
+        grid-template-columns: min-content auto 1fr;
+        grid-template-rows: auto 1fr
+    }
+    .ticker__info-label {
+        margin-inline-end: 16px
+    }
+    .ticker__icon {
+        align-self: center;
+        color: #0a34a1;
+        display: inline-block;
+        font-size: 29px;
+        grid-area: icn
+    }
+    .ticker--warning .ticker__info-label {
+        display: inline
+    }
+    .tracking-overlay {
+        margin-inline: 32px
+    }
+    .context-menu {
+        inset-inline-end: 5%
+    }
+    .chatbot-action {
+        inset-block-end: 0;
+        max-height: 600px;
+        padding-inline: 0;
+        position: absolute;
+        width: 400px
+    }
+    .banner {
+        padding: 48px 40px
+    }
+}

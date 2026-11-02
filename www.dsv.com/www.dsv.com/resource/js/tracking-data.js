@@ -1,0 +1,1 @@
+window.DSV_SHIPMENTS = {};

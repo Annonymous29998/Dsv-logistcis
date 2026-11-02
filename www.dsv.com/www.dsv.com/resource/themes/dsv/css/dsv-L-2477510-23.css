@@ -1,0 +1,386 @@
+@media only screen and (min-width:992px) {
+    .content-box {
+        padding-inline: calc(min(1400px, 100%)*.02419)
+    }
+    .header-content {
+        display: grid;
+        gap: 24px;
+        grid-template-areas: "logo user" "menu menu"
+    }
+    .header-content__logo {
+        grid-area: logo
+    }
+    .header-content-menu {
+        align-items: center;
+        display: flex;
+        flex-grow: 1;
+        gap: 8px 24px;
+        grid-area: menu
+    }
+    .header-mobile-menu {
+        display: none
+    }
+    .header-user-menu {
+        gap: 20px;
+        grid-area: user
+    }
+    .header-user-menu__button--localization {
+        display: flex
+    }
+    .header-cta-buttons {
+        display: flex;
+        gap: 8px;
+        margin-inline-start: 4px
+    }
+    .header-cta-buttons--mobile,
+    .mobile-navigation {
+        display: none
+    }
+    .main-navigation {
+        display: block
+    }
+    .main-navigation__all-levels-wrapper,
+    .navigation-background {
+        background-color: #fff;
+        border-bottom: 1px solid #eff0f0;
+        inset-block-start: 100%;
+        inset-inline: 0;
+        opacity: 0;
+        position: absolute
+    }
+    .navigation-background {
+        display: none;
+        height: min(80vh, 540px);
+        z-index: -1
+    }
+    .main-navigation__all-levels-wrapper {
+        margin-block-start: 1px;
+        max-height: min(80vh, 540px)
+    }
+    .main-navigation__all-levels-wrapper--show,
+    .navigation-background--show {
+        opacity: 1
+    }
+    .navigation-background--show {
+        display: block
+    }
+    .main-navigation__item-text {
+        margin-block-start: 6px
+    }
+    .main-navigation__level {
+        max-height: min(80vh, 540px);
+        overflow-y: auto;
+        padding-block: 40px;
+        scrollbar-color: #cdd0d3;
+        scrollbar-width: thin
+    }
+    .main-navigation__level::-webkit-scrollbar {
+        background-color: transparent;
+        width: 6px
+    }
+    .main-navigation__level-item:first-child {
+        grid-column: 1/4
+    }
+    .main-navigation__level-item:nth-child(2) {
+        grid-column: 4/7
+    }
+    .main-navigation__level-item:nth-child(3) {
+        grid-column: 7/10
+    }
+    .main-navigation__level-item:nth-child(4) {
+        grid-column: 10/13
+    }
+    .main-navigation__level-item:has(.main-navigation__teaser) {
+        grid-column: 9/13
+    }
+    .main-navigation__level-wrapper {
+        height: min(80vh, 540px)
+    }
+    .main-navigation__element--hide {
+        display: none
+    }
+    .main-navigation__teaser {
+        margin-block-start: 0
+    }
+    .main-navigation__teaser-picture-area {
+        height: 460px
+    }
+    .grid {
+        gap: 0 calc(min(1400px, 100%)*.01613)
+    }
+    .grid-center--l-4 {
+        grid-column: 5/9
+    }
+    .grid-center--l-8 {
+        grid-column: 3/11
+    }
+    .cta-list__container {
+        column-gap: calc(min(1400px, 100vw)*.01613);
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .cta-list__container--two-columns {
+        padding-inline: calc(min(1400px, 100%)*.18547)
+    }
+    .cta-list__item {
+        padding-inline: 32px
+    }
+    .footer__main-section-wrapper {
+        column-gap: calc(min(1400px, 100%)*.01613);
+        grid-template-columns: repeat(4, 1fr)
+    }
+    .booking-tool-content-wrapper,
+    .booking-tool-wrapper {
+        display: grid;
+        gap: inherit;
+        grid-template-columns: subgrid
+    }
+    .booking-tool-login--wrapper {
+        display: flex;
+        grid-column: 1/4
+    }
+    .booking-tool-login__control {
+        align-items: start
+    }
+    .booking-tool {
+        grid-column: 4/13
+    }
+    .contact--image {
+        padding-inline: 80px
+    }
+    .contact.standalone {
+        align-items: center;
+        flex-direction: row;
+        gap: 32px;
+        justify-content: space-between;
+        padding: 32px 60px;
+        text-align: start
+    }
+    .contact.standalone .contact__button {
+        margin-block-start: 0;
+        white-space: nowrap
+    }
+    .contact-list-single-element {
+        grid-template-areas: "txt txt txt txt   txt txt cnt cnt   cnt cnt cnt cnt"
+    }
+    .contact-list-single-element__contact {
+        margin-block-start: 0
+    }
+    .contact-list-single-element__header {
+        flex-direction: column;
+        gap: 16px;
+        justify-content: flex-start
+    }
+    .dialog {
+        padding-inline: calc(min(1400px, 100%)*.18547)
+    }
+    .dialog--sidebar {
+        grid-template-columns: 6fr 6fr;
+        padding-inline: 1.5391818182% 0
+    }
+    .dialog--content-box {
+        padding-inline: 2.419%
+    }
+    .error__animation {
+        margin-block-start: 80px;
+        width: 40.6779661017%
+    }
+    .feature-stage__features {
+        grid-template-rows: auto
+    }
+    .feature-wrapper--primary:has(+.feature-wrapper--secondary) {
+        grid-column: 1/10
+    }
+    .feature-stage__features .feature-wrapper--secondary {
+        display: flex;
+        flex-direction: column;
+        grid-column: 10/13;
+        grid-row: 1/2
+    }
+    .form-grid {
+        gap: 0 calc(min(1400px, 100vw)*.01613)
+    }
+    .form-grid--standalone {
+        max-width: calc(min(1400px, 100%)*.62907)
+    }
+    .tracking-form__container {
+        width: 79.037%
+    }
+    .tracking-form--primary {
+        padding: 40px 80px 60px
+    }
+    .tracking-form__fields {
+        gap: 35px
+    }
+    .job-summary__details {
+        grid-column: 9/13
+    }
+    .image-gallery__title {
+        padding-inline: calc(min(1400px, 100%)*.18547)
+    }
+    .image-gallery__slide-container {
+        padding-inline: calc(min(1400px, 100%)*.10482)
+    }
+    .image-gallery__single-slide-container {
+        padding-inline: calc(min(1400px, 100%)*.18547)
+    }
+    .image-gallery--single .image-gallery__slide--portrait {
+        margin-inline: 20.4081632653%
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait {
+        width: 59.1836734694%
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape {
+        width: 79.5918367347%
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait:first-child {
+        margin-inline-start: calc(min(1400px, 100vw)*.1613)
+    }
+    .image-gallery--multiple .image-gallery__slide--portrait:last-child {
+        margin-inline-end: calc(min(1400px, 100vw)*.1613)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape:first-child {
+        margin-inline-start: calc(min(1400px, 100vw)*.08065)
+    }
+    .image-gallery--multiple .image-gallery__slide--landscape:last-child {
+        margin-inline-end: calc(min(1400px, 100vw)*.08065)
+    }
+    .search-form--search,
+    .search-result__form-title {
+        width: 66.1016949153%
+    }
+    .search-form--jobsearch {
+        display: grid;
+        grid-template-areas: "src src src src src loc loc loc loc loc btn btn"
+    }
+    .regular-stage__area-txt {
+        width: calc(min(1400px, 100%)*.62907)
+    }
+    .hero-stage__area-txt,
+    .regular-stage__area-txt {
+        margin-inline-start: calc(min(1400px, 100%)*.02419)
+    }
+    .hero-stage__area-txt {
+        width: calc(min(1400px, 100%)*.79037)
+    }
+    .rte-section--standalone {
+        max-width: calc(min(1400px, 100%)*.95167)
+    }
+    .rte-section--narrow {
+        max-width: calc(min(1400px, 100%)*.62907)
+    }
+    table {
+        border-spacing: calc(min(1400px, 100vw)*.01613) 0;
+        margin-inline-start: calc(min(1400px, 100vw)*-.01613)
+    }
+    .table-wrapper__cell {
+        min-width: calc(min(1400px, 100vw)*.22582)
+    }
+    .self-service-wrapper {
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .self-service-teaser {
+        padding: 32px 24px
+    }
+    .sequence__item {
+        --picture-size: 200px
+    }
+    .sequence__items-wrapper {
+        gap: calc(min(1400px, 100vw)*.01613);
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .sequence__item {
+        width: 32.2033898305%
+    }
+    .subnavigation-mobile {
+        display: none
+    }
+    .subnavigation-desktop {
+        display: flex;
+        padding-block: 24px
+    }
+    .subnavigation-desktop__title {
+        flex-shrink: 0;
+        white-space: nowrap
+    }
+    .subnavigation-desktop__content {
+        border-top: 1px solid #eff0f0;
+        margin-block-start: 24px;
+        padding-block-start: 24px
+    }
+    .subnavigation-desktop__links {
+        display: flex;
+        flex-wrap: wrap;
+        margin-block: 0;
+        padding: 0;
+        row-gap: 12px
+    }
+    .subnavigation-desktop__link {
+        border-inline-start: 1px solid #181818;
+        margin-inline-start: 16px;
+        padding-inline-start: 16px
+    }
+    .tablist-menu--expanded {
+        padding-inline: calc(min(1400px, 100vw)*.02417);
+        scroll-padding-inline: calc(min(1400px, 100vw)*.02417)
+    }
+    .tablist-menu__item {
+        max-width: 30%
+    }
+    .featured-teasers {
+        gap: calc(min(1400px, 100vw)*.01613);
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .featured-teaser {
+        width: 23.7288135593%
+    }
+    .tag-teasers-wrapper {
+        column-gap: calc(min(1400px, 100%)*.01613);
+        grid-template-columns: repeat(3, 1fr)
+    }
+    .teaser-list-c__container {
+        gap: calc(min(1400px, 100vw)*.01613);
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .teaser-list-c__list_item {
+        width: 32.2033898305%
+    }
+    .teaser-list-c__teaser--solo {
+        padding-inline: calc(min(1400px, 100%)*.26612)
+    }
+    .teaser-list-c__pager {
+        display: none
+    }
+    .teaser-list-d__container {
+        column-gap: calc(min(1400px, 100vw)*.01613);
+        grid-template-columns: repeat(3, 1fr);
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .teaser-list-d__container--two-columns {
+        grid-template-columns: repeat(2, 1fr);
+        padding-inline: calc(min(1400px, 100%)*.18547)
+    }
+    .jobs-teasers__container {
+        gap: calc(min(1400px, 100vw)*.01613);
+        padding-inline: calc(min(1400px, 100%)*.02417);
+        scroll-padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .jobs-teasers__solo-container {
+        padding-inline: calc(min(1400px, 100%)*.26612)
+    }
+    .jobs-teasers__slide {
+        width: 40.6779661017%
+    }
+    .testimonials__container {
+        gap: calc(min(1400px, 100%)*.01613);
+        padding-inline: calc(min(1400px, 100%)*.02417)
+    }
+    .testimonials__testimonial {
+        width: 83.0508474576%
+    }
+    .context-menu {
+        inset-inline-end: 2.419%
+    }
+    .banner {
+        padding-inline: 80px
+    }
+}
