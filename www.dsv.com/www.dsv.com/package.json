@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "DSV tracking site + admin APIs for Vercel + Supabase",
   "engines": {
-    "node": "20.x"
+    "node": "26.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
