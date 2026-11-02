@@ -260,7 +260,7 @@
       var el = document.createElement("div");
       var who = (m.from === "agent" || m.from === "bot" || m.from === "system") ? "bot" : "user";
       el.className = "dsv-support-chat__msg dsv-support-chat__msg--" + who;
-      el.textContent = m.from === "agent" ? ("Support: " + m.text) : m.text;
+      el.textContent = m.from === "agent" ? ("🕵️ Agent: " + m.text) : m.text;
       messages.appendChild(el);
     });
     renderedCount = (list || []).length;
