@@ -96,11 +96,6 @@
             .featured-teasers.js-auto-track > .featured-teaser {
                 width: min(82vw, 320px);
             }
-            .hero-stage.js-hero-rotator .hero-stage__area-cinema {
-                min-height: 200px;
-                height: clamp(200px, 48vw, 260px);
-                max-height: 260px;
-            }
             .banner {
                 min-height: 200px !important;
                 max-height: 240px;
@@ -355,6 +350,47 @@
         .hero-stage.js-hero-rotator .hero-stage__area-txt {
             color: #fff;
             z-index: 3;
+        }
+        /* Mobile: stack image + copy in one frame (theme reserved a 400px empty row) */
+        @media (max-width: 991px) {
+            .hero-stage.js-hero-rotator {
+                display: grid !important;
+                grid-template: "stack" minmax(320px, 58vh) / minmax(0, 1fr) !important;
+                min-height: 0 !important;
+            }
+            .hero-stage.js-hero-rotator .hero-stage__area-cinema,
+            .hero-stage.js-hero-rotator .hero-stage__area-txt {
+                grid-area: stack !important;
+            }
+            .hero-stage.js-hero-rotator .hero-stage__area-cinema {
+                min-height: 320px !important;
+                height: 100% !important;
+                max-height: none !important;
+            }
+            .hero-stage.js-hero-rotator .hero-stage__area-cinema:after {
+                background: linear-gradient(
+                    180deg,
+                    rgba(0, 18, 48, 0.12) 0%,
+                    rgba(0, 18, 48, 0.45) 48%,
+                    rgba(0, 18, 48, 0.82) 100%
+                );
+            }
+            .hero-stage.js-hero-rotator .hero-stage__area-txt {
+                background: transparent !important;
+                display: flex !important;
+                align-items: flex-end;
+                align-self: stretch;
+                width: 100%;
+                padding: 1.1rem 1rem 1.4rem !important;
+                box-sizing: border-box;
+            }
+            .hero-stage--w-feature-stage .hero-stage.js-hero-rotator .hero-stage__area-txt {
+                padding-block-end: 1.4rem;
+            }
+            .hero-stage.js-hero-rotator .hero-stage__txt-wrapper {
+                width: 100%;
+                max-width: none;
+            }
         }
         .hero-stage.js-hero-rotator .hero-stage__txt-wrapper {
             max-width: 42rem;
