@@ -80,10 +80,52 @@
         .featured-teaser__photo {
             display: block;
             width: 100%;
-            aspect-ratio: 3 / 4;
+            aspect-ratio: 16 / 10;
+            max-height: 260px;
+            height: auto;
             object-fit: cover;
             object-position: center;
             background: #d7dde3;
+        }
+        /* Keep photo blocks desktop-sized on phones (theme banners are 500px tall) */
+        @media (max-width: 991px) {
+            .featured-teaser__photo {
+                aspect-ratio: 16 / 9;
+                max-height: 220px;
+            }
+            .featured-teasers.js-auto-track > .featured-teaser {
+                width: min(82vw, 320px);
+            }
+            .hero-stage.js-hero-rotator .hero-stage__area-cinema {
+                min-height: 200px;
+                height: clamp(200px, 48vw, 260px);
+                max-height: 260px;
+            }
+            .banner {
+                min-height: 200px !important;
+                max-height: 240px;
+                height: 220px;
+            }
+            .banner .banner__background,
+            .banner .lazy-placeholder-loader,
+            .banner picture,
+            .banner img {
+                height: 100% !important;
+                max-height: 240px;
+                object-fit: cover;
+                object-position: center;
+            }
+            .teaser-list-d__teaser--image {
+                min-height: 180px !important;
+                max-height: 200px;
+                height: 190px;
+            }
+        }
+        @media (min-width: 992px) {
+            .featured-teaser__photo {
+                aspect-ratio: 3 / 2;
+                max-height: 280px;
+            }
         }
         /* Reliable mobile hamburger menu (theme JS binding is flaky offline) */
         .mobile-navigation {
