@@ -1210,28 +1210,39 @@ body.nav-open .overlay-nav { opacity: 1; pointer-events: auto; }
   position: fixed;
   inset: 0;
   z-index: 79;
-  display: grid;
-  place-items: end end;
-  padding: 1rem 1.25rem 5.25rem;
+  display: block;
+  pointer-events: none;
 }
 .admin-chat-inbox[hidden] { display: none !important; }
 .admin-chat-inbox__backdrop {
   position: absolute;
   inset: 0;
   background: rgba(7, 22, 40, .28);
+  pointer-events: auto;
+  border: 0;
 }
 .admin-chat-inbox__panel {
-  position: relative;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
-  width: min(380px, calc(100vw - 2rem));
-  max-height: min(68vh, 540px);
+  width: min(400px, 100vw);
+  max-height: none;
+  height: 100%;
   background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 22px 56px rgba(7, 22, 40, .28);
+  border-radius: 0;
+  border-left: 1px solid var(--line);
+  box-shadow: -18px 0 48px rgba(7, 22, 40, .22);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: create-modal-in .18s ease;
+  pointer-events: auto;
+  animation: admin-chat-inbox-in .2s ease;
+}
+@keyframes admin-chat-inbox-in {
+  from { transform: translateX(100%); opacity: .96; }
+  to { transform: translateX(0); opacity: 1; }
 }
 .admin-chat-inbox__head {
   display: flex;
@@ -1327,13 +1338,8 @@ body.nav-open .overlay-nav { opacity: 1; pointer-events: auto; }
     right: 1rem;
     bottom: 1rem;
   }
-  .admin-chat-inbox {
-    place-items: end center;
-    padding: 1rem 1rem 5rem;
-  }
   .admin-chat-inbox__panel {
-    width: 100%;
-    max-height: min(72vh, 620px);
+    width: min(100vw, 100%);
   }
 }
 
