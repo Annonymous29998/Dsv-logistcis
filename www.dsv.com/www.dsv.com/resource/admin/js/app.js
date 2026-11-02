@@ -332,9 +332,7 @@
         (reason ? '<div class="span-2"><span>Status reason</span><strong>' + AdminUtils.escapeHtml(reason) + "</strong></div>" : "") +
         (noticeText ? '<div class="span-2 backend-note">' + AdminUtils.escapeHtml(noticeText) + "</div>" : "") +
         (packageImage
-          ? '<div class="span-2"><a class="pkg-preview-link" href="' +
-            AdminUtils.escapeHtml(packageImage) +
-            '" target="_blank" rel="noopener">Preview package</a></div>'
+          ? '<div class="span-2"><button type="button" class="pkg-preview-link" data-package-preview>Preview package</button></div>'
           : "") +
       "</div>" +
       '<h3 style="margin:0 0 .7rem;font-size:.95rem">Scan timeline</h3>' +
@@ -344,6 +342,47 @@
             AdminUtils.escapeHtml(ev.location) + "</span><time>" + AdminUtils.escapeHtml(ev.date) + "</time></li>";
         }).join("") +
       "</ol>";
+    var body = document.getElementById("drawer-body");
+    if (packageImage && body) {
+      body.dataset.packageImage = packageImage;
+      body.onclick = function (event) {
+        var btn = event.target.closest("[data-package-preview]");
+        if (!btn) return;
+        event.preventDefault();
+        openAdminPackagePreview(body.dataset.packageImage);
+      };
+    } else if (body) {
+      delete body.dataset.packageImage;
+      body.onclick = null;
+    }
+  }
+
+  function closeAdminPackagePreview() {
+    var existing = document.getElementById("admin-package-lightbox");
+    if (existing) existing.remove();
+    document.body.classList.remove("admin-lightbox-open");
+  }
+
+  function openAdminPackagePreview(src) {
+    if (!src) return;
+    closeAdminPackagePreview();
+    var modal = document.createElement("div");
+    modal.id = "admin-package-lightbox";
+    modal.className = "admin-package-lightbox";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Package preview");
+    modal.innerHTML =
+      '<button type="button" class="admin-package-lightbox__backdrop" data-package-close aria-label="Close preview"></button>' +
+      '<div class="admin-package-lightbox__panel">' +
+        '<button type="button" class="admin-package-lightbox__close" data-package-close aria-label="Close">&times;</button>' +
+        '<img src="' + AdminUtils.escapeHtml(src) + '" alt="Package photo">' +
+      "</div>";
+    document.body.appendChild(modal);
+    document.body.classList.add("admin-lightbox-open");
+    modal.addEventListener("click", function (event) {
+      if (event.target.closest("[data-package-close]")) closeAdminPackagePreview();
+    });
   }
 
   function askReason(options) {

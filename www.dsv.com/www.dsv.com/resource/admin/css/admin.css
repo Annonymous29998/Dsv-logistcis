@@ -777,6 +777,72 @@ tbody tr:hover { background: #f8fafc; }
   color: var(--muted); font-size: .9rem; line-height: 1.45;
 }
 .backend-note strong { color: var(--ink); }
+.pkg-preview-link {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.pkg-preview-link:hover { color: #0b3d91; }
+body.admin-lightbox-open { overflow: hidden; }
+.admin-package-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.admin-package-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 20, 50, 0.55);
+  cursor: pointer;
+}
+.admin-package-lightbox__panel {
+  position: relative;
+  z-index: 1;
+  width: min(920px, 100%);
+  max-height: min(86vh, 900px);
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 22px 60px rgba(0, 20, 50, 0.35);
+  padding: .75rem;
+}
+.admin-package-lightbox__panel img {
+  display: block;
+  width: 100%;
+  max-height: calc(86vh - 2rem);
+  object-fit: contain;
+  background: #f3f5f8;
+  border-radius: 10px;
+}
+.admin-package-lightbox__close {
+  position: absolute;
+  top: .55rem;
+  right: .55rem;
+  z-index: 2;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.95);
+  color: #111;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
 .note-list { display: grid; gap: .65rem; }
 .note {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .65rem; align-items: start;
