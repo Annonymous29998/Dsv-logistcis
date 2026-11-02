@@ -96,19 +96,48 @@
             .featured-teasers.js-auto-track > .featured-teaser {
                 width: min(82vw, 320px);
             }
+            /* Auto height so title/copy are never clipped (theme uses justify-end) */
             .banner {
-                min-height: 200px !important;
-                max-height: 240px;
-                height: 220px;
+                min-height: 0 !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible;
+                padding: 1.35rem 1.15rem 1.5rem !important;
+                justify-content: flex-end;
             }
             .banner .banner__background,
             .banner .lazy-placeholder-loader,
             .banner picture,
             .banner img {
+                position: absolute !important;
+                inset: 0 !important;
+                width: 100% !important;
                 height: 100% !important;
-                max-height: 240px;
+                max-height: none !important;
                 object-fit: cover;
                 object-position: center;
+            }
+            .banner .banner__background,
+            .banner lazy-loaded-image {
+                z-index: 0;
+            }
+            .banner__title,
+            .banner__text,
+            .banner__button {
+                position: relative;
+                z-index: 1;
+            }
+            .banner__title {
+                display: block;
+                line-height: 1.2;
+                overflow: visible;
+                padding-top: 0.15rem;
+            }
+            .banner__text {
+                margin-block-start: 0.85rem !important;
+            }
+            .banner__button {
+                margin-block-start: 1rem !important;
             }
             .teaser-list-d__teaser--image {
                 min-height: 180px !important;
