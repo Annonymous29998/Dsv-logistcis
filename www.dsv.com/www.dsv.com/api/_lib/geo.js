@@ -268,18 +268,25 @@ async function buildRoutePlan(fromLabel, toLabel, fromLat, fromLon, toLat, toLon
 }
 
 function timelineForStatus(plannedEvents, status) {
+  // FedEx-style seed: only the latest scan that matches the starting status.
+  // Later hubs appear over time via progressShipment — never dump the full plan up front.
   const s = String(status || "in-transit").toLowerCase();
-  let allowed;
-  if (s === "label-created" || s === "pending") allowed = new Set(["LABEL CREATED"]);
-  else if (s === "out-for-delivery") allowed = new Set(["LABEL CREATED", "PACKAGE RECEIVED BY DSV", "IN TRANSIT", "OUT FOR DELIVERY"]);
-  else if (s === "delivered") allowed = new Set(["LABEL CREATED", "PACKAGE RECEIVED BY DSV", "IN TRANSIT", "OUT FOR DELIVERY", "DELIVERED"]);
-  else allowed = new Set(["LABEL CREATED", "PACKAGE RECEIVED BY DSV", "IN TRANSIT"]);
+  let stopTitle = "LABEL CREATED";
+  if (s === "in-transit") stopTitle = "PACKAGE RECEIVED BY DSV";
+  else if (s === "out-for-delivery") stopTitle = "OUT FOR DELIVERY";
+  else if (s === "delivered") stopTitle = "DELIVERED";
+  else if (s === "label-created" || s === "pending") stopTitle = "LABEL CREATED";
 
   const out = [];
   for (const ev of plannedEvents || []) {
-    if (!allowed.has(ev.title)) break;
     out.push({ title: ev.title, location: ev.location, date: ev.date });
-    if ((s === "label-created" || s === "pending") && ev.title === "LABEL CREATED") break;
+    if (ev.title === stopTitle) break;
+    // If pick-up isn't in the plan yet, stop after the first IN TRANSIT for in-transit seeds.
+    if (stopTitle === "PACKAGE RECEIVED BY DSV" && ev.title === "IN TRANSIT") break;
+  }
+  if (!out.length && plannedEvents && plannedEvents[0]) {
+    const ev = plannedEvents[0];
+    out.push({ title: ev.title, location: ev.location, date: ev.date });
   }
   return out;
 }

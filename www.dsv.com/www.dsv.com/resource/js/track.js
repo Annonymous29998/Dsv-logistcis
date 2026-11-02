@@ -565,50 +565,47 @@
     var senderPlace = data.senderAddress || addressLine(data.fromLocation);
     var receiverPlace = data.receiverAddress || addressLine(data.toLocation);
     var timeline = data.timeline || [];
-    var lastIdx = Math.max(0, timeline.length - 1);
+    // FedEx-style: only show history that has already taken place (no future est. hubs).
+    var occurred = timeline.filter(function (_event, index) {
+      return index <= currentIdx;
+    });
+    if (!occurred.length && timeline.length) occurred = [timeline[0]];
+    var lastIdx = Math.max(0, occurred.length - 1);
 
-    var progressItems = timeline
+    var progressItems = occurred
       .map(function (event, index) {
         var label = milestoneLabel(event.title);
         var place = shortPlace(event.location);
         var dateLine = formatDsvDate(event.date);
         var detail = label === "BOOKED" ? "Booking date" : place;
         var classes = ["mydsv-progress__item"];
-        if (index < currentIdx) classes.push("is-done");
-        if (index === currentIdx) classes.push("is-current");
-        if (index > currentIdx) classes.push("is-future");
-        if (index === 0 || (index === lastIdx && index <= currentIdx) || index === currentIdx) {
-          classes.push("is-endpoint");
-        }
+        if (index < lastIdx) classes.push("is-done");
+        if (index === lastIdx) classes.push("is-current");
+        if (index === 0 || index === lastIdx) classes.push("is-endpoint");
         return (
           '<li class="' + classes.join(" ") + '">' +
             '<div class="mydsv-progress__rail" aria-hidden="true"><span class="mydsv-progress__dot"></span></div>' +
             "<div>" +
               '<p class="mydsv-progress__title">' + escapeHtml(label) + "</p>" +
               '<p class="mydsv-progress__meta">' + escapeHtml(detail) + "</p>" +
-              '<p class="mydsv-progress__meta">' +
-                (index > currentIdx ? "est. " : "") +
-                escapeHtml(dateLine) +
-              "</p>" +
+              '<p class="mydsv-progress__meta">' + escapeHtml(dateLine) + "</p>" +
             "</div>" +
           "</li>"
         );
       })
       .join("");
 
-    var reverseTimeline = timeline.slice().reverse();
+    var reverseTimeline = occurred.slice().reverse();
     var traceItems = reverseTimeline
-      .map(function (event) {
-        var originalIndex = timeline.indexOf(event);
-        var done = originalIndex <= currentIdx;
+      .map(function (event, reverseIndex) {
+        var originalIndex = occurred.length - 1 - reverseIndex;
         var label = milestoneLabel(event.title);
         var place = placeWithCode(event.location);
         var dateLine = formatDsvDate(event.date);
-        var check = done
-          ? '<span class="mydsv-trace-check" aria-hidden="true"><svg viewBox="0 0 16 16"><path fill="currentColor" d="M6.2 11.3 2.9 8l1.1-1.1 2.2 2.2 5-5L12.3 5z"/></svg></span>'
-          : '<span class="mydsv-trace-check is-pending" aria-hidden="true"></span>';
+        var check =
+          '<span class="mydsv-trace-check" aria-hidden="true"><svg viewBox="0 0 16 16"><path fill="currentColor" d="M6.2 11.3 2.9 8l1.1-1.1 2.2 2.2 5-5L12.3 5z"/></svg></span>';
         return (
-          '<details class="mydsv-trace-item"' + (originalIndex === currentIdx ? " open" : "") + ">" +
+          '<details class="mydsv-trace-item"' + (originalIndex === lastIdx ? " open" : "") + ">" +
             "<summary>" +
               check +
               "<div>" +
