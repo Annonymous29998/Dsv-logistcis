@@ -1078,6 +1078,10 @@ body.nav-open .overlay-nav { opacity: 1; pointer-events: auto; }
   place-items: center;
 }
 .admin-chat-fab:hover { background: #002664; }
+/* Hide floating widget while a conversation drawer is open */
+#chat-drawer.is-open ~ .admin-chat-fab {
+  display: none !important;
+}
 .admin-chat-fab__badge {
   position: absolute;
   top: -.1rem;
