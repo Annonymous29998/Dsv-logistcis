@@ -95,6 +95,8 @@ function shipmentListRow(item) {
     toLon: item.toLon,
     routeDistanceM: item.routeDistanceM,
     routeDurationS: item.routeDurationS,
+    createdAt: item.createdAt || null,
+    etaAt: item.etaAt || null,
     lastEvent: last.title,
     lastDate: last.date,
     lastLocation: last.location

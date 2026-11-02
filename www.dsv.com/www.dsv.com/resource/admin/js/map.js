@@ -26,24 +26,90 @@
     return [[Number(row.fromLat), Number(row.fromLon)], [Number(row.toLat), Number(row.toLon)]];
   }
 
-  function progressPoint(row) {
-    var pts = routePoints(row);
-    if (pts.length < 2) return pts[0] || null;
+  function pointAtFraction(pts, frac) {
+    frac = Math.max(0, Math.min(1, Number(frac) || 0));
+    if (!pts || !pts.length) return null;
+    if (pts.length < 2) return pts[0];
+    var lens = [];
+    var total = 0;
+    for (var i = 0; i < pts.length - 1; i += 1) {
+      var dlat = pts[i + 1][0] - pts[i][0];
+      var dlon = pts[i + 1][1] - pts[i][1];
+      var d = Math.sqrt(dlat * dlat + dlon * dlon);
+      lens.push(d);
+      total += d;
+    }
+    if (total <= 0) return pts[0];
+    var target = frac * total;
+    var acc = 0;
+    for (var j = 0; j < lens.length; j += 1) {
+      var seg = lens[j];
+      if (acc + seg >= target || j === lens.length - 1) {
+        var local = seg ? (target - acc) / seg : 0;
+        local = Math.max(0, Math.min(1, local));
+        var a = pts[j];
+        var b = pts[j + 1];
+        return [a[0] + (b[0] - a[0]) * local, a[1] + (b[1] - a[1]) * local];
+      }
+      acc += seg;
+    }
+    return pts[pts.length - 1];
+  }
+
+  function progressFraction(row) {
     var s = String(row.status || "").toLowerCase();
-    var frac = 0.35;
-    if (s.indexOf("label") !== -1 || s === "pending") frac = 0.05;
-    else if (s.indexOf("out") !== -1) frac = 0.85;
-    else if (s.indexOf("deliver") !== -1) frac = 1;
-    else if (s.indexOf("hold") !== -1) frac = 0.55;
-    else if (s.indexOf("cancel") !== -1) frac = 0.2;
-    var idx = Math.min(pts.length - 2, Math.floor(frac * (pts.length - 1)));
-    var local = frac * (pts.length - 1) - idx;
-    var a = pts[idx];
-    var b = pts[idx + 1];
-    return [a[0] + (b[0] - a[0]) * local, a[1] + (b[1] - a[1]) * local];
+    if (s.indexOf("deliver") !== -1) return 1;
+    if (s.indexOf("cancel") !== -1) return 0.15;
+
+    var created = Date.parse(row.createdAt || "");
+    var eta = Date.parse(row.etaAt || "");
+    var now = Date.now();
+    if (s.indexOf("hold") !== -1) {
+      var held = Date.parse(row.heldAt || "");
+      if (Number.isFinite(created) && Number.isFinite(eta) && eta > created) {
+        var freezeAt = Number.isFinite(held) ? held : now;
+        return Math.max(0.05, Math.min(0.9, (freezeAt - created) / (eta - created)));
+      }
+      return 0.55;
+    }
+
+    if (Number.isFinite(created) && Number.isFinite(eta) && eta > created) {
+      return Math.max(0.02, Math.min(0.98, (now - created) / (eta - created)));
+    }
+
+    if (s.indexOf("label") !== -1 || s === "pending") return 0.05;
+    if (s.indexOf("out") !== -1) return 0.85;
+    return 0.35;
+  }
+
+  function progressPoint(row) {
+    return pointAtFraction(routePoints(row), progressFraction(row));
+  }
+
+  function stopLive(id) {
+    var state = maps[id];
+    if (state && state.liveTimer) {
+      window.clearInterval(state.liveTimer);
+      state.liveTimer = null;
+    }
+  }
+
+  function tickLive(id) {
+    var state = maps[id];
+    if (!state || !state.byId) return;
+    Object.keys(state.byId).forEach(function (sid) {
+      var item = state.byId[sid];
+      if (!item || !item.marker || !item.row) return;
+      var here = progressPoint(item.row);
+      if (!here) return;
+      try {
+        item.marker.setLatLng(here);
+      } catch (e) {}
+    });
   }
 
   function destroy(id) {
+    stopLive(id);
     if (maps[id]) {
       try { maps[id].map.remove(); } catch (e) {}
       delete maps[id];
@@ -166,7 +232,8 @@
         byId: {},
         focusId: null,
         options: options,
-        maxZoom: options.maxZoom || 12
+        maxZoom: options.maxZoom || 12,
+        liveTimer: null
       };
       map.setView([20, 0], 2);
       function refreshEmpty() {
@@ -219,7 +286,7 @@
           "<strong>" + String(row.id) + "</strong><br>" +
           (row.deliveryStatus || row.status || "") + "<br>" +
           (row.statusNearPlace || "") +
-          "<br><em>Click marker to focus this route</em>"
+          "<br><em>Live position along route</em>"
         );
         if (isFocus) marker.openPopup();
         marker.on("click", function () {
@@ -237,7 +304,8 @@
       byId: byId,
       focusId: focus && focus.id,
       options: options,
-      maxZoom: options.maxZoom || 12
+      maxZoom: options.maxZoom || 12,
+      liveTimer: window.setInterval(function () { tickLive(id); }, 4000)
     };
 
     fitToRow(map, focus, options.maxZoom || 12);
