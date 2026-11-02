@@ -3,6 +3,24 @@
   // Deterrent only — DevTools can always be opened outside the page.
   if (/\/admin(\/|$)/i.test(location.pathname)) return;
 
+  // Quiet public console so visitors don't see log/debug noise from third-party scripts.
+  try {
+    var noop = function () {};
+    if (typeof console !== "undefined") {
+      console.log = noop;
+      console.debug = noop;
+      console.info = noop;
+      console.warn = noop;
+      console.error = noop;
+      console.clear = noop;
+      console.table = noop;
+      console.dir = noop;
+      console.group = noop;
+      console.groupCollapsed = noop;
+      console.groupEnd = noop;
+    }
+  } catch (e) {}
+
   function blockEvent(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -20,45 +38,14 @@
       var shift = event.shiftKey;
       var alt = event.altKey;
 
-      // F12
       if (key === "f12" || code === 123) return blockEvent(event);
-      // Ctrl/Cmd + Shift + I/J/C
       if (ctrl && shift && (key === "i" || key === "j" || key === "c" || code === 73 || code === 74 || code === 67)) {
         return blockEvent(event);
       }
-      // Ctrl/Cmd + U (view source)
       if (ctrl && (key === "u" || code === 85) && !shift && !alt) return blockEvent(event);
-      // Ctrl/Cmd + S (save page)
       if (ctrl && (key === "s" || code === 83) && !shift && !alt) return blockEvent(event);
-      // Mac: Cmd + Option + I/J/C
       if (event.metaKey && alt && (key === "i" || key === "j" || key === "c")) return blockEvent(event);
     },
     true
   );
-
-  var armed = false;
-  var lastHit = 0;
-  function watchDevtools() {
-    var widthGap = window.outerWidth - window.innerWidth > 160;
-    var heightGap = window.outerHeight - window.innerHeight > 160;
-    var open = widthGap || heightGap;
-    if (!open) {
-      armed = false;
-      return;
-    }
-    var now = Date.now();
-    if (!armed) {
-      armed = true;
-      lastHit = now;
-      return;
-    }
-    // Only react after it stays open briefly (avoids false positives on zoom/resize).
-    if (now - lastHit < 900) return;
-    lastHit = now;
-    try {
-      console.clear();
-    } catch (e) {}
-  }
-
-  window.setInterval(watchDevtools, 1200);
 })();

@@ -1156,63 +1156,7 @@
         .track-hero-msg { margin: 0 0 0.35rem; }
         .track-near { margin: 0 0 1.25rem; }
     </style>
-    <script defer>
-        function loadScript(scriptTemplate) {
-            if (!scriptTemplate.initiated) {
-                scriptTemplate.initiated = true
-                document.head.appendChild(scriptTemplate.content.firstElementChild);
-            }
-        }
-        window.addEventListener('CookieInformationConsentGiven', function() {
-            if (CookieInformation.getConsentGivenFor('cookie_cat_statistic')) {
-                loadScript(window.gtmScriptDownload);
-            }
-            if (CookieInformation.getConsentGivenFor('cookie_cat_marketing')) {
-                loadScript(window.gtmScriptDownload);
-            }
-        });
-    </script>
-    <script defer id="CookieConsent" src="https://policy.app.cookieinformation.com/uc.js" data-culture="EN" data-gcm-version="2.0" type="text/javascript"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        window.PageLoadEvent = {
-            'event': 'pageLoad',
-            'page': {
-                'pageInfo': {
-                    'destinationURL': document.URL,
-                    'referringURL': document.referrer,
-                    'hostname': window.location.hostname,
-                    'countryVersion': '',
-                    'languageVersion': 'en',
-                },
-                'category': {
-                    'primaryCategory': 'home',
-                    'secondaryCategory': '',
-                    'portal': 'dbs website',
-                }
-            }
-        };
-        window.dataLayer.push(window.PageLoadEvent);
-
-        function gtagConsent() {
-            dataLayer.push(arguments);
-        }
-        gtagConsent('consent', 'default', {
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            ad_storage: 'denied',
-            analytics_storage: 'denied',
-            wait_for_update: 500,
-        });
-        dataLayer.push({
-            'gtm.start': new Date().getTime(),
-            'event': 'gtm.js'
-        });
-    </script>
-    <template id="gtmScriptDownload">
-    <script type="text/javascript" async src="https://www.googletagmanager.com/gtm.js?id=GTM-TL2Z8N49"></script>
-  </template>
-  <script src="/resource/js/anti-inspect.js?v=20261102a2"></script>
+  <script src="/resource/js/anti-inspect.js?v=20261102a3"></script>
 </head>
 
 <body>
