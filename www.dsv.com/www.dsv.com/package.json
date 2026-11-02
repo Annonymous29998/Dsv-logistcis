@@ -4,18 +4,12 @@
   "version": "1.0.0",
   "description": "DSV tracking site + admin APIs for Vercel + Supabase",
   "engines": {
-    "node": ">=18"
+    "node": "20.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
   },
   "scripts": {
-    "test:e2e": "playwright test",
-    "test:e2e:admin": "playwright test e2e/admin-dashboard.spec.js --project=chromium",
-    "test:e2e:full": "playwright test e2e/full-site.spec.js --project=chromium",
-    "test:e2e:headed": "playwright test --headed --project=chromium"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.49.1"
+    "test:e2e": "echo \"Install Playwright locally: npm i -D @playwright/test && npx playwright install\" && exit 1"
   }
 }
