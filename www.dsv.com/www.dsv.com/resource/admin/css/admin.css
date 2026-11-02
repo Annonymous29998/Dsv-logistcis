@@ -626,6 +626,32 @@ body.sidebar-collapsed .btn-logout-side:focus-visible span {
   height: 380px !important;
   min-height: 380px !important;
 }
+.card--map-hero {
+  margin-bottom: .95rem;
+}
+.map-stage--hero,
+.map-canvas--hero,
+.map-canvas--hero.leaflet-container {
+  height: 560px !important;
+  min-height: 560px !important;
+}
+.grid-2--recent {
+  grid-template-columns: 1fr;
+}
+.card--recent {
+  width: 100%;
+}
+@media (min-width: 1101px) {
+  .map-stage--hero,
+  .map-canvas--hero,
+  .map-canvas--hero.leaflet-container {
+    height: min(62vh, 640px) !important;
+    min-height: 520px !important;
+  }
+  .card--map-hero .live-card {
+    width: min(280px, calc(100% - 1.5rem));
+  }
+}
 .map-canvas--empty {
   display: grid !important;
   place-items: center;

@@ -110,26 +110,19 @@
         kpiCard("Active Routes", onRoad, "green", iconUser(), '<div class="kpi__trend">Moves currently on the road</div>') +
         kpiCard("Book Capacity", fleetTotal, "red", iconCash(), '<div class="kpi__trend">Active + pending slots</div>') +
       "</div>" +
+      '<article class="card card--map-hero">' +
+        '<div class="card__head"><h2>Live shipment map</h2><span class="pill">' +
+          liveMoves.length + " active move" + (liveMoves.length === 1 ? "" : "s") +
+        "</span></div>" +
+        '<div class="card__body">' +
+          '<div class="map-stage map-stage--hero">' +
+            '<div class="map-canvas map-canvas--hero" id="dashboard-live-map" aria-label="Live shipment map"></div>' +
+            liveCardHtml(live, liveIndex, liveMoves.length) +
+          "</div>" +
+        "</div>" +
+      "</article>" +
       '<div class="grid-2">' +
         '<article class="card"><div class="card__head"><h2>Shipment performance</h2><span class="pill">Current book</span></div><div class="card__body"><div class="chart-wrap" id="shipments-chart-wrap"><canvas id="shipments-chart"></canvas><p class="chart-empty" id="shipments-chart-empty" hidden>No shipment data yet. Create a tracking to see performance.</p></div></div></article>' +
-        '<article class="card"><div class="card__head"><h2>Live shipment map</h2><span class="pill">' +
-          liveMoves.length + " active move" + (liveMoves.length === 1 ? "" : "s") +
-        '</span></div><div class="card__body">' +
-          '<div class="map-stage">' +
-            '<div class="map-canvas" id="dashboard-live-map" aria-label="Live shipment map"></div>' +
-            liveCardHtml(live, liveIndex, liveMoves.length) +
-          "</div></div></article>" +
-      "</div>" +
-      '<div class="grid-2">' +
-        '<article class="card"><div class="card__head"><h2>Recent shipments</h2><button type="button" class="pill" data-nav="shipments" style="cursor:pointer">View all</button></div>' +
-          '<div class="card__body table-wrap"><table class="table-compact"><thead><tr><th>Tracking</th><th>Route</th><th>Status</th><th>Updated</th></tr></thead><tbody>' +
-          recent.map(function (row) {
-            return '<tr data-open-id="' + utils().escapeHtml(row.id) + '"><td class="mono">' + utils().escapeHtml(row.id) + "</td><td>" +
-              utils().escapeHtml(utils().cityOnly(row.fromLocation)) + " → " + utils().escapeHtml(utils().cityOnly(row.toLocation)) +
-              '</td><td><span class="' + utils().statusClass(row.status) + '">' + utils().escapeHtml(utils().statusLabel(row.status)) + "</span></td><td>" +
-              utils().escapeHtml(row.lastDate || "—") + "</td></tr>";
-          }).join("") +
-          "</tbody></table></div></article>" +
         '<article class="card"><div class="card__head"><h2>Fleet status</h2></div><div class="card__body">' +
           (hasBook
             ? '<div class="donut" style="--p1:' + p1 + ";--p2:" + p2 + ';"><div class="donut__center"><strong>' + fleetTotal + '</strong><span>Derived units</span></div></div>' +
@@ -140,6 +133,17 @@
               '</div><p class="backend-note" style="margin-top:.85rem">Fleet split is calculated from live shipment statuses in your book.</p>'
             : '<div class="fleet-empty"><p class="chart-empty chart-empty--static">No shipment data yet. Create a tracking to see fleet status.</p></div>') +
         "</div></article>" +
+      "</div>" +
+      '<div class="grid-2 grid-2--recent">' +
+        '<article class="card card--recent"><div class="card__head"><h2>Recent shipments</h2><button type="button" class="pill" data-nav="shipments" style="cursor:pointer">View all</button></div>' +
+          '<div class="card__body table-wrap"><table class="table-compact"><thead><tr><th>Tracking</th><th>Route</th><th>Status</th><th>Updated</th></tr></thead><tbody>' +
+          recent.map(function (row) {
+            return '<tr data-open-id="' + utils().escapeHtml(row.id) + '"><td class="mono">' + utils().escapeHtml(row.id) + "</td><td>" +
+              utils().escapeHtml(utils().cityOnly(row.fromLocation)) + " → " + utils().escapeHtml(utils().cityOnly(row.toLocation)) +
+              '</td><td><span class="' + utils().statusClass(row.status) + '">' + utils().escapeHtml(utils().statusLabel(row.status)) + "</span></td><td>" +
+              utils().escapeHtml(row.lastDate || "—") + "</td></tr>";
+          }).join("") +
+          "</tbody></table></div></article>" +
       "</div>";
 
     if (typeof ctx.updateChatNotifications === "function") ctx.updateChatNotifications({ silent: true });
