@@ -45,14 +45,10 @@ const {
 } = require("./_lib/support");
 
 function pathParts(req) {
-  const raw = req.query.path;
-  if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
-  if (typeof raw === "string" && raw) return raw.split("/").filter(Boolean);
-  // Fallback: parse URL path after /api/
+  // Prefer original URL path (preserved across vercel.json rewrite to /api).
   try {
     const url = new URL(req.url || "/", "http://localhost");
-    const parts = url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
-    return parts;
+    return url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
   } catch (err) {
     return [];
   }
