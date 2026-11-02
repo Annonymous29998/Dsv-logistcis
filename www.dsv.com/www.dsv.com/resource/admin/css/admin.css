@@ -47,7 +47,7 @@ a { color: inherit; text-decoration: none; }
   color: #fff;
   background:
     linear-gradient(105deg, rgba(11,31,58,.88) 0%, rgba(11,31,58,.52) 45%, rgba(11,31,58,.4) 100%),
-    url("/resource/unsplash/hero-highway.jpg") 55% center / cover no-repeat;
+    url("/resource/unsplash/hero-highway.webp") 55% center / cover no-repeat;
 }
 .login-hero__inner {
   position: relative; z-index: 2; height: 100%;
