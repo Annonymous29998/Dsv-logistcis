@@ -265,7 +265,7 @@ function timelineForStatus(plannedEvents, status) {
 function statusMeta(status) {
   const s = String(status || "in-transit").toLowerCase();
   const map = {
-    "label-created": ["pending", "Pending"],
+    "label-created": ["label-created", "Label Created"],
     pending: ["pending", "Pending"],
     "in-transit": ["in-transit", "In Transit"],
     "out-for-delivery": ["out-for-delivery", "Out For Delivery"],

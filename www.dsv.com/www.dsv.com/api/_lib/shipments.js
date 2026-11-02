@@ -371,7 +371,12 @@ async function updateShipment(id, payload) {
     "toLocation"
   ];
   editable.forEach((key) => {
-    if (payload[key] !== undefined) existing[key] = payload[key];
+    if (payload[key] === undefined) return;
+    if (key === "signatureRequired") {
+      existing.signatureRequired = payload.signatureRequired !== false;
+      return;
+    }
+    existing[key] = payload[key];
   });
 
   if (payload.status) {
