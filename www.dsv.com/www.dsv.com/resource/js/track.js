@@ -299,7 +299,7 @@
       return (
         '<div class="mydsv-alert mydsv-alert--hold" role="status">' +
           "<strong>On hold</strong>" +
-          "<p>" + escapeHtml(holdReason || "This shipment is temporarily on hold.") + "</p>" +
+          "<p>Reasons: " + escapeHtml(holdReason || "This shipment is temporarily on hold.") + "</p>" +
         "</div>"
       );
     }
@@ -307,7 +307,7 @@
       return (
         '<div class="mydsv-alert mydsv-alert--cancel" role="status">' +
           "<strong>Cancelled</strong>" +
-          "<p>" + escapeHtml(cancelReason || "This shipment was cancelled.") + "</p>" +
+          "<p>Reasons: " + escapeHtml(cancelReason || "This shipment was cancelled.") + "</p>" +
         "</div>"
       );
     }
@@ -315,7 +315,7 @@
       return (
         '<div class="mydsv-alert mydsv-alert--hold" role="status">' +
           "<strong>Exception</strong>" +
-          "<p>" + escapeHtml(holdReason || notice || "There is an exception on this shipment.") + "</p>" +
+          "<p>Reasons: " + escapeHtml(holdReason || notice || "There is an exception on this shipment.") + "</p>" +
         "</div>"
       );
     }
