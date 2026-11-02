@@ -66,6 +66,7 @@ function progressShipment(item) {
     }
   }
   if (!visible.length) return false;
+  // Don't shrink below admin-appended events; public UI hides future planned scans itself.
   if (visible.length < (item.timeline || []).length) return false;
 
   const title = String(currentTitle || "").toUpperCase();
