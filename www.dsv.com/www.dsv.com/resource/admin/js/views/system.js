@@ -352,9 +352,13 @@
     if (endBtn) {
       endBtn.addEventListener("click", async function () {
         if (!ctx.selectedChatId) return;
-        if (!window.confirm("End this conversation? The visitor will see that the chat ended and can open a new conversation.")) {
-          return;
-        }
+        var ok = await askConfirm({
+          title: "End this conversation?",
+          message: "The visitor will see that the chat ended and can open a new conversation.",
+          confirmLabel: "End conversation",
+          confirmClass: "btn-danger"
+        });
+        if (!ok) return;
         clearAgentTyping(ctx.selectedChatId);
         try {
           await global.AdminAPI.supportAction({ id: ctx.selectedChatId, action: "end" });
@@ -405,12 +409,66 @@
     }
   }
 
+  function askConfirm(options) {
+    options = options || {};
+    return new Promise(function (resolve) {
+      var existing = document.getElementById("admin-confirm-modal");
+      if (existing) existing.remove();
+
+      var modal = document.createElement("div");
+      modal.id = "admin-confirm-modal";
+      modal.className = "reason-modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.innerHTML =
+        '<div class="reason-modal__backdrop" data-confirm-cancel="1"></div>' +
+        '<div class="reason-modal__panel">' +
+          "<h3>" + U().escapeHtml(options.title || "Confirm") + "</h3>" +
+          "<p>" + U().escapeHtml(options.message || "") + "</p>" +
+          '<div class="reason-modal__actions">' +
+            '<button type="button" class="btn" data-confirm-cancel="1">' +
+              U().escapeHtml(options.cancelLabel || "Cancel") +
+            "</button>" +
+            '<button type="button" class="btn ' +
+              U().escapeHtml(options.confirmClass || "btn-primary") +
+              '" data-confirm-ok="1">' +
+              U().escapeHtml(options.confirmLabel || "Confirm") +
+            "</button>" +
+          "</div>" +
+        "</div>";
+      document.body.appendChild(modal);
+
+      var settled = false;
+      function finish(value) {
+        if (settled) return;
+        settled = true;
+        modal.remove();
+        document.removeEventListener("keydown", onKey);
+        resolve(value);
+      }
+      function onKey(event) {
+        if (event.key === "Escape") finish(false);
+      }
+      modal.addEventListener("click", function (event) {
+        if (event.target.closest("[data-confirm-cancel]")) finish(false);
+        if (event.target.closest("[data-confirm-ok]")) finish(true);
+      });
+      document.addEventListener("keydown", onKey);
+      var ok = modal.querySelector("[data-confirm-ok]");
+      if (ok) window.setTimeout(function () { ok.focus(); }, 40);
+    });
+  }
+
   async function clearAllConversations(ctx) {
     var current = await fetchSupportChats();
     if (!current.length) return false;
-    if (!window.confirm("Clear all conversations? This removes every support chat for all visitors.")) {
-      return false;
-    }
+    var ok = await askConfirm({
+      title: "Clear all conversations?",
+      message: "This removes every support chat for all visitors.",
+      confirmLabel: "Clear all",
+      confirmClass: "btn-danger"
+    });
+    if (!ok) return false;
     clearAgentTyping(ctx && ctx.selectedChatId);
     try {
       await global.AdminAPI.supportClearAll();
