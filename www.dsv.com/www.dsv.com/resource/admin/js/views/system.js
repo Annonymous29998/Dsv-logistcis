@@ -262,24 +262,24 @@
     }
   }
 
-  async function openChatDrawer(chatId, ctx) {
-    if (!chatId) return;
-    ctx.selectedChatId = chatId;
-    try {
-      await global.AdminAPI.supportAction({ id: chatId, action: "open" });
-      await global.AdminAPI.supportAction({ id: chatId, action: "read" });
-    } catch (e) {}
-    var chats = await fetchSupportChats();
-    notifySupportChanged();
-    var chat = chats.find(function (c) { return c.id === chatId; });
-    if (!chat) return;
+  function findCachedChat(chatId, ctx) {
+    var pools = [supportCache, (ctx && ctx.supportChats) || []];
+    for (var i = 0; i < pools.length; i++) {
+      var list = pools[i];
+      if (!Array.isArray(list)) continue;
+      var hit = list.find(function (c) { return c && c.id === chatId; });
+      if (hit) return hit;
+    }
+    return null;
+  }
 
+  function showChatDrawerShell(chat) {
     var shipDrawer = document.getElementById("drawer");
     var shipBackdrop = document.getElementById("drawer-backdrop");
     if (shipDrawer) shipDrawer.classList.remove("is-open");
     if (shipBackdrop) shipBackdrop.classList.remove("is-open");
 
-    fillChatDrawer(chat);
+    if (chat) fillChatDrawer(chat);
     var drawer = document.getElementById("chat-drawer");
     var backdrop = document.getElementById("chat-drawer-backdrop");
     if (drawer) {
@@ -289,7 +289,43 @@
     if (backdrop) backdrop.classList.add("is-open");
 
     var input = document.getElementById("chat-drawer-input");
-    if (input) window.setTimeout(function () { input.focus(); }, 180);
+    if (input && chat && chat.status !== "ended") {
+      window.setTimeout(function () { input.focus(); }, 80);
+    }
+  }
+
+  async function openChatDrawer(chatId, ctx) {
+    if (!chatId) return;
+    ctx.selectedChatId = chatId;
+
+    // Open immediately from cache — don't wait on network.
+    var cached = findCachedChat(chatId, ctx);
+    if (cached) {
+      cached = Object.assign({}, cached, { unread: 0 });
+      showChatDrawerShell(cached);
+      notifySupportChanged();
+    } else {
+      showChatDrawerShell({
+        id: chatId,
+        name: "Loading…",
+        messages: [],
+        status: "open",
+        unread: 0
+      });
+    }
+
+    try {
+      // Fire open+read together; refresh after.
+      await Promise.all([
+        global.AdminAPI.supportAction({ id: chatId, action: "open" }).catch(function () {}),
+        global.AdminAPI.supportAction({ id: chatId, action: "read" }).catch(function () {})
+      ]);
+    } catch (e) {}
+    var chats = await fetchSupportChats();
+    notifySupportChanged();
+    if (ctx.selectedChatId !== chatId) return;
+    var chat = chats.find(function (c) { return c.id === chatId; });
+    if (chat) fillChatDrawer(chat);
   }
 
   function bindChatDrawerOnce(ctx) {
