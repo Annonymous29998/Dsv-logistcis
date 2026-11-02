@@ -114,6 +114,91 @@ async function handlePublicConfig(req, res) {
   });
 }
 
+function headerValue(req, name) {
+  const raw = (req.headers && (req.headers[name] || req.headers[String(name).toLowerCase()])) || "";
+  return String(Array.isArray(raw) ? raw[0] : raw).trim();
+}
+
+function decodeHeader(value) {
+  if (!value) return "";
+  try {
+    return decodeURIComponent(value.replace(/\+/g, " "));
+  } catch (err) {
+    return value;
+  }
+}
+
+function clientIp(req) {
+  const forwarded = headerValue(req, "x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return (
+    headerValue(req, "x-real-ip") ||
+    headerValue(req, "cf-connecting-ip") ||
+    headerValue(req, "x-vercel-forwarded-for") ||
+    ""
+  );
+}
+
+function countryNameFromCode(code) {
+  const map = {
+    US: "United States",
+    GB: "United Kingdom",
+    CA: "Canada",
+    AU: "Australia",
+    DE: "Germany",
+    FR: "France",
+    NL: "Netherlands",
+    BE: "Belgium",
+    DK: "Denmark",
+    SE: "Sweden",
+    NO: "Norway",
+    FI: "Finland",
+    IE: "Ireland",
+    ES: "Spain",
+    IT: "Italy",
+    PT: "Portugal",
+    PL: "Poland",
+    NG: "Nigeria",
+    GH: "Ghana",
+    ZA: "South Africa",
+    KE: "Kenya",
+    IN: "India",
+    PK: "Pakistan",
+    BD: "Bangladesh",
+    CN: "China",
+    JP: "Japan",
+    KR: "South Korea",
+    BR: "Brazil",
+    MX: "Mexico",
+    AE: "United Arab Emirates",
+    SA: "Saudi Arabia",
+    SG: "Singapore",
+    MY: "Malaysia",
+    PH: "Philippines",
+    NZ: "New Zealand"
+  };
+  const key = String(code || "").toUpperCase();
+  return map[key] || key;
+}
+
+async function handleClientInfo(req, res) {
+  if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+  const ip = clientIp(req);
+  const city = decodeHeader(headerValue(req, "x-vercel-ip-city"));
+  const region = decodeHeader(headerValue(req, "x-vercel-ip-country-region"));
+  const countryCode = String(headerValue(req, "x-vercel-ip-country") || "").toUpperCase();
+  const country = countryNameFromCode(countryCode);
+  const label = [city, region && region !== city ? region : "", country].filter(Boolean).join(", ");
+  return sendJson(res, 200, {
+    ok: true,
+    ip: ip || "",
+    city: city || "",
+    country: country || "",
+    countryCode: countryCode || "",
+    label: label || countryCode || ""
+  });
+}
+
 async function handleAdminGuard(req, res) {
   const cookies = parseCookies(req);
   const session = verifySessionToken(cookies[COOKIE_NAME]);
@@ -397,6 +482,7 @@ module.exports = async function handler(req, res) {
 
   try {
     if (key === "public/config") return await handlePublicConfig(req, res);
+    if (key === "client-info") return await handleClientInfo(req, res);
     if (key === "admin/guard") return await handleAdminGuard(req, res);
     if (key === "admin/login") return await handleAdminLogin(req, res);
     if (key === "admin/logout") return await handleAdminLogout(req, res);
