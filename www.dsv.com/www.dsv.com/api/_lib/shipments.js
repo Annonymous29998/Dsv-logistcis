@@ -6,6 +6,34 @@ const {
   statusMeta
 } = require("./geo");
 
+// Optional column — if SQL migration was not run, strip it and keep image in delivery_notice.
+let packageImageColumnMissing = false;
+
+function isMissingPackageImageColumn(error) {
+  return /package_image/i.test(String((error && error.message) || error || ""));
+}
+
+async function saveShipmentRow(id, item, mode) {
+  const supabase = getSupabase();
+  const row = shipmentToRow(id, item);
+  if (packageImageColumnMissing) delete row.package_image;
+
+  let result =
+    mode === "insert"
+      ? await supabase.from("shipments").insert(row)
+      : await supabase.from("shipments").upsert(row);
+
+  if (result.error && isMissingPackageImageColumn(result.error)) {
+    packageImageColumnMissing = true;
+    delete row.package_image;
+    result =
+      mode === "insert"
+        ? await supabase.from("shipments").insert(row)
+        : await supabase.from("shipments").upsert(row);
+  }
+  return result.error || null;
+}
+
 function generateTrackingId() {
   let id = "";
   for (let i = 0; i < 12; i += 1) id += String(Math.floor(Math.random() * 10));
@@ -190,7 +218,7 @@ async function getShipment(id) {
   if (!data) return null;
   const item = rowToShipment(data);
   if (progressShipment(item)) {
-    await supabase.from("shipments").upsert(shipmentToRow(item.id, item));
+    await saveShipmentRow(item.id, item, "upsert");
   }
   return item;
 }
@@ -306,13 +334,7 @@ async function createShipment(payload) {
     adminEvents: [{ at: plan.createdAt, action: "create", reason: null }]
   };
 
-  const row = shipmentToRow(trackingId, item);
-  let { error } = await supabase.from("shipments").insert(row);
-  // Fallback if package_image column is not migrated yet — keep image in delivery_notice.
-  if (error && /package_image/i.test(String(error.message || ""))) {
-    delete row.package_image;
-    ({ error } = await supabase.from("shipments").insert(row));
-  }
+  const error = await saveShipmentRow(trackingId, item, "insert");
   if (error) throw error;
   return { id: trackingId, shipment: adminShipment(item) };
 }
@@ -471,8 +493,7 @@ async function updateShipment(id, payload) {
 
   pushAdminEvent(existing, "edit", payload.reason || "Shipment details updated");
   appendTimeline(existing, "DETAILS UPDATED", payload.reason || "Shipment details updated");
-  const supabase = getSupabase();
-  const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
+  const error = await saveShipmentRow(existing.id, existing, "upsert");
   if (error) {
     const err = new Error(error.message || "Could not save shipment changes.");
     err.status = 500;
@@ -517,8 +538,7 @@ async function holdShipment(id, reason) {
   appendTimeline(existing, "ON HOLD", why);
   pushAdminEvent(existing, "hold", why);
 
-  const supabase = getSupabase();
-  const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
+  const error = await saveShipmentRow(existing.id, existing, "upsert");
   if (error) {
     const err = new Error(error.message || "Could not place shipment on hold.");
     err.status = 500;
@@ -550,8 +570,7 @@ async function releaseHold(id, note) {
   appendTimeline(existing, "HOLD RELEASED", note || "Shipment released from hold");
   pushAdminEvent(existing, "release-hold", note || null);
 
-  const supabase = getSupabase();
-  const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
+  const error = await saveShipmentRow(existing.id, existing, "upsert");
   if (error) {
     const err = new Error(error.message || "Could not release hold.");
     err.status = 500;
@@ -589,8 +608,7 @@ async function cancelShipment(id, reason) {
   appendTimeline(existing, "CANCELLED", why);
   pushAdminEvent(existing, "cancel", why);
 
-  const supabase = getSupabase();
-  const { error } = await supabase.from("shipments").upsert(shipmentToRow(existing.id, existing));
+  const error = await saveShipmentRow(existing.id, existing, "upsert");
   if (error) {
     const err = new Error(error.message || "Could not cancel shipment.");
     err.status = 500;
