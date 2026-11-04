@@ -9,6 +9,105 @@ function googleMapsKey() {
   ).trim();
 }
 
+function geoapifyKey() {
+  return String(process.env.GEOAPIFY_API_KEY || process.env.GEOAPIFY_KEY || "").trim();
+}
+
+function mapGeoapifyResult(row) {
+  if (!row) return null;
+  const lat = Number(row.lat);
+  const lon = Number(row.lon);
+  const label = String(row.formatted || row.address_line1 || "").trim();
+  if (!label || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const house = String(row.housenumber || "").trim();
+  const street = String(row.street || "").trim();
+  const primary =
+    String(row.address_line1 || "").trim() ||
+    (street ? (house ? `${house} ${street}` : street) : label.split(",")[0].trim());
+  let secondary = String(row.address_line2 || row.formatted || label).trim();
+  if (primary && secondary.toLowerCase().startsWith(primary.toLowerCase())) {
+    secondary = secondary.slice(primary.length).replace(/^[\s,]+/, "") || secondary;
+  }
+  return {
+    label: row.formatted || [row.address_line1, row.address_line2].filter(Boolean).join(", "),
+    primary,
+    secondary,
+    lat,
+    lon,
+    type: row.result_type || row.layer || "geoapify",
+    source: "geoapify"
+  };
+}
+
+async function searchGeoapify(query, limit) {
+  const key = geoapifyKey();
+  if (!key) return [];
+  const max = Math.max(1, Math.min(limit, 10));
+  try {
+    const autoParams = new URLSearchParams({
+      text: query,
+      apiKey: key,
+      limit: String(max),
+      lang: "en",
+      format: "json"
+    });
+    const auto = await httpJson(
+      `https://api.geoapify.com/v1/geocode/autocomplete?${autoParams}`
+    );
+    const autoRows = Array.isArray(auto.results)
+      ? auto.results.map(mapGeoapifyResult).filter(Boolean)
+      : [];
+    if (autoRows.length) return autoRows;
+
+    const searchParams = new URLSearchParams({
+      text: query,
+      apiKey: key,
+      limit: String(max),
+      lang: "en",
+      format: "json"
+    });
+    const search = await httpJson(
+      `https://api.geoapify.com/v1/geocode/search?${searchParams}`
+    );
+    return Array.isArray(search.results)
+      ? search.results.map(mapGeoapifyResult).filter(Boolean)
+      : [];
+  } catch (_err) {
+    return [];
+  }
+}
+
+async function geocodeGeoapify(query) {
+  const key = geoapifyKey();
+  if (!key) return null;
+  try {
+    const params = new URLSearchParams({
+      text: query,
+      apiKey: key,
+      limit: "5",
+      lang: "en",
+      format: "json"
+    });
+    const data = await httpJson(`https://api.geoapify.com/v1/geocode/search?${params}`);
+    const rows = Array.isArray(data.results)
+      ? data.results.map(mapGeoapifyResult).filter(Boolean)
+      : [];
+    if (!rows.length) return null;
+    let best = rows[0];
+    let bestScore = -1;
+    for (const row of rows) {
+      const score = scoreAddressMatch(row.label, query, row.primary);
+      if (score > bestScore) {
+        best = row;
+        bestScore = score;
+      }
+    }
+    return best;
+  } catch (_err) {
+    return null;
+  }
+}
+
 async function httpJson(url) {
   const res = await fetch(url, {
     headers: {
@@ -382,7 +481,7 @@ function dedupeResults(rows, limit, query) {
     const sa = scoreAddressMatch(a.label, query, a.primary);
     const sb = scoreAddressMatch(b.label, query, b.primary);
     if (sb !== sa) return sb - sa;
-    const rank = (s) => (s === "google" ? 0 : s === "photon" ? 1 : 2);
+    const rank = (s) => (s === "geoapify" || s === "google" ? 0 : s === "photon" ? 1 : 2);
     return rank(a.source) - rank(b.source);
   });
   const out = [];
@@ -600,7 +699,13 @@ async function searchAddresses(query, limit = 8) {
   if (q.length < 2) return [];
   const max = Math.max(1, Math.min(limit, 10));
 
-  // Google Places covers essentially all addresses worldwide when a key is set.
+  // Prefer Geoapify (free tier) when configured — better autocomplete than raw OSM.
+  if (geoapifyKey()) {
+    const geoapify = await searchGeoapify(q, max);
+    if (geoapify.length) return dedupeResults(geoapify, max, q);
+  }
+
+  // Google Places when a key is set (best coverage, paid).
   if (googleMapsKey()) {
     const google = await searchGooglePlaces(q, max);
     if (google.length) return dedupeResults(google, max, q);
@@ -614,6 +719,11 @@ async function searchAddresses(query, limit = 8) {
 async function geocodeAddress(query) {
   const q = normalizeSearchQuery(query);
   if (!q) return null;
+
+  if (geoapifyKey()) {
+    const geoapify = await geocodeGeoapify(q);
+    if (geoapify) return geoapify;
+  }
 
   if (googleMapsKey()) {
     const google = await geocodeGoogle(q);
