@@ -580,7 +580,11 @@
     var receiverName = data.receiver || data.receiverName || "";
     var senderPlace = data.senderAddress || addressLine(data.fromLocation);
     var receiverPlace = data.receiverAddress || addressLine(data.toLocation);
-    var timeline = data.timeline || [];
+    var timeline = (data.timeline || []).filter(function (event) {
+      var title = String((event && event.title) || "").toUpperCase();
+      // Never show hold-release notes on public tracking.
+      return title !== "HOLD RELEASED";
+    });
     // FedEx-style: only show history that has already taken place (no future est. hubs).
     var occurred = timeline.filter(function (_event, index) {
       return index <= currentIdx;

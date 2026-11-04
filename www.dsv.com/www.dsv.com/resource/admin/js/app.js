@@ -498,16 +498,7 @@
           message: "Tracking " + id + " is now on hold."
         };
       } else if (action === "release-hold") {
-        reason = await askReason({
-          title: "Release hold",
-          message: "Optional note for the tracking timeline.",
-          label: "Release note (optional)",
-          placeholder: "e.g. Documents received, resuming transit",
-          confirmLabel: "Release hold",
-          required: false
-        });
-        if (reason == null) return;
-        var releaseResult = await AdminAPI.releaseHold(id, String(reason).trim());
+        var releaseResult = await AdminAPI.releaseHold(id, "");
         mergeShipmentIntoState(releaseResult && releaseResult.shipment);
         successToast = {
           title: "Hold released",

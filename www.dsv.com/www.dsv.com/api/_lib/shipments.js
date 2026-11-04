@@ -604,10 +604,14 @@ async function releaseHold(id, note) {
   existing.deliveryStatus = deliveryStatus;
   existing.previousStatus = null;
   existing.holdReason = null;
-  existing.statusReason = note || null;
+  existing.statusReason = null;
   existing.heldAt = null;
-  appendTimeline(existing, "HOLD RELEASED", note || "Shipment released from hold");
-  pushAdminEvent(existing, "release-hold", note || null);
+  // No public timeline/reason on release — shipment simply resumes.
+  // Strip any prior "HOLD RELEASED" scan so it never shows on tracking.
+  existing.timeline = (existing.timeline || []).filter(function (ev) {
+    return String((ev && ev.title) || "").toUpperCase() !== "HOLD RELEASED";
+  });
+  pushAdminEvent(existing, "release-hold", null);
 
   const error = await patchShipmentStatus(existing.id, existing);
   if (error) {
