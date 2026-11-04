@@ -1,5 +1,14 @@
 const USER_AGENT = "DSV-Logistics-Control/1.0 (vercel admin)";
 
+function googleMapsKey() {
+  return String(
+    process.env.GOOGLE_MAPS_API_KEY ||
+      process.env.GOOGLE_PLACES_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      ""
+  ).trim();
+}
+
 async function httpJson(url) {
   const res = await fetch(url, {
     headers: {
@@ -10,6 +19,132 @@ async function httpJson(url) {
   });
   if (!res.ok) throw new Error(`Upstream ${res.status}`);
   return res.json();
+}
+
+function googlePrimary(result) {
+  const comps = Array.isArray(result.address_components) ? result.address_components : [];
+  const get = (type) => {
+    const hit = comps.find((c) => Array.isArray(c.types) && c.types.includes(type));
+    return hit ? String(hit.long_name || hit.short_name || "").trim() : "";
+  };
+  const streetNum = get("street_number");
+  const route = get("route");
+  if (route) return streetNum ? `${streetNum} ${route}` : route;
+  if (result.name) return String(result.name).trim();
+  const label = String(result.formatted_address || "").trim();
+  return label.split(",")[0].trim();
+}
+
+async function searchGooglePlaces(query, limit) {
+  const key = googleMapsKey();
+  if (!key) return [];
+  const max = Math.max(1, Math.min(limit, 10));
+  try {
+    const autoParams = new URLSearchParams({
+      input: query,
+      key,
+      language: "en"
+      // no components/country filter — worldwide
+    });
+    const auto = await httpJson(
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json?${autoParams}`
+    );
+    if (auto.status && auto.status !== "OK" && auto.status !== "ZERO_RESULTS") {
+      return [];
+    }
+    const predictions = Array.isArray(auto.predictions) ? auto.predictions.slice(0, max) : [];
+    if (!predictions.length) {
+      // Fall through to Geocoding which often still finds exact addresses.
+      return geocodeGoogleList(query, max);
+    }
+
+    const rows = await Promise.all(
+      predictions.map(async (pred) => {
+        try {
+          const detailParams = new URLSearchParams({
+            place_id: pred.place_id,
+            fields: "geometry,formatted_address,name,address_component",
+            key,
+            language: "en"
+          });
+          const detail = await httpJson(
+            `https://maps.googleapis.com/maps/api/place/details/json?${detailParams}`
+          );
+          const result = detail && detail.result ? detail.result : null;
+          if (!result || !result.geometry || !result.geometry.location) return null;
+          const lat = Number(result.geometry.location.lat);
+          const lon = Number(result.geometry.location.lng);
+          const label = String(result.formatted_address || pred.description || "").trim();
+          if (!label || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+          const primary = googlePrimary(result) || String(pred.structured_formatting?.main_text || "").trim();
+          let secondary = label;
+          if (primary && label.toLowerCase().startsWith(primary.toLowerCase())) {
+            secondary = label.slice(primary.length).replace(/^[\s,]+/, "") || label;
+          } else if (pred.structured_formatting?.secondary_text) {
+            secondary = String(pred.structured_formatting.secondary_text);
+          }
+          return {
+            label,
+            primary: primary || label.split(",")[0],
+            secondary,
+            lat,
+            lon,
+            type: "google",
+            source: "google"
+          };
+        } catch (_err) {
+          return null;
+        }
+      })
+    );
+    return rows.filter(Boolean);
+  } catch (_err) {
+    return [];
+  }
+}
+
+async function geocodeGoogleList(query, limit) {
+  const key = googleMapsKey();
+  if (!key) return [];
+  try {
+    const params = new URLSearchParams({
+      address: query,
+      key,
+      language: "en"
+    });
+    const data = await httpJson(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
+    if (data.status && data.status !== "OK" && data.status !== "ZERO_RESULTS") return [];
+    const results = Array.isArray(data.results) ? data.results.slice(0, limit) : [];
+    return results
+      .map((result) => {
+        const lat = Number(result.geometry && result.geometry.location && result.geometry.location.lat);
+        const lon = Number(result.geometry && result.geometry.location && result.geometry.location.lng);
+        const label = String(result.formatted_address || "").trim();
+        if (!label || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        const primary = googlePrimary(result);
+        let secondary = label;
+        if (primary && label.toLowerCase().startsWith(primary.toLowerCase())) {
+          secondary = label.slice(primary.length).replace(/^[\s,]+/, "") || label;
+        }
+        return {
+          label,
+          primary: primary || label.split(",")[0],
+          secondary,
+          lat,
+          lon,
+          type: "google-geocode",
+          source: "google"
+        };
+      })
+      .filter(Boolean);
+  } catch (_err) {
+    return [];
+  }
+}
+
+async function geocodeGoogle(query) {
+  const rows = await geocodeGoogleList(query, 1);
+  return rows[0] || null;
 }
 
 function addressPrimary(row, label) {
@@ -230,9 +365,8 @@ function dedupeResults(rows, limit, query) {
     const sa = scoreAddressMatch(a.label, query, a.primary);
     const sb = scoreAddressMatch(b.label, query, b.primary);
     if (sb !== sa) return sb - sa;
-    const as = a.source === "photon" ? 0 : 1;
-    const bs = b.source === "photon" ? 0 : 1;
-    return as - bs;
+    const rank = (s) => (s === "google" ? 0 : s === "photon" ? 1 : 2);
+    return rank(a.source) - rank(b.source);
   });
   const out = [];
   for (const row of ranked) {
@@ -397,8 +531,8 @@ async function searchNominatimStructured(query, limit) {
   }
 }
 
-async function searchAddresses(query, limit = 8) {
-  // Worldwide Photon + Nominatim — no global country lock.
+async function searchAddressesOsm(query, limit = 8) {
+  // Worldwide Photon + Nominatim fallback when Google is unavailable.
   const raw = String(query || "").trim();
   const q = normalizeSearchQuery(raw);
   if (q.length < 2) return [];
@@ -443,9 +577,31 @@ async function searchAddresses(query, limit = 8) {
   return dedupeResults(collected, max, q);
 }
 
+async function searchAddresses(query, limit = 8) {
+  const raw = String(query || "").trim();
+  const q = normalizeSearchQuery(raw);
+  if (q.length < 2) return [];
+  const max = Math.max(1, Math.min(limit, 10));
+
+  // Google Places covers essentially all addresses worldwide when a key is set.
+  if (googleMapsKey()) {
+    const google = await searchGooglePlaces(q, max);
+    if (google.length) return dedupeResults(google, max, q);
+    const geo = await geocodeGoogleList(q, max);
+    if (geo.length) return dedupeResults(geo, max, q);
+  }
+
+  return searchAddressesOsm(q, max);
+}
+
 async function geocodeAddress(query) {
   const q = normalizeSearchQuery(query);
   if (!q) return null;
+
+  if (googleMapsKey()) {
+    const google = await geocodeGoogle(q);
+    if (google) return google;
+  }
 
   const candidates = [];
   const push = (value) => {
@@ -476,7 +632,7 @@ async function geocodeAddress(query) {
   let best = null;
   let bestScore = -1;
   for (const candidate of candidates) {
-    const hits = await searchAddresses(candidate, 5);
+    const hits = await searchAddressesOsm(candidate, 5);
     for (const hit of hits || []) {
       const score = scoreAddressMatch(hit.label, q, hit.primary);
       if (score > bestScore) {
