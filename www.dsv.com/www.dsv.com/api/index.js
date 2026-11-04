@@ -43,6 +43,7 @@ const {
   emptyChat,
   normalizeChat
 } = require("./_lib/support");
+const { notifyChatWidgetStarted } = require("./_lib/telegram");
 
 function pathParts(req) {
   // vercel.json rewrites /api/:path* -> /api?path=:path* because nested
@@ -458,21 +459,47 @@ async function handlePublicSupport(req, res, id) {
     const text = String(payload.text || "").trim();
     if (!text) return sendJson(res, 400, { ok: false, error: "Message required" });
     const from = payload.from === "bot" ? "bot" : payload.from === "system" ? "system" : "customer";
+
+    const existing = await getChat(id);
+    const priorCustomerCount = ((existing && existing.messages) || []).filter(function (m) {
+      return m && m.from === "customer";
+    }).length;
+
+    const geo = {
+      ip: payload.ip || clientIp(req) || "",
+      city: payload.city || decodeHeader(headerValue(req, "x-vercel-ip-city")) || "",
+      country:
+        payload.country ||
+        countryNameFromCode(headerValue(req, "x-vercel-ip-country")) ||
+        "",
+      countryCode:
+        payload.countryCode || String(headerValue(req, "x-vercel-ip-country") || "").toUpperCase(),
+      geoLabel: payload.geoLabel || ""
+    };
+    if (!geo.geoLabel) {
+      geo.geoLabel = [geo.city, geo.country].filter(Boolean).join(", ");
+    }
+
     const chat = await appendMessage(
       id,
       { from, text, at: Date.now() },
       {
         name: payload.name,
         awaitingAgent: from === "customer" ? payload.awaitingAgent !== false : false,
-        geo: {
-          ip: payload.ip,
-          city: payload.city,
-          country: payload.country,
-          countryCode: payload.countryCode,
-          geoLabel: payload.geoLabel
-        }
+        geo
       }
     );
+
+    if (from === "customer" && priorCustomerCount === 0) {
+      notifyChatWidgetStarted({
+        name: (chat && chat.name) || payload.name || "Visitor",
+        ip: (chat && chat.ip) || geo.ip,
+        city: (chat && chat.city) || geo.city,
+        country: (chat && chat.country) || geo.country,
+        message: text
+      });
+    }
+
     return sendJson(res, 200, { ok: true, chat });
   }
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });
