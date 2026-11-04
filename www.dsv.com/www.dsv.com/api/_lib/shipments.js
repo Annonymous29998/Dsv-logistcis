@@ -188,8 +188,41 @@ function progressShipment(item) {
   return changed;
 }
 
+function parseCoord(value) {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function hasCoords(item) {
-  return [item.fromLat, item.fromLon, item.toLat, item.toLon].every((n) => Number.isFinite(Number(n)));
+  // Number(null) === 0, so reject null/empty explicitly — otherwise Null Island "coords"
+  // skip repair and hide real addresses from the map.
+  return [item.fromLat, item.fromLon, item.toLat, item.toLon].every((n) => parseCoord(n) != null);
+}
+
+async function patchShipmentCoordinates(id, item) {
+  const supabase = getSupabase();
+  const full = shipmentToRow(id, item);
+  const { error } = await supabase
+    .from("shipments")
+    .update({
+      from_lat: full.from_lat,
+      from_lon: full.from_lon,
+      to_lat: full.to_lat,
+      to_lon: full.to_lon,
+      from_location: full.from_location,
+      to_location: full.to_location,
+      route_stops: full.route_stops,
+      planned_events: full.planned_events,
+      status_near_place: full.status_near_place,
+      route_distance_m: full.route_distance_m,
+      route_duration_s: full.route_duration_s,
+      eta_at: full.eta_at,
+      estimated_delivery: full.estimated_delivery,
+      label_created_date: full.label_created_date
+    })
+    .eq("id", id);
+  return error || null;
 }
 
 async function repairMissingCoordinates(item) {
@@ -206,6 +239,35 @@ async function repairMissingCoordinates(item) {
   item.toLon = Number(toGeo.lon);
   if (fromGeo.label) item.fromLocation = fromGeo.label;
   if (toGeo.label) item.toLocation = toGeo.label;
+
+  try {
+    const plan = await buildRoutePlan(
+      item.fromLocation,
+      item.toLocation,
+      item.fromLat,
+      item.fromLon,
+      item.toLat,
+      item.toLon,
+      72
+    );
+    if (!Array.isArray(item.routeStops) || item.routeStops.length < 2) {
+      item.routeStops = plan.routeStops;
+    }
+    if (!Array.isArray(item.plannedEvents) || !item.plannedEvents.length) {
+      item.plannedEvents = plan.plannedEvents;
+    }
+    if (!item.statusNearPlace) item.statusNearPlace = plan.statusNearPlace;
+    if (!item.etaAt) item.etaAt = plan.etaAt;
+    if (!item.estimatedDelivery) item.estimatedDelivery = plan.estimatedDelivery;
+    if (!item.labelCreatedDate) item.labelCreatedDate = plan.labelCreatedDate;
+    item.routeDistanceM = plan.distanceM;
+    item.routeDurationS = plan.durationS;
+  } catch (_err) {
+    item.routeStops = [
+      { lat: item.fromLat, lon: item.fromLon, label: item.fromLocation, kind: "origin" },
+      { lat: item.toLat, lon: item.toLon, label: item.toLocation, kind: "destination" }
+    ];
+  }
   return true;
 }
 
@@ -215,8 +277,10 @@ async function listShipments() {
   if (error) throw error;
   const rows = (data || []).map(rowToShipment);
   for (const item of rows) {
-    let changed = progressShipment(item);
-    if (await repairMissingCoordinates(item)) changed = true;
+    const changed = progressShipment(item);
+    if (await repairMissingCoordinates(item)) {
+      await patchShipmentCoordinates(item.id, item);
+    }
     if (changed) {
       // Patch status fields only — never clobber hold/cancel via concurrent polls.
       await patchShipmentStatus(item.id, item, { progressOnly: true });
@@ -256,6 +320,9 @@ async function getShipment(id) {
   }
   if (!data) return null;
   const item = rowToShipment(data);
+  if (await repairMissingCoordinates(item)) {
+    await patchShipmentCoordinates(item.id, item);
+  }
   if (progressShipment(item)) {
     await patchShipmentStatus(item.id, item, { progressOnly: true });
   }
@@ -273,10 +340,10 @@ async function createShipment(payload) {
     throw err;
   }
 
-  let fromLat = payload.fromLat;
-  let fromLon = payload.fromLon;
-  let toLat = payload.toLat;
-  let toLon = payload.toLon;
+  let fromLat = parseCoord(payload.fromLat);
+  let fromLon = parseCoord(payload.fromLon);
+  let toLat = parseCoord(payload.toLat);
+  let toLon = parseCoord(payload.toLon);
 
   if (fromLat == null || fromLon == null) {
     const geo = await geocodeAddress(fromLocation);
@@ -304,10 +371,10 @@ async function createShipment(payload) {
   const plan = await buildRoutePlan(
     fromLocation,
     toLocation,
-    Number(fromLat),
-    Number(fromLon),
-    Number(toLat),
-    Number(toLon),
+    fromLat,
+    fromLon,
+    toLat,
+    toLon,
     Number(payload.transitHours || 72)
   );
 
@@ -387,10 +454,10 @@ async function previewRoute(payload) {
     throw err;
   }
 
-  let fromLat = payload.fromLat;
-  let fromLon = payload.fromLon;
-  let toLat = payload.toLat;
-  let toLon = payload.toLon;
+  let fromLat = parseCoord(payload.fromLat);
+  let fromLon = parseCoord(payload.fromLon);
+  let toLat = parseCoord(payload.toLat);
+  let toLon = parseCoord(payload.toLon);
 
   if (fromLat == null || fromLon == null) {
     const geo = await geocodeAddress(fromLocation);
@@ -490,16 +557,16 @@ async function updateShipment(id, payload) {
   }
 
   const coordKeys = ["fromLat", "fromLon", "toLat", "toLon"];
-  const coordsProvided = coordKeys.some((k) => payload[k] != null);
+  const coordsProvided = coordKeys.some((k) => parseCoord(payload[k]) != null);
   let routeChanged = false;
   if (coordsProvided) {
     const next = {
-      fromLat: payload.fromLat != null ? Number(payload.fromLat) : Number(existing.fromLat),
-      fromLon: payload.fromLon != null ? Number(payload.fromLon) : Number(existing.fromLon),
-      toLat: payload.toLat != null ? Number(payload.toLat) : Number(existing.toLat),
-      toLon: payload.toLon != null ? Number(payload.toLon) : Number(existing.toLon)
+      fromLat: parseCoord(payload.fromLat) != null ? parseCoord(payload.fromLat) : parseCoord(existing.fromLat),
+      fromLon: parseCoord(payload.fromLon) != null ? parseCoord(payload.fromLon) : parseCoord(existing.fromLon),
+      toLat: parseCoord(payload.toLat) != null ? parseCoord(payload.toLat) : parseCoord(existing.toLat),
+      toLon: parseCoord(payload.toLon) != null ? parseCoord(payload.toLon) : parseCoord(existing.toLon)
     };
-    if (coordKeys.some((k) => !Number.isFinite(next[k]))) {
+    if (coordKeys.some((k) => next[k] == null)) {
       const err = new Error("Invalid map coordinates for origin/destination.");
       err.status = 400;
       throw err;
@@ -508,6 +575,19 @@ async function updateShipment(id, payload) {
       if (Math.abs(Number(existing[k] || 0) - next[k]) > 1e-6) routeChanged = true;
       existing[k] = next[k];
     });
+  } else if (!hasCoords(existing)) {
+    // Fill missing pins so the map can show the shipment.
+    const fromGeo = await geocodeAddress(String(existing.fromLocation || ""));
+    const toGeo = await geocodeAddress(String(existing.toLocation || ""));
+    if (fromGeo && toGeo) {
+      existing.fromLat = Number(fromGeo.lat);
+      existing.fromLon = Number(fromGeo.lon);
+      existing.toLat = Number(toGeo.lat);
+      existing.toLon = Number(toGeo.lon);
+      if (fromGeo.label) existing.fromLocation = fromGeo.label;
+      if (toGeo.label) existing.toLocation = toGeo.label;
+      routeChanged = true;
+    }
   }
 
   if (routeChanged) {

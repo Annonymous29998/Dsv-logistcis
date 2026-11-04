@@ -4,8 +4,12 @@
   var maps = {};
 
   function hasCoords(row) {
-    return row && Number.isFinite(Number(row.fromLat)) && Number.isFinite(Number(row.fromLon)) &&
-      Number.isFinite(Number(row.toLat)) && Number.isFinite(Number(row.toLon));
+    // Number(null) === 0 — treat missing coords as unmapped so they can be repaired.
+    function ok(v) {
+      if (v == null || v === "") return false;
+      return Number.isFinite(Number(v));
+    }
+    return row && ok(row.fromLat) && ok(row.fromLon) && ok(row.toLat) && ok(row.toLon);
   }
 
   function statusColor(status) {

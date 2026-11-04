@@ -262,10 +262,42 @@
     });
 
     input.addEventListener("focus", function () {
-      if (currentResults.length && input.value.trim().length >= 3 && !state[stateKey].lat) {
+      if (currentResults.length && input.value.trim().length >= 2 && !state[stateKey].lat) {
         render(currentResults);
       }
     });
+
+    // If the user typed an address without clicking a suggestion, resolve it on blur.
+    input.addEventListener("blur", function () {
+      window.setTimeout(function () {
+        resolveTypedAddress();
+      }, 220);
+    });
+
+    async function resolveTypedAddress() {
+      if (picking) return false;
+      var q = input.value.trim();
+      if (!q) return false;
+      if (state[stateKey].lat != null && state[stateKey].lon != null && state[stateKey].label === q) {
+        return true;
+      }
+      try {
+        var rows = await lookupAddresses(q);
+        if (!rows.length) {
+          if (hint) {
+            hint.hidden = false;
+            hint.textContent = "Address not mapped yet — pick a suggestion or preview route.";
+          }
+          return false;
+        }
+        choose(rows[0]);
+        return true;
+      } catch (_err) {
+        return false;
+      }
+    }
+
+    input._resolveAddress = resolveTypedAddress;
 
     if (state[stateKey].lat != null && state[stateKey].lon != null) {
       wrap.classList.add("is-mapped");
@@ -527,6 +559,14 @@
       btn.disabled = true;
       btn.textContent = "Creating…";
       try {
+        var fromInput = modal.querySelector("#from-location");
+        var toInput = modal.querySelector("#to-location");
+        if (fromInput && typeof fromInput._resolveAddress === "function") {
+          await fromInput._resolveAddress();
+        }
+        if (toInput && typeof toInput._resolveAddress === "function") {
+          await toInput._resolveAddress();
+        }
         var data = await AdminAPI.createShipment(payloadFromForm());
         if (data && data.id) {
           if (U().toast) {

@@ -137,10 +137,73 @@ async function searchNominatim(query, limit) {
   return results;
 }
 
-function dedupeResults(rows, limit) {
+function tokensOf(text) {
+  return String(text || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t && t.length > 1 && !["the", "and", "for", "usa", "united", "states"].includes(t));
+}
+
+const US_STATE_NAMES = {
+  al: "alabama", ak: "alaska", az: "arizona", ar: "arkansas", ca: "california",
+  co: "colorado", ct: "connecticut", de: "delaware", fl: "florida", ga: "georgia",
+  hi: "hawaii", id: "idaho", il: "illinois", in: "indiana", ia: "iowa",
+  ks: "kansas", ky: "kentucky", la: "louisiana", me: "maine", md: "maryland",
+  ma: "massachusetts", mi: "michigan", mn: "minnesota", ms: "mississippi",
+  mo: "missouri", mt: "montana", ne: "nebraska", nv: "nevada", nh: "new hampshire",
+  nj: "new jersey", nm: "new mexico", ny: "new york", nc: "north carolina",
+  nd: "north dakota", oh: "ohio", ok: "oklahoma", or: "oregon", pa: "pennsylvania",
+  ri: "rhode island", sc: "south carolina", sd: "south dakota", tn: "tennessee",
+  tx: "texas", ut: "utah", vt: "vermont", va: "virginia", wa: "washington",
+  wv: "west virginia", wi: "wisconsin", wy: "wyoming", dc: "district of columbia"
+};
+
+function looksLikeUsQuery(query) {
+  const q = String(query || "").toLowerCase();
+  if (/\b(usa|u\.s\.a?|united states)\b/.test(q)) return true;
+  return Object.keys(US_STATE_NAMES).some((code) => new RegExp(`\\b${code}\\b`, "i").test(q));
+}
+
+function scoreAddressMatch(label, query) {
+  const qTokens = tokensOf(query);
+  const lTokens = new Set(tokensOf(label));
+  if (!qTokens.length) return 0;
+  let hit = 0;
+  for (const t of qTokens) {
+    if (lTokens.has(t)) hit += 1;
+    else if ([...lTokens].some((lt) => lt.startsWith(t) || t.startsWith(lt))) hit += 0.5;
+  }
+  // Prefer denser matches; slight boost when house number appears.
+  const house = (String(query).match(/\b(\d+[a-z]?)\b/i) || [])[1];
+  const labelLower = String(label).toLowerCase();
+  if (house && labelLower.includes(String(house).toLowerCase())) hit += 1.5;
+
+  // Prefer US results when the query looks American (stops Canada/elsewhere winning).
+  if (looksLikeUsQuery(query)) {
+    if (labelLower.includes("united states") || labelLower.includes("usa")) hit += 2.5;
+    if (labelLower.includes("canada") || labelLower.includes("mexico")) hit -= 4;
+    for (const [code, name] of Object.entries(US_STATE_NAMES)) {
+      if (new RegExp(`\\b${code}\\b`, "i").test(query) && labelLower.includes(name)) {
+        hit += 2;
+        break;
+      }
+    }
+  }
+  return hit / Math.max(1, qTokens.length) + hit * 0.05;
+}
+
+function dedupeResults(rows, limit, query) {
   const seen = new Set();
+  const ranked = (rows || []).slice().sort((a, b) => {
+    const sa = scoreAddressMatch(a.label, query);
+    const sb = scoreAddressMatch(b.label, query);
+    if (sb !== sa) return sb - sa;
+    const as = a.source === "photon" ? 0 : 1;
+    const bs = b.source === "photon" ? 0 : 1;
+    return as - bs;
+  });
   const out = [];
-  for (const row of rows) {
+  for (const row of ranked) {
     const key = String(row.label || "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, " ")
@@ -155,71 +218,155 @@ function dedupeResults(rows, limit) {
   return out;
 }
 
+async function searchNominatimStructured(query, limit) {
+  // Parse "123 Main St, City, ST 12345" style queries for stronger matches.
+  const cleaned = normalizeSearchQuery(query)
+    .replace(/\b(apt|apartment|unit|suite|#)\s*[a-z0-9\-]+\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  const parts = cleaned.split(",").map((p) => p.trim()).filter(Boolean);
+  if (!parts.length) return [];
+  const street = parts[0];
+  const city = parts[1] || "";
+  const stateZip = parts[2] || parts[parts.length - 1] || "";
+  const state = (stateZip.match(/\b[A-Za-z]{2}\b/) || [])[0] || stateZip.replace(/\d+/g, "").trim();
+  const postalcode = (stateZip.match(/\b\d{5}(?:-\d{4})?\b/) || [])[0] || "";
+  if (!street) return [];
+
+  const params = new URLSearchParams({
+    format: "jsonv2",
+    addressdetails: "1",
+    limit: String(Math.max(1, Math.min(limit, 10))),
+    "accept-language": "en",
+    street
+  });
+  if (city) params.set("city", city);
+  if (state) params.set("state", state);
+  if (postalcode) params.set("postalcode", postalcode);
+  params.set("country", "United States");
+
+  try {
+    const data = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
+    if (!Array.isArray(data) || !data.length) {
+      // Retry street without house number so map can still place nearby.
+      const noHouse = street.replace(/^\d+[a-z]?\s+/i, "").trim();
+      if (!noHouse || noHouse === street) return [];
+      params.set("street", noHouse);
+      const data2 = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
+      if (!Array.isArray(data2)) return [];
+      return data2.map((row) => {
+        const label = String(row.display_name || "").trim();
+        return {
+          label,
+          primary: addressPrimary(row, label),
+          secondary: label,
+          lat: Number(row.lat),
+          lon: Number(row.lon),
+          type: row.type || "",
+          source: "nominatim-structured"
+        };
+      }).filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lon));
+    }
+    return data.map((row) => {
+      const label = String(row.display_name || "").trim();
+      return {
+        label,
+        primary: addressPrimary(row, label),
+        secondary: label,
+        lat: Number(row.lat),
+        lon: Number(row.lon),
+        type: row.type || "",
+        source: "nominatim-structured"
+      };
+    }).filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lon));
+  } catch (_err) {
+    return [];
+  }
+}
+
 async function searchAddresses(query, limit = 8) {
-  // Photon (autocomplete-first) + Nominatim — better partial / mistyped matches than Nominatim alone.
+  // Photon (autocomplete) + Nominatim free-text + structured — map more addresses reliably.
   const raw = String(query || "").trim();
   const q = normalizeSearchQuery(raw);
   if (q.length < 2) return [];
   const max = Math.max(1, Math.min(limit, 10));
+  const usBias = looksLikeUsQuery(q) ? " USA" : "";
   const queries = Array.from(
-    new Set([q, raw, q.replace(/,/g, " ").replace(/\s{2,}/g, " ").trim()].filter((s) => s && s.length >= 2))
+    new Set(
+      [
+        q,
+        raw,
+        q.replace(/,/g, " ").replace(/\s{2,}/g, " ").trim(),
+        q.replace(/\b(apt|apartment|unit|suite|#)\s*[a-z0-9\-]+\b/gi, " ").replace(/\s{2,}/g, " ").trim(),
+        usBias ? `${q}${usBias}` : ""
+      ].filter((s) => s && s.length >= 2)
+    )
   );
 
   const collected = [];
-  await Promise.all(
-    queries.slice(0, 2).map(async (candidate) => {
+  await Promise.all([
+    ...queries.slice(0, 2).map(async (candidate) => {
       try {
-        const photon = await searchPhoton(candidate, max);
-        collected.push(...photon);
-      } catch (_err) {
-        /* Photon optional */
-      }
-    })
-  );
+        collected.push(...(await searchPhoton(candidate, max)));
+      } catch (_err) {}
+    }),
+    (async () => {
+      try {
+        collected.push(...(await searchNominatim(queries[0], max)));
+      } catch (_err) {}
+    })(),
+    (async () => {
+      collected.push(...(await searchNominatimStructured(queries[0], max)));
+    })()
+  ]);
 
-  if (collected.length < max) {
-    try {
-      const nomi = await searchNominatim(queries[0], max);
-      collected.push(...nomi);
-    } catch (_err) {
-      /* Nominatim optional fallback */
-    }
-  }
-
-  // Prefer Photon rows (better typeahead), then Nominatim.
-  collected.sort((a, b) => {
-    const as = a.source === "photon" ? 0 : 1;
-    const bs = b.source === "photon" ? 0 : 1;
-    return as - bs;
-  });
-  return dedupeResults(collected, max);
+  return dedupeResults(collected, max, q);
 }
 
 async function geocodeAddress(query) {
-  const q = String(query || "").trim();
+  const q = normalizeSearchQuery(query);
   if (!q) return null;
-  const candidates = [q];
-  const cleaned = q
-    .replace(/\b(apt|apartment|unit|suite|ste|#)\s*[a-z0-9\-]+\b/gi, "")
-    .replace(/\s{2,}/g, " ")
-    .replace(/\s+,/g, ",")
-    .replace(/^,+|,+$/g, "")
-    .trim();
-  if (cleaned && cleaned.toLowerCase() !== q.toLowerCase()) candidates.push(cleaned);
-  const parts = cleaned.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length >= 2) candidates.push(parts.slice(-2).join(", "));
-  if (parts.length >= 3) candidates.push(parts.slice(-3).join(", "));
 
-  const seen = new Set();
-  for (const candidate of candidates) {
-    const key = candidate.toLowerCase();
-    if (!candidate || seen.has(key)) continue;
-    seen.add(key);
-    const hits = await searchAddresses(candidate, 1);
-    if (hits && hits[0]) return hits[0];
-    await new Promise((resolve) => setTimeout(resolve, 1050));
+  const candidates = [];
+  const push = (value) => {
+    const v = String(value || "").replace(/\s{2,}/g, " ").trim();
+    if (!v) return;
+    if (!candidates.some((c) => c.toLowerCase() === v.toLowerCase())) candidates.push(v);
+  };
+
+  push(q);
+  push(
+    q
+      .replace(/\b(apt|apartment|unit|suite|ste|#)\s*[a-z0-9\-]+\b/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/\s+,/g, ",")
+      .replace(/^,+|,+$/g, "")
+      .trim()
+  );
+  // Drop house number → street/city still maps (OSM often lacks exact suite/house).
+  push(q.replace(/^\d+[a-z]?\s+/i, ""));
+  const parts = q.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    push(parts.slice(0, 2).join(", "));
+    push(parts.slice(-2).join(", "));
   }
-  return null;
+  if (parts.length >= 3) push(parts.slice(0, 3).join(", "));
+  if (parts[0]) push(parts[0].replace(/^\d+[a-z]?\s+/i, "") + (parts[1] ? `, ${parts[1]}` : ""));
+
+  let best = null;
+  let bestScore = -1;
+  for (const candidate of candidates) {
+    const hits = await searchAddresses(candidate, 5);
+    for (const hit of hits || []) {
+      const score = scoreAddressMatch(hit.label, q);
+      if (score > bestScore) {
+        best = hit;
+        bestScore = score;
+      }
+    }
+    if (best && bestScore >= 0.55) return best;
+  }
+  return best;
 }
 
 async function reverseLabel(lat, lon) {
