@@ -208,12 +208,62 @@
     });
   }
 
+  function syncExisting(id, shipments, options) {
+    var state = maps[id];
+    if (!state || !state.map || !state.byId) return false;
+    var rows = (shipments || []).filter(hasCoords);
+    var nextIds = rows.map(function (r) { return r.id; }).sort().join("|");
+    var prevIds = (state.rows || []).map(function (r) { return r.id; }).sort().join("|");
+    if (nextIds !== prevIds) return false;
+
+    state.options = options || state.options || {};
+    rows.forEach(function (row) {
+      var item = state.byId[row.id];
+      if (!item) return;
+      item.row = row;
+      var color = statusColor(row.status);
+      item.color = color;
+      var isFocus = state.focusId === row.id || (state.options.focusId && state.options.focusId === row.id);
+      if (item.line) {
+        item.line.setStyle({
+          color: color,
+          weight: isFocus ? 5 : 3,
+          opacity: isFocus ? 0.9 : 0.35
+        });
+      }
+      if (item.marker) {
+        var here = progressPoint(row);
+        if (here) item.marker.setLatLng(here);
+        item.marker.setStyle({
+          fillColor: color,
+          radius: isFocus ? 8 : 5
+        });
+        item.marker.setPopupContent(
+          "<strong>" + String(row.id) + "</strong><br>" +
+          (row.deliveryStatus || row.status || "") + "<br>" +
+          (row.statusNearPlace || "") +
+          "<br><em>Live position along route</em>"
+        );
+      }
+    });
+    state.rows = rows;
+    if (state.options.focusId) focusShipment(id, state.options.focusId);
+    try { state.map.invalidateSize({ animate: false }); } catch (e) {}
+    return true;
+  }
+
   function mountNow(container, shipments, options) {
     options = options || {};
     if (!container || !global.L) return null;
 
     var id = container.id || ("map-" + Math.random().toString(36).slice(2, 8));
     container.id = id;
+
+    // Reuse existing map instance — full remount is what caused the blinking.
+    if (maps[id] && syncExisting(id, shipments, options)) {
+      return maps[id].map;
+    }
+
     destroy(id);
 
     var rows = (shipments || []).filter(hasCoords);

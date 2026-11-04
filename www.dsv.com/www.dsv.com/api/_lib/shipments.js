@@ -34,6 +34,46 @@ async function saveShipmentRow(id, item, mode) {
   return result.error || null;
 }
 
+/**
+ * Status/timeline updates only — never re-upload package_image (large data URLs break hold/cancel).
+ * options.progressOnly: refuse to overwrite admin hold/cancel/delivered (fixes race with live polling).
+ */
+async function patchShipmentStatus(id, item, options) {
+  options = options || {};
+  const supabase = getSupabase();
+  const full = shipmentToRow(id, item);
+  const patch = {
+    status: full.status,
+    delivery_status: full.delivery_status,
+    previous_status: full.previous_status,
+    status_reason: full.status_reason,
+    hold_reason: full.hold_reason,
+    cancel_reason: full.cancel_reason,
+    held_at: full.held_at,
+    cancelled_at: full.cancelled_at,
+    out_for_delivery_today: full.out_for_delivery_today,
+    status_near_place: full.status_near_place,
+    timeline: full.timeline,
+    planned_events: full.planned_events,
+    admin_events: full.admin_events,
+    eta_at: full.eta_at,
+    progress_updated_at: full.progress_updated_at,
+    estimated_delivery: full.estimated_delivery
+  };
+  let query = supabase.from("shipments").update(patch).eq("id", id);
+  if (options.progressOnly) {
+    query = query.in("status", [
+      "pending",
+      "label-created",
+      "in-transit",
+      "out-for-delivery",
+      "exception"
+    ]);
+  }
+  const { error } = await query;
+  return error || null;
+}
+
 function generateTrackingId() {
   let id = "";
   for (let i = 0; i < 12; i += 1) id += String(Math.floor(Math.random() * 10));
@@ -174,14 +214,13 @@ async function listShipments() {
   const { data, error } = await supabase.from("shipments").select("*").order("created_at", { ascending: false });
   if (error) throw error;
   const rows = (data || []).map(rowToShipment);
-  const updates = [];
   for (const item of rows) {
     let changed = progressShipment(item);
     if (await repairMissingCoordinates(item)) changed = true;
-    if (changed) updates.push(shipmentToRow(item.id, item));
-  }
-  if (updates.length) {
-    await supabase.from("shipments").upsert(updates);
+    if (changed) {
+      // Patch status fields only — never clobber hold/cancel via concurrent polls.
+      await patchShipmentStatus(item.id, item, { progressOnly: true });
+    }
   }
   return rows;
 }
@@ -218,7 +257,7 @@ async function getShipment(id) {
   if (!data) return null;
   const item = rowToShipment(data);
   if (progressShipment(item)) {
-    await saveShipmentRow(item.id, item, "upsert");
+    await patchShipmentStatus(item.id, item, { progressOnly: true });
   }
   return item;
 }
@@ -538,7 +577,7 @@ async function holdShipment(id, reason) {
   appendTimeline(existing, "ON HOLD", why);
   pushAdminEvent(existing, "hold", why);
 
-  const error = await saveShipmentRow(existing.id, existing, "upsert");
+  const error = await patchShipmentStatus(existing.id, existing);
   if (error) {
     const err = new Error(error.message || "Could not place shipment on hold.");
     err.status = 500;
@@ -570,7 +609,7 @@ async function releaseHold(id, note) {
   appendTimeline(existing, "HOLD RELEASED", note || "Shipment released from hold");
   pushAdminEvent(existing, "release-hold", note || null);
 
-  const error = await saveShipmentRow(existing.id, existing, "upsert");
+  const error = await patchShipmentStatus(existing.id, existing);
   if (error) {
     const err = new Error(error.message || "Could not release hold.");
     err.status = 500;
@@ -608,7 +647,7 @@ async function cancelShipment(id, reason) {
   appendTimeline(existing, "CANCELLED", why);
   pushAdminEvent(existing, "cancel", why);
 
-  const error = await saveShipmentRow(existing.id, existing, "upsert");
+  const error = await patchShipmentStatus(existing.id, existing);
   if (error) {
     const err = new Error(error.message || "Could not cancel shipment.");
     err.status = 500;

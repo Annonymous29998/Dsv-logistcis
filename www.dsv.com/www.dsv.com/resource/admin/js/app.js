@@ -596,7 +596,7 @@
     window.DsvRealtime.subscribeShipments({
       onChange: function () {
         if (realtimeTimer) clearTimeout(realtimeTimer);
-        realtimeTimer = setTimeout(function () { refreshFromServer(); }, 150);
+        realtimeTimer = setTimeout(function () { refreshFromServer(); }, 2500);
       }
     });
   }
