@@ -36,12 +36,76 @@ function addressPrimary(row, label) {
   return label.split(",")[0].trim();
 }
 
-async function searchAddresses(query, limit = 8) {
-  // Worldwide Nominatim search — do not set countrycodes (all countries).
-  const q = String(query || "").trim();
-  if (q.length < 3) return [];
+function normalizeSearchQuery(query) {
+  return String(query || "")
+    .replace(/\bste\.?\b/gi, "suite")
+    .replace(/\bapt\.?\b/gi, "apartment")
+    .replace(/\brd\.?\b/gi, "road")
+    .replace(/\bst\.?\b/gi, "street")
+    .replace(/\bave\.?\b/gi, "avenue")
+    .replace(/\bblvd\.?\b/gi, "boulevard")
+    .replace(/\bdr\.?\b/gi, "drive")
+    .replace(/\bln\.?\b/gi, "lane")
+    .replace(/\bhwy\.?\b/gi, "highway")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+,/g, ",")
+    .trim();
+}
+
+function photonLabel(props) {
+  props = props || {};
+  const parts = [];
+  const house = String(props.housenumber || "").trim();
+  const street = String(props.street || props.name || "").trim();
+  if (street) parts.push(house ? `${house} ${street}` : street);
+  else if (props.name) parts.push(String(props.name).trim());
+  for (const key of ["district", "city", "town", "village", "county", "state", "postcode", "country"]) {
+    const val = String(props[key] || "").trim();
+    if (val && !parts.some((p) => p.toLowerCase() === val.toLowerCase())) parts.push(val);
+  }
+  return parts.filter(Boolean).join(", ");
+}
+
+async function searchPhoton(query, limit) {
   const params = new URLSearchParams({
-    q,
+    q: query,
+    limit: String(Math.max(1, Math.min(limit, 10))),
+    lang: "en"
+  });
+  const data = await httpJson(`https://photon.komoot.io/api/?${params}`);
+  const features = data && Array.isArray(data.features) ? data.features : [];
+  const results = [];
+  for (const feature of features) {
+    const props = feature.properties || {};
+    const coords = feature.geometry && feature.geometry.coordinates;
+    if (!coords || coords.length < 2) continue;
+    const lon = Number(coords[0]);
+    const lat = Number(coords[1]);
+    const label = photonLabel(props);
+    if (!label || Number.isNaN(lat) || Number.isNaN(lon)) continue;
+    const primary =
+      [props.housenumber, props.street || props.name].filter(Boolean).join(" ").trim() ||
+      label.split(",")[0].trim();
+    let secondary = label;
+    if (primary && label.toLowerCase().startsWith(String(primary).toLowerCase())) {
+      secondary = label.slice(String(primary).length).replace(/^[\s,]+/, "") || label;
+    }
+    results.push({
+      label,
+      primary: String(primary),
+      secondary,
+      lat,
+      lon,
+      type: props.osm_value || props.type || props.osm_key || "place",
+      source: "photon"
+    });
+  }
+  return results;
+}
+
+async function searchNominatim(query, limit) {
+  const params = new URLSearchParams({
+    q: query,
     format: "jsonv2",
     addressdetails: "1",
     limit: String(Math.max(1, Math.min(limit, 10))),
@@ -49,16 +113,12 @@ async function searchAddresses(query, limit = 8) {
   });
   const data = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
   if (!Array.isArray(data)) return [];
-  const seen = new Set();
   const results = [];
   for (const row of data) {
     const lat = Number(row.lat);
     const lon = Number(row.lon);
     const label = String(row.display_name || "").trim();
     if (!label || Number.isNaN(lat) || Number.isNaN(lon)) continue;
-    const key = label.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
     const primary = addressPrimary(row, label);
     let secondary = label;
     if (primary && label.toLowerCase().startsWith(String(primary).toLowerCase())) {
@@ -70,10 +130,69 @@ async function searchAddresses(query, limit = 8) {
       secondary,
       lat,
       lon,
-      type: row.type || row.category || row.class || ""
+      type: row.type || row.category || row.class || "",
+      source: "nominatim"
     });
   }
   return results;
+}
+
+function dedupeResults(rows, limit) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows) {
+    const key = String(row.label || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    const coarse = `${Number(row.lat).toFixed(4)},${Number(row.lon).toFixed(4)}`;
+    if (!key || seen.has(key) || seen.has(coarse)) continue;
+    seen.add(key);
+    seen.add(coarse);
+    out.push(row);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+async function searchAddresses(query, limit = 8) {
+  // Photon (autocomplete-first) + Nominatim — better partial / mistyped matches than Nominatim alone.
+  const raw = String(query || "").trim();
+  const q = normalizeSearchQuery(raw);
+  if (q.length < 2) return [];
+  const max = Math.max(1, Math.min(limit, 10));
+  const queries = Array.from(
+    new Set([q, raw, q.replace(/,/g, " ").replace(/\s{2,}/g, " ").trim()].filter((s) => s && s.length >= 2))
+  );
+
+  const collected = [];
+  await Promise.all(
+    queries.slice(0, 2).map(async (candidate) => {
+      try {
+        const photon = await searchPhoton(candidate, max);
+        collected.push(...photon);
+      } catch (_err) {
+        /* Photon optional */
+      }
+    })
+  );
+
+  if (collected.length < max) {
+    try {
+      const nomi = await searchNominatim(queries[0], max);
+      collected.push(...nomi);
+    } catch (_err) {
+      /* Nominatim optional fallback */
+    }
+  }
+
+  // Prefer Photon rows (better typeahead), then Nominatim.
+  collected.sort((a, b) => {
+    const as = a.source === "photon" ? 0 : 1;
+    const bs = b.source === "photon" ? 0 : 1;
+    return as - bs;
+  });
+  return dedupeResults(collected, max);
 }
 
 async function geocodeAddress(query) {

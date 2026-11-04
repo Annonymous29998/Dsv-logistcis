@@ -29,7 +29,7 @@
         '<div class="address-control">' +
           '<input id="' + name + '" name="' + name + '" autocomplete="off" spellcheck="false"' +
             ' role="combobox" aria-autocomplete="list" aria-expanded="false"' +
-            ' placeholder="Any street, city, or place worldwide…"' + val + ">" +
+            ' placeholder="Start typing an address — suggestions appear as you type…"' + val + ">" +
           '<div class="address-suggest" role="listbox" hidden></div>' +
         "</div>" +
         '<p class="field-hint" data-geo-hint="' + name + '" hidden></p>' +
@@ -181,13 +181,20 @@
       }
       box.hidden = false;
       setExpanded(true);
-      // PBG-style: pin + full display_name as one readable line
       box.innerHTML = currentResults.map(function (row, i) {
+        var primary = row.primary || row.label.split(",")[0];
+        var secondary = row.secondary && row.secondary !== row.label ? row.secondary : "";
+        if (!secondary && row.label.indexOf(",") !== -1) {
+          secondary = row.label.slice(row.label.indexOf(",") + 1).replace(/^[\s,]+/, "");
+        }
         return (
           '<button type="button" class="address-suggest__item" role="option" data-idx="' + i + '">' +
             pinSvg() +
             '<span class="address-suggest__text">' +
-              '<span class="address-suggest__label">' + U().escapeHtml(row.label) + "</span>" +
+              '<span class="address-suggest__label">' + U().escapeHtml(primary) + "</span>" +
+              (secondary
+                ? '<span class="address-suggest__sub">' + U().escapeHtml(secondary) + "</span>"
+                : "") +
             "</span>" +
           "</button>"
         );
@@ -205,7 +212,7 @@
       clearGeo();
       var q = input.value.trim();
       if (timer) clearTimeout(timer);
-      if (q.length < 3) {
+      if (q.length < 2) {
         setBusy(false);
         box.hidden = true;
         setExpanded(false);
@@ -227,7 +234,7 @@
           setBusy(false);
           render([], "Address lookup unavailable. Check your connection and try again.");
         }
-      }, 350);
+      }, 220);
     });
 
     input.addEventListener("keydown", function (event) {

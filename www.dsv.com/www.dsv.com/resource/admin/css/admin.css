@@ -1653,7 +1653,11 @@ body.create-modal-open { overflow: hidden; }
   display: grid; gap: .12rem; min-width: 0;
 }
 .address-suggest__label {
-  font-size: .9rem; font-weight: 500; color: #0f172a;
+  font-size: .9rem; font-weight: 700; color: #0f172a;
+  white-space: normal; overflow-wrap: anywhere;
+}
+.address-suggest__sub {
+  font-size: .78rem; font-weight: 500; color: #64748b;
   white-space: normal; overflow-wrap: anywhere;
 }
 .address-suggest__spinner {
