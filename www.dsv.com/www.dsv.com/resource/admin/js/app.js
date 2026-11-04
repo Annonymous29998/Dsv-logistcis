@@ -917,30 +917,46 @@
     }
   }
 
+  function chatIsOnline(c) {
+    if (!c || c.status === "ended") return false;
+    if (c.online) return true;
+    var seen = Number(c.lastSeenAt || 0);
+    return !!(seen && Date.now() - seen < 45000);
+  }
+
   function chatInboxListHtml() {
     var chats = loadSupportChats().slice().sort(function (a, b) {
-      return (Number(b.unread) || 0) - (Number(a.unread) || 0) ||
+      var aOnline = chatIsOnline(a) ? 1 : 0;
+      var bOnline = chatIsOnline(b) ? 1 : 0;
+      return bOnline - aOnline ||
+        (Number(b.unread) || 0) - (Number(a.unread) || 0) ||
         Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
     });
     if (!chats.length) {
-      return '<p class="admin-chat-inbox__empty">No customer conversations yet. Messages from the homepage chat will appear here.</p>';
+      return '<p class="admin-chat-inbox__empty">No website visitors yet. Open the homepage chat widget page and visitors will appear here.</p>';
     }
     return chats.map(function (c) {
       var last = c.messages && c.messages.length ? c.messages[c.messages.length - 1] : null;
       var unread = Number(c.unread) || 0;
-      var preview = last && last.text ? last.text : "No messages yet";
+      var online = chatIsOnline(c);
+      var preview = last && last.text
+        ? last.text
+        : (online ? "Browsing the website" : "On website · waiting");
       var when = c.updatedAt ? new Date(c.updatedAt).toLocaleString() : "";
       var geo = [c.city, c.country].filter(Boolean).join(", ") || c.geoLabel || "";
+      var stateLabel = c.status === "ended" ? "Ended" : (online ? "Online" : "Away");
       return (
         '<button type="button" class="admin-chat-inbox__item' + (unread ? " is-unread" : "") +
         (c.status === "ended" ? " is-ended" : "") +
+        (online ? " is-online" : "") +
         '" data-open-support-chat="' + AdminUtils.escapeHtml(c.id) + '">' +
-          "<strong>" + AdminUtils.escapeHtml(c.name || "Visitor") +
+          "<strong>" + AdminUtils.escapeHtml(c.name || "Website Visitor") +
+            (online ? '<span class="admin-chat-inbox__online">Online</span>' : "") +
             (unread ? '<span class="admin-chat-inbox__unread">' + (unread > 9 ? "9+" : unread) + "</span>" : "") +
           "</strong>" +
           "<span>" + AdminUtils.escapeHtml(preview) + "</span>" +
           "<em>" + AdminUtils.escapeHtml(
-            (c.status === "ended" ? "Ended" : "Open") +
+            stateLabel +
             (geo ? " · " + geo : "") +
             (when ? " · " + when : "")
           ) + "</em>" +

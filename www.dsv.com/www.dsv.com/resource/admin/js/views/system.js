@@ -488,37 +488,50 @@
   async function supportView(root, ctx) {
     bindChatDrawerOnce(ctx);
     var chats = await fetchSupportChats();
+    function isOnline(c) {
+      if (!c || c.status === "ended") return false;
+      if (c.online) return true;
+      var seen = Number(c.lastSeenAt || 0);
+      return !!(seen && Date.now() - seen < 45000);
+    }
     chats = chats.slice().sort(function (a, b) {
-      return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+      return (isOnline(b) ? 1 : 0) - (isOnline(a) ? 1 : 0) ||
+        String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
     });
 
     var openCount = chats.filter(function (c) { return c.status !== "ended"; }).length;
+    var onlineCount = chats.filter(isOnline).length;
     root.innerHTML =
-      '<div class="welcome"><div><h1>Help & Support</h1><p>Click a conversation to open it. IP and country help you tell visitors apart. End a chat when you are done so it clears on the visitor widget.</p></div>' +
+      '<div class="welcome"><div><h1>Help & Support</h1><p>Website visitors appear here automatically. You can open a chat and message them first — they will see a red unread badge on the chat button.</p></div>' +
         (chats.length
           ? '<button type="button" class="btn" id="btn-clear-all-chats">Clear all</button>'
           : "") +
       "</div>" +
       '<article class="chat-inbox">' +
-        '<div class="chat-inbox__head"><strong>Conversations</strong><span>' + openCount + " open · " + chats.length + " total</span></div>" +
+        '<div class="chat-inbox__head"><strong>Conversations</strong><span>' + onlineCount + " online · " + openCount + " open · " + chats.length + " total</span></div>" +
         '<div class="chat-threads" id="chat-threads">' +
           chats.map(function (c) {
-            var preview = c.messages && c.messages.length ? c.messages[c.messages.length - 1].text : "No messages";
+            var online = isOnline(c);
+            var preview = c.messages && c.messages.length
+              ? c.messages[c.messages.length - 1].text
+              : (online ? "Browsing the website" : "On website · waiting");
             var unread = c.status === "ended" ? 0 : (c.unread || 0);
             var when = c.updatedAt ? new Date(c.updatedAt).toLocaleString() : "";
             var geo = chatGeoLabel(c);
             return '<button type="button" class="thread' +
               (c.id === ctx.selectedChatId ? " is-active" : "") +
               (c.status === "ended" ? " is-ended" : "") +
+              (online ? " is-online" : "") +
               '" data-open-chat="' + U().escapeHtml(c.id) + '">' +
-              "<strong>" + U().escapeHtml(c.name || "Visitor") + "</strong>" +
+              "<strong>" + U().escapeHtml(c.name || "Website Visitor") + "</strong>" +
+              (online ? '<span class="thread__online">Online</span>' : "") +
               (unread ? '<span class="thread__unread">' + (unread > 9 ? "9+" : unread) + "</span>" : "") +
               "<span>" + U().escapeHtml(preview) + "</span>" +
               (geo ? '<span class="thread__geo">' + U().escapeHtml(geo) + "</span>" : "") +
               (when ? '<span class="thread__meta">' + U().escapeHtml(when) + "</span>" : "") +
               "</button>";
           }).join("") +
-          (chats.length ? "" : '<p class="empty" style="padding:1rem">No conversations yet. Messages from the homepage widget will appear here.</p>') +
+          (chats.length ? "" : '<p class="empty" style="padding:1rem">No website visitors yet. When someone opens the homepage they appear here.</p>') +
         "</div></article>";
 
     var clearBtn = document.getElementById("btn-clear-all-chats");

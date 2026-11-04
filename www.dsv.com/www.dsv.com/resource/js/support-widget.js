@@ -367,7 +367,13 @@
       var id = null;
       try { id = localStorage.getItem(SESSION_KEY); } catch (e) {}
       if (id) {
-        await apiPost(id, Object.assign({ action: "meta", name: visitorName() }, geoPayload()));
+        await apiPost(
+          id,
+          Object.assign(
+            { action: "meta", name: visitorName(), lastSeenAt: Date.now(), browsing: true },
+            geoPayload()
+          )
+        );
       }
       return visitorGeo;
     } catch (e) {
@@ -397,7 +403,7 @@
     if (messages) messages.innerHTML = "";
     updateUnreadBadge(0);
     updateVisitorSubtitle(null);
-    await detectVisitorGeo();
+    await registerPresence(false);
     if (input) {
       try { input.focus(); } catch (e) {}
     }
@@ -551,18 +557,57 @@
     });
   }
 
-  (function restore() {
+  async function registerPresence(forceNew) {
+    if (forceNew) sessionId(true);
+    else sessionId(false);
+    var id = sessionId(false);
+    if (!id) return null;
+    try {
+      if (!visitorGeo) await detectVisitorGeo();
+      var chat = await apiPost(
+        id,
+        Object.assign(
+          {
+            action: "meta",
+            name: visitorName(),
+            lastSeenAt: Date.now(),
+            browsing: true
+          },
+          geoPayload()
+        )
+      );
+      applyThread(chat, false);
+      return chat;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function pulsePresence() {
     var id = null;
     try { id = localStorage.getItem(SESSION_KEY); } catch (e) {}
-    if (!id) {
-      updateUnreadBadge(0);
-      updateVisitorSubtitle(null);
-      setEndedUi(false);
-      detectVisitorGeo();
-      return;
-    }
-    refreshFromServer(true).then(function () {
-      detectVisitorGeo();
+    if (!id || conversationEndedLocally) return;
+    apiPost(
+      id,
+      Object.assign(
+        {
+          action: "meta",
+          name: visitorName(),
+          lastSeenAt: Date.now(),
+          browsing: true
+        },
+        geoPayload()
+      )
+    ).catch(function () {});
+  }
+
+  (function restore() {
+    updateUnreadBadge(0);
+    updateVisitorSubtitle(null);
+    setEndedUi(false);
+    // Always register so admin can see website visitors and message first.
+    registerPresence(false).then(function () {
+      refreshFromServer(true);
     });
   })();
 
@@ -572,4 +617,9 @@
     if (!id && !conversationEndedLocally) return;
     refreshFromServer(false);
   }, 2000);
+
+  window.setInterval(pulsePresence, 15000);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") pulsePresence();
+  });
 })();

@@ -19,6 +19,8 @@ function emptyChat(id, name) {
     country: "",
     countryCode: "",
     geoLabel: "",
+    lastSeenAt: null,
+    browsing: false,
     updatedAt: Date.now(),
     createdAt: new Date().toISOString()
   };
@@ -46,6 +48,12 @@ function normalizeChat(chat) {
     country: chat.country || "",
     countryCode: chat.countryCode || "",
     geoLabel: chat.geoLabel || "",
+    lastSeenAt: chat.lastSeenAt != null ? Number(chat.lastSeenAt) : null,
+    browsing: !!chat.browsing,
+    online:
+      chat.lastSeenAt != null &&
+      Date.now() - Number(chat.lastSeenAt) < 45000 &&
+      chat.status !== "ended",
     updatedAt: Number(chat.updatedAt || Date.now()),
     createdAt: chat.createdAt || null,
     endedAt: chat.endedAt || null,
@@ -71,6 +79,8 @@ function rowToChat(row) {
     country: meta.country || "",
     countryCode: meta.countryCode || "",
     geoLabel: meta.geoLabel || "",
+    lastSeenAt: meta.lastSeenAt != null ? Number(meta.lastSeenAt) : null,
+    browsing: meta.browsing === true,
     updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now(),
     createdAt: row.created_at || null,
     endedAt: meta.endedAt || null,
@@ -96,6 +106,8 @@ function chatToRow(chat) {
       country: n.country || "",
       countryCode: n.countryCode || "",
       geoLabel: n.geoLabel || "",
+      lastSeenAt: n.lastSeenAt != null ? Number(n.lastSeenAt) : null,
+      browsing: !!n.browsing,
       endedAt: n.endedAt || null,
       agentConnectedAt: n.agentConnectedAt || null,
       status: n.status || "open"
@@ -234,6 +246,10 @@ async function patchChatMeta(id, patch) {
     });
     if (patch.awaitingAgent != null) chat.awaitingAgent = !!patch.awaitingAgent;
     if (patch.agentConnected != null) chat.agentConnected = !!patch.agentConnected;
+    if (patch.lastSeenAt != null) chat.lastSeenAt = Number(patch.lastSeenAt) || Date.now();
+    else chat.lastSeenAt = Date.now();
+    if (patch.browsing != null) chat.browsing = !!patch.browsing;
+    else chat.browsing = true;
     chat.updatedAt = Date.now();
     return saveChat(chat);
   }
@@ -248,6 +264,8 @@ async function patchChatMeta(id, patch) {
   });
   if (patch.awaitingAgent != null) metaPatch.awaitingAgent = !!patch.awaitingAgent;
   if (patch.agentConnected != null) metaPatch.agentConnected = !!patch.agentConnected;
+  if (patch.lastSeenAt != null) metaPatch.lastSeenAt = Number(patch.lastSeenAt) || Date.now();
+  if (patch.browsing != null) metaPatch.browsing = !!patch.browsing;
 
   if (Object.keys(metaPatch).length) {
     const { data, error } = await supabase.from("support_chats").select("meta").eq("id", key).maybeSingle();
@@ -256,7 +274,19 @@ async function patchChatMeta(id, patch) {
   }
 
   if (!Object.keys(rowPatch).length) return chat;
-  rowPatch.updated_at = new Date().toISOString();
+
+  const presenceOnly =
+    !patch.name &&
+    patch.awaitingAgent == null &&
+    patch.agentConnected == null &&
+    Object.keys(metaPatch).every(function (k) {
+      return k === "lastSeenAt" || k === "browsing" || k === "ip" || k === "city" || k === "country" || k === "countryCode" || k === "geoLabel";
+    }) &&
+    (metaPatch.lastSeenAt != null || metaPatch.browsing != null);
+
+  // Presence heartbeats update meta only — don't reshuffle inbox order.
+  if (!presenceOnly) rowPatch.updated_at = new Date().toISOString();
+
   const { error: upErr } = await supabase.from("support_chats").update(rowPatch).eq("id", key);
   if (upErr) throw upErr;
   return getChat(key);

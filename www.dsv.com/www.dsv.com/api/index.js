@@ -447,12 +447,18 @@ async function handlePublicSupport(req, res, id) {
     if (action === "meta") {
       const chat = await patchChatMeta(id, {
         name: payload.name,
-        ip: payload.ip,
-        city: payload.city,
-        country: payload.country,
-        countryCode: payload.countryCode,
+        ip: payload.ip || clientIp(req) || "",
+        city: payload.city || decodeHeader(headerValue(req, "x-vercel-ip-city")) || "",
+        country:
+          payload.country ||
+          countryNameFromCode(headerValue(req, "x-vercel-ip-country")) ||
+          "",
+        countryCode:
+          payload.countryCode || String(headerValue(req, "x-vercel-ip-country") || "").toUpperCase(),
         geoLabel: payload.geoLabel,
-        awaitingAgent: payload.awaitingAgent
+        awaitingAgent: payload.awaitingAgent,
+        lastSeenAt: payload.lastSeenAt != null ? Number(payload.lastSeenAt) || Date.now() : Date.now(),
+        browsing: payload.browsing !== false
       });
       return sendJson(res, 200, { ok: true, chat });
     }
