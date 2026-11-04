@@ -1,59 +1,54 @@
 /**
- * Telegram alerts for support chat (server-only env vars).
- * TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID must be set in Vercel / .env
+ * Notify admin via Supabase Edge Function (Telegram secrets live there, not on Vercel).
+ * Function: chat-telegram-notify
+ * Secrets on Supabase: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
  */
-async function sendTelegramMessage(text) {
-  const token = String(process.env.TELEGRAM_BOT_TOKEN || "").trim();
-  const chatId = String(process.env.TELEGRAM_CHAT_ID || "").trim();
-  if (!token || !chatId || !text) return { ok: false, skipped: true };
+async function notifyChatWidgetStarted(info) {
+  info = info || {};
+  const base = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  if (!base || !key) return { ok: false, skipped: true };
 
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   const timer = controller ? setTimeout(function () { controller.abort(); }, 8000) : null;
+
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(base + "/functions/v1/chat-telegram-notify", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        Authorization: "Bearer " + key,
+        apikey: key,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
       body: JSON.stringify({
-        chat_id: chatId,
-        text: String(text).slice(0, 3500),
-        disable_web_page_preview: true
+        name: info.name || "Visitor",
+        ip: info.ip || "",
+        city: info.city || "",
+        country: info.country || "",
+        message: info.message || ""
       }),
       signal: controller ? controller.signal : undefined
     });
     const data = await res.json().catch(function () { return null; });
     if (!res.ok || !(data && data.ok)) {
-      return { ok: false, error: (data && data.description) || ("HTTP " + res.status) };
+      return { ok: false, error: (data && data.error) || ("HTTP " + res.status) };
     }
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: (err && err.message) || "Telegram request failed" };
+    return { ok: false, error: (err && err.message) || "Edge notify failed" };
   } finally {
     if (timer) clearTimeout(timer);
   }
 }
 
-function notifyChatWidgetStarted(info) {
-  info = info || {};
-  const lines = [
-    "💬 Someone used the chat widget",
-    "",
-    "Name: " + (info.name || "Visitor"),
-    "IP: " + (info.ip || "—"),
-    "City: " + (info.city || "—")
-  ];
-  if (info.country) lines.push("Country: " + info.country);
-  if (info.message) {
-    lines.push("");
-    lines.push("First message:");
-    lines.push(String(info.message).slice(0, 500));
-  }
+function notifyChatWidgetStartedAsync(info) {
   // Fire-and-forget — never block the chat API on Telegram.
-  return sendTelegramMessage(lines.join("\n")).catch(function () {
+  return notifyChatWidgetStarted(info).catch(function () {
     return { ok: false };
   });
 }
 
 module.exports = {
-  sendTelegramMessage,
-  notifyChatWidgetStarted
+  notifyChatWidgetStarted: notifyChatWidgetStartedAsync
 };
