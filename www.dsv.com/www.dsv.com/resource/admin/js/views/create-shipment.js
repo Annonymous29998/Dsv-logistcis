@@ -29,7 +29,7 @@
         '<div class="address-control">' +
           '<input id="' + name + '" name="' + name + '" autocomplete="off" spellcheck="false"' +
             ' role="combobox" aria-autocomplete="list" aria-expanded="false"' +
-            ' placeholder="Start typing an address — suggestions appear as you type…"' + val + ">" +
+            ' placeholder="Any country — start typing a street, city, or place…"' + val + ">" +
           '<div class="address-suggest" role="listbox" hidden></div>' +
         "</div>" +
         '<p class="field-hint" data-geo-hint="' + name + '" hidden></p>' +

@@ -159,12 +159,17 @@ const US_STATE_NAMES = {
 };
 
 function looksLikeUsQuery(query) {
-  const q = String(query || "").toLowerCase();
+  const q = String(query || "").toLowerCase().trim();
   if (/\b(usa|u\.s\.a?|united states)\b/.test(q)) return true;
-  return Object.keys(US_STATE_NAMES).some((code) => new RegExp(`\\b${code}\\b`, "i").test(q));
+  // Avoid treating words like "or"/"in"/"me" as US state codes worldwide.
+  const trailingState = q.match(/,\s*([a-z]{2})\s*(?:\d{5}(?:-\d{4})?)?\s*$/i);
+  if (trailingState && US_STATE_NAMES[trailingState[1].toLowerCase()]) return true;
+  const stateZip = q.match(/\b([a-z]{2})\s+(\d{5}(?:-\d{4})?)\b/i);
+  if (stateZip && US_STATE_NAMES[stateZip[1].toLowerCase()]) return true;
+  return false;
 }
 
-function scoreAddressMatch(label, query) {
+function scoreAddressMatch(label, query, primary) {
   const qTokens = tokensOf(query);
   const lTokens = new Set(tokensOf(label));
   if (!qTokens.length) return 0;
@@ -178,7 +183,22 @@ function scoreAddressMatch(label, query) {
   const labelLower = String(label).toLowerCase();
   if (house && labelLower.includes(String(house).toLowerCase())) hit += 1.5;
 
-  // Prefer US results when the query looks American (stops Canada/elsewhere winning).
+  // Strongly prefer results whose primary name matches the street/place typed first.
+  const head = String(query || "").split(",")[0].trim().toLowerCase();
+  const headTokens = tokensOf(head);
+  const primaryText = String(primary || label.split(",")[0] || "").toLowerCase();
+  const primaryTokens = new Set(tokensOf(primaryText));
+  if (headTokens.length) {
+    let headHit = 0;
+    for (const t of headTokens) {
+      if (primaryTokens.has(t) || primaryText.includes(t)) headHit += 1;
+    }
+    if (headHit === headTokens.length) hit += 3.5;
+    else if (headHit > 0) hit += headHit * 0.75;
+    if (primaryText && (primaryText.includes(head) || head.includes(primaryText))) hit += 2;
+  }
+
+  // Prefer US results only when the query itself looks American.
   if (looksLikeUsQuery(query)) {
     if (labelLower.includes("united states") || labelLower.includes("usa")) hit += 2.5;
     if (labelLower.includes("canada") || labelLower.includes("mexico")) hit -= 4;
@@ -189,14 +209,26 @@ function scoreAddressMatch(label, query) {
       }
     }
   }
+  // Boost when the typed country name appears in the result (worldwide).
+  const countryBoost = [
+    "united kingdom", "canada", "nigeria", "ghana", "kenya", "australia",
+    "germany", "france", "india", "brazil", "japan", "china", "mexico",
+    "south africa", "uae", "singapore", "philippines", "pakistan"
+  ];
+  for (const c of countryBoost) {
+    if (new RegExp(`\\b${c}\\b`, "i").test(String(query || "")) && labelLower.includes(c)) {
+      hit += 2;
+      break;
+    }
+  }
   return hit / Math.max(1, qTokens.length) + hit * 0.05;
 }
 
 function dedupeResults(rows, limit, query) {
   const seen = new Set();
   const ranked = (rows || []).slice().sort((a, b) => {
-    const sa = scoreAddressMatch(a.label, query);
-    const sb = scoreAddressMatch(b.label, query);
+    const sa = scoreAddressMatch(a.label, query, a.primary);
+    const sb = scoreAddressMatch(b.label, query, b.primary);
     if (sb !== sa) return sb - sa;
     const as = a.source === "photon" ? 0 : 1;
     const bs = b.source === "photon" ? 0 : 1;
@@ -218,8 +250,99 @@ function dedupeResults(rows, limit, query) {
   return out;
 }
 
+function detectCountryHint(query, parts) {
+  const q = String(query || "").toLowerCase();
+  const last = String((parts && parts[parts.length - 1]) || "").trim();
+  const lastLower = last.toLowerCase();
+
+  // Explicit country name / code in the last comma segment or free text.
+  const named = [
+    ["united states", "United States"],
+    ["usa", "United States"],
+    ["u.s.a", "United States"],
+    ["u.s.", "United States"],
+    ["united kingdom", "United Kingdom"],
+    ["uk", "United Kingdom"],
+    ["great britain", "United Kingdom"],
+    ["england", "United Kingdom"],
+    ["canada", "Canada"],
+    ["mexico", "Mexico"],
+    ["nigeria", "Nigeria"],
+    ["ghana", "Ghana"],
+    ["kenya", "Kenya"],
+    ["south africa", "South Africa"],
+    ["australia", "Australia"],
+    ["new zealand", "New Zealand"],
+    ["germany", "Germany"],
+    ["france", "France"],
+    ["spain", "Spain"],
+    ["italy", "Italy"],
+    ["netherlands", "Netherlands"],
+    ["belgium", "Belgium"],
+    ["switzerland", "Switzerland"],
+    ["sweden", "Sweden"],
+    ["norway", "Norway"],
+    ["denmark", "Denmark"],
+    ["ireland", "Ireland"],
+    ["portugal", "Portugal"],
+    ["brazil", "Brazil"],
+    ["argentina", "Argentina"],
+    ["chile", "Chile"],
+    ["colombia", "Colombia"],
+    ["india", "India"],
+    ["pakistan", "Pakistan"],
+    ["bangladesh", "Bangladesh"],
+    ["china", "China"],
+    ["japan", "Japan"],
+    ["south korea", "South Korea"],
+    ["singapore", "Singapore"],
+    ["malaysia", "Malaysia"],
+    ["indonesia", "Indonesia"],
+    ["philippines", "Philippines"],
+    ["thailand", "Thailand"],
+    ["vietnam", "Vietnam"],
+    ["uae", "United Arab Emirates"],
+    ["united arab emirates", "United Arab Emirates"],
+    ["saudi arabia", "Saudi Arabia"],
+    ["egypt", "Egypt"],
+    ["turkey", "Turkey"],
+    ["poland", "Poland"],
+    ["romania", "Romania"],
+    ["ukraine", "Ukraine"],
+    ["russia", "Russia"]
+  ];
+  for (const [needle, country] of named) {
+    if (lastLower === needle || new RegExp(`\\b${needle.replace(/\./g, "\\.")}\\b`, "i").test(q)) {
+      return country;
+    }
+  }
+  // US-style state/ZIP without an explicit other country → United States.
+  if (looksLikeUsQuery(query) && !/\b(canada|mexico|uk|united kingdom)\b/i.test(q)) {
+    return "United States";
+  }
+  return "";
+}
+
+function mapStructuredRows(data) {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((row) => {
+      const label = String(row.display_name || "").trim();
+      return {
+        label,
+        primary: addressPrimary(row, label),
+        secondary: label,
+        lat: Number(row.lat),
+        lon: Number(row.lon),
+        type: row.type || "",
+        source: "nominatim-structured"
+      };
+    })
+    .filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lon));
+}
+
 async function searchNominatimStructured(query, limit) {
-  // Parse "123 Main St, City, ST 12345" style queries for stronger matches.
+  // Parse "street, city, region/postal, country" for stronger worldwide matches.
   const cleaned = normalizeSearchQuery(query)
     .replace(/\b(apt|apartment|unit|suite|#)\s*[a-z0-9\-]+\b/gi, "")
     .replace(/\s{2,}/g, " ")
@@ -227,11 +350,25 @@ async function searchNominatimStructured(query, limit) {
   const parts = cleaned.split(",").map((p) => p.trim()).filter(Boolean);
   if (!parts.length) return [];
   const street = parts[0];
-  const city = parts[1] || "";
-  const stateZip = parts[2] || parts[parts.length - 1] || "";
-  const state = (stateZip.match(/\b[A-Za-z]{2}\b/) || [])[0] || stateZip.replace(/\d+/g, "").trim();
-  const postalcode = (stateZip.match(/\b\d{5}(?:-\d{4})?\b/) || [])[0] || "";
   if (!street) return [];
+
+  const country = detectCountryHint(cleaned, parts);
+  const mid = parts.slice(1).filter((p) => {
+    if (!country) return true;
+    return p.toLowerCase() !== country.toLowerCase() &&
+      !(country === "United States" && /^(usa|u\.s\.a?|united states)$/i.test(p)) &&
+      !(country === "United Kingdom" && /^(uk|u\.k\.|united kingdom|great britain|england)$/i.test(p));
+  });
+  const city = mid[0] || "";
+  const regionZip = mid[1] || mid[mid.length - 1] || "";
+  const state =
+    (regionZip.match(/\b[A-Za-z]{2}\b/) || [])[0] ||
+    regionZip.replace(/\b\d[\dA-Za-z\-]*\b/g, "").trim();
+  const postalcode =
+    (regionZip.match(/\b\d{5}(?:-\d{4})?\b/) || [])[0] ||
+    (regionZip.match(/\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i) || [])[0] || // UK
+    (regionZip.match(/\b[A-Z]\d[A-Z]\s*\d[A-Z]\d\b/i) || [])[0] || // CA
+    "";
 
   const params = new URLSearchParams({
     format: "jsonv2",
@@ -243,54 +380,37 @@ async function searchNominatimStructured(query, limit) {
   if (city) params.set("city", city);
   if (state) params.set("state", state);
   if (postalcode) params.set("postalcode", postalcode);
-  params.set("country", "United States");
+  // Only pin a country when the query clearly names one — never force USA globally.
+  if (country) params.set("country", country);
 
   try {
-    const data = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
+    let data = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
     if (!Array.isArray(data) || !data.length) {
-      // Retry street without house number so map can still place nearby.
       const noHouse = street.replace(/^\d+[a-z]?\s+/i, "").trim();
       if (!noHouse || noHouse === street) return [];
       params.set("street", noHouse);
-      const data2 = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
-      if (!Array.isArray(data2)) return [];
-      return data2.map((row) => {
-        const label = String(row.display_name || "").trim();
-        return {
-          label,
-          primary: addressPrimary(row, label),
-          secondary: label,
-          lat: Number(row.lat),
-          lon: Number(row.lon),
-          type: row.type || "",
-          source: "nominatim-structured"
-        };
-      }).filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lon));
+      data = await httpJson(`https://nominatim.openstreetmap.org/search?${params}`);
     }
-    return data.map((row) => {
-      const label = String(row.display_name || "").trim();
-      return {
-        label,
-        primary: addressPrimary(row, label),
-        secondary: label,
-        lat: Number(row.lat),
-        lon: Number(row.lon),
-        type: row.type || "",
-        source: "nominatim-structured"
-      };
-    }).filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lon));
+    return mapStructuredRows(data);
   } catch (_err) {
     return [];
   }
 }
 
 async function searchAddresses(query, limit = 8) {
-  // Photon (autocomplete) + Nominatim free-text + structured — map more addresses reliably.
+  // Worldwide Photon + Nominatim — no global country lock.
   const raw = String(query || "").trim();
   const q = normalizeSearchQuery(raw);
   if (q.length < 2) return [];
   const max = Math.max(1, Math.min(limit, 10));
-  const usBias = looksLikeUsQuery(q) ? " USA" : "";
+  const parts = q.split(",").map((p) => p.trim()).filter(Boolean);
+  const country = detectCountryHint(q, parts);
+  const countryBias =
+    country && !new RegExp(`\\b${country.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(q)
+      ? ` ${country}`
+      : country && looksLikeUsQuery(q) && !/\busa\b|\bunited states\b/i.test(q)
+        ? " USA"
+        : "";
   const queries = Array.from(
     new Set(
       [
@@ -298,7 +418,7 @@ async function searchAddresses(query, limit = 8) {
         raw,
         q.replace(/,/g, " ").replace(/\s{2,}/g, " ").trim(),
         q.replace(/\b(apt|apartment|unit|suite|#)\s*[a-z0-9\-]+\b/gi, " ").replace(/\s{2,}/g, " ").trim(),
-        usBias ? `${q}${usBias}` : ""
+        countryBias ? `${q}${countryBias}` : ""
       ].filter((s) => s && s.length >= 2)
     )
   );
@@ -358,13 +478,15 @@ async function geocodeAddress(query) {
   for (const candidate of candidates) {
     const hits = await searchAddresses(candidate, 5);
     for (const hit of hits || []) {
-      const score = scoreAddressMatch(hit.label, q);
+      const score = scoreAddressMatch(hit.label, q, hit.primary);
       if (score > bestScore) {
         best = hit;
         bestScore = score;
       }
     }
+    // Good enough on the first/full query — avoid hammering OSM for every rewrite.
     if (best && bestScore >= 0.55) return best;
+    if (candidate === candidates[0] && best) return best;
   }
   return best;
 }
