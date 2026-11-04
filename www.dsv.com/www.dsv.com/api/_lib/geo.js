@@ -182,9 +182,19 @@ function normalizeSearchQuery(query) {
     .replace(/\bdr\.?\b/gi, "drive")
     .replace(/\bln\.?\b/gi, "lane")
     .replace(/\bhwy\.?\b/gi, "highway")
+    // Canadian / apartment style "109-989 Range Rd" → keep street number 989
+    .replace(/\b(\d+)\s*[-–]\s*(?=\d+)/g, "")
+    .replace(/\bYT\b/g, "Yukon")
     .replace(/\s{2,}/g, " ")
     .replace(/\s+,/g, ",")
     .trim();
+}
+
+function looksLikeCanadaQuery(query) {
+  const q = String(query || "").toLowerCase();
+  if (/\bcanada\b/.test(q)) return true;
+  if (/\b[a-z]\d[a-z]\s*\d[a-z]\d\b/i.test(String(query || ""))) return true; // postal e.g. Y1A 6K1
+  return /\b(yukon|whitehorse|ontario|alberta|manitoba|saskatchewan|nunavut|northwest territories)\b/i.test(q);
 }
 
 function photonLabel(props) {
@@ -334,7 +344,7 @@ function scoreAddressMatch(label, query, primary) {
   }
 
   // Prefer US results only when the query itself looks American.
-  if (looksLikeUsQuery(query)) {
+  if (looksLikeUsQuery(query) && !looksLikeCanadaQuery(query)) {
     if (labelLower.includes("united states") || labelLower.includes("usa")) hit += 2.5;
     if (labelLower.includes("canada") || labelLower.includes("mexico")) hit -= 4;
     for (const [code, name] of Object.entries(US_STATE_NAMES)) {
@@ -343,6 +353,13 @@ function scoreAddressMatch(label, query, primary) {
         break;
       }
     }
+  }
+  // Canada queries must not snap to US streets with similar names.
+  if (looksLikeCanadaQuery(query)) {
+    if (labelLower.includes("canada")) hit += 3.5;
+    if (labelLower.includes("united states") || labelLower.includes("usa")) hit -= 8;
+    if (/\byukon\b|\byt\b/i.test(String(query || "")) && labelLower.includes("yukon")) hit += 2;
+    if (/\bwhitehorse\b/i.test(String(query || "")) && labelLower.includes("whitehorse")) hit += 2;
   }
   // Boost when the typed country name appears in the result (worldwide).
   const countryBoost = [
@@ -628,6 +645,11 @@ async function geocodeAddress(query) {
   }
   if (parts.length >= 3) push(parts.slice(0, 3).join(", "));
   if (parts[0]) push(parts[0].replace(/^\d+[a-z]?\s+/i, "") + (parts[1] ? `, ${parts[1]}` : ""));
+  // Canadian civic: "989 Range Road, Whitehorse, Yukon, Canada"
+  if (looksLikeCanadaQuery(q)) {
+    push(q.replace(/\bYT\b/gi, "Yukon"));
+    if (parts[0] && parts[1]) push(`${parts[0]}, ${parts[1]}, Canada`);
+  }
 
   let best = null;
   let bestScore = -1;
@@ -641,9 +663,15 @@ async function geocodeAddress(query) {
       }
     }
     // Good enough on the first/full query — avoid hammering OSM for every rewrite.
-    if (best && bestScore >= 0.55) return best;
-    if (candidate === candidates[0] && best) return best;
+    if (best && bestScore >= 0.55) break;
   }
+  if (!best) return null;
+  // Never accept a wrong-country snap (e.g. Canada query → USA street).
+  if (looksLikeCanadaQuery(q) && !/canada/i.test(best.label)) return null;
+  if (looksLikeUsQuery(q) && !looksLikeCanadaQuery(q) && /canada/i.test(best.label) && bestScore < 1) {
+    return null;
+  }
+  if (bestScore < 0.25) return null;
   return best;
 }
 
