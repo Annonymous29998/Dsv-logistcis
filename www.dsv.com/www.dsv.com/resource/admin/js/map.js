@@ -184,17 +184,8 @@
   }
 
   function addBasemap(map) {
-    // Do not use tile.openstreetmap.org — OSM blocks production apps (403 policy).
-    // Carto hosts OSM-based tiles for apps; Esri is the offline/network fallback.
-    var cartoTiles = global.L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      {
-        maxZoom: 20,
-        subdomains: "abcd",
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      }
-    );
+    // Esri first — no API key. Do not use OSM.org (blocks apps) or Carto CDN
+    // (now serves "API KEY REQUIRED" placeholder tiles without erroring).
     var esriTiles = global.L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       {
@@ -202,15 +193,24 @@
         attribution: "Tiles &copy; Esri"
       }
     );
+    var osmFrTiles = global.L.tileLayer(
+      "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
+      {
+        maxZoom: 20,
+        subdomains: "abc",
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> / osmfr'
+      }
+    );
     var tileErrors = 0;
-    cartoTiles.on("tileerror", function () {
+    esriTiles.on("tileerror", function () {
       tileErrors += 1;
-      if (tileErrors >= 3 && map.hasLayer(cartoTiles)) {
-        map.removeLayer(cartoTiles);
-        if (!map.hasLayer(esriTiles)) esriTiles.addTo(map);
+      if (tileErrors >= 3 && map.hasLayer(esriTiles)) {
+        map.removeLayer(esriTiles);
+        if (!map.hasLayer(osmFrTiles)) osmFrTiles.addTo(map);
       }
     });
-    cartoTiles.addTo(map);
+    esriTiles.addTo(map);
   }
 
   function createMap(container) {
