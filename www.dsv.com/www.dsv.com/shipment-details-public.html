@@ -109,6 +109,49 @@
       font-weight: 700;
       line-height: 1.2;
     }
+    .mydsv-copy-id {
+      display: inline;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      font-weight: inherit;
+      line-height: inherit;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+    .mydsv-copy-id:hover,
+    .mydsv-copy-id:focus-visible {
+      color: var(--dsv-tab);
+      outline: none;
+    }
+    .mydsv-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 1.35rem;
+      z-index: 120;
+      max-width: calc(100vw - 2rem);
+      padding: 0.7rem 1.05rem;
+      border-radius: 999px;
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      transform: translate(-50%, 12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .mydsv-toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
     .mydsv-booking {
       margin: 0.35rem 0 0;
       color: var(--muted);
@@ -529,7 +572,7 @@
       100% { transform: translateX(280%); }
     }
   </style>
-  <script src="/resource/js/anti-inspect.js?v=20261102a3"></script>
+  <script src="/resource/js/anti-inspect.js?v=20261106a1"></script>
 </head>
 <body>
   <header class="mydsv-header">
@@ -548,6 +591,6 @@
     <div id="track-result" aria-live="polite"></div>
   </div>
   <script src="/resource/js/realtime.js?v=20261102k"></script>
-  <script src="/resource/js/track.js?v=20261106p01"></script>
+  <script src="/resource/js/track.js?v=20261106p02"></script>
 </body>
 </html>

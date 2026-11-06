@@ -747,7 +747,13 @@
         '<div class="mydsv-shipment-head">' +
           '<div class="mydsv-mode">' + modeIcon(kind) + "</div>" +
           "<div>" +
-            "<h1>Shipment " + escapeHtml(trackingNumber) + "</h1>" +
+            '<h1>Shipment <button type="button" class="mydsv-copy-id" data-copy-id="' +
+              escapeHtml(trackingNumber) +
+              '" aria-label="Copy shipment id ' +
+              escapeHtml(trackingNumber) +
+              '" title="Tap to copy">' +
+              escapeHtml(trackingNumber) +
+              "</button></h1>" +
             (hasRouteCoords(data)
               ? '<button type="button" class="mydsv-view-route">View route</button>'
               : "") +
@@ -939,9 +945,69 @@
     });
   }
 
+  function showCopyToast(message) {
+    var existing = document.querySelector(".mydsv-toast");
+    if (existing) existing.remove();
+    var toast = document.createElement("div");
+    toast.className = "mydsv-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.textContent = message || "Shipment id copied";
+    document.body.appendChild(toast);
+    requestAnimationFrame(function () {
+      toast.classList.add("is-visible");
+    });
+    setTimeout(function () {
+      toast.classList.remove("is-visible");
+      setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 220);
+    }, 2200);
+  }
+
+  function copyShipmentId(value) {
+    var text = String(value || "").trim();
+    if (!text) return Promise.resolve(false);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(
+        function () { return true; },
+        function () { return false; }
+      );
+    }
+    return new Promise(function (resolve) {
+      try {
+        var area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(area);
+        resolve(!!ok);
+      } catch (err) {
+        resolve(false);
+      }
+    });
+  }
+
   function bindShipmentActions(root, shipment, trackingNumber) {
     if (!root) return;
-    root.addEventListener("click", function (event) {
+    // Re-bind on each paint so live refreshes keep the latest shipment data.
+    if (root._mydsvActionsBound) {
+      root.removeEventListener("click", root._mydsvActionsBound);
+    }
+    root._mydsvActionsBound = function (event) {
+      var copyBtn = event.target.closest(".mydsv-copy-id");
+      if (copyBtn) {
+        event.preventDefault();
+        var id = copyBtn.getAttribute("data-copy-id") || trackingNumber || copyBtn.textContent;
+        copyShipmentId(id).then(function (ok) {
+          if (ok) showCopyToast("Shipment id copied");
+        });
+        return;
+      }
       var routeBtn = event.target.closest(".mydsv-view-route");
       if (routeBtn) {
         event.preventDefault();
@@ -953,7 +1019,8 @@
         event.preventDefault();
         openPackagePreview(packageImageUrl(shipment));
       }
-    });
+    };
+    root.addEventListener("click", root._mydsvActionsBound);
   }
 
   var detailsUnsub = null;
