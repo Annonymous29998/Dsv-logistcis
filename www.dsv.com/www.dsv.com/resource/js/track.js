@@ -916,8 +916,7 @@
         scrollWheelZoom: true
       });
       modal._mydsvMap = map;
-      // Esri first (no API key). Avoid OSM.org (blocks apps) and Carto CDN
-      // (serves "API KEY REQUIRED" placeholders without triggering tileerror).
+      // Esri first; Geoapify (same address API key) then OSM FR if Esri fails.
       var esri = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
         {
@@ -935,12 +934,44 @@
         }
       );
       var tileErrors = 0;
+      var switched = false;
+      function switchFromEsri(fallback) {
+        if (switched || !map.hasLayer(esri)) return;
+        switched = true;
+        map.removeLayer(esri);
+        (fallback || osmFr).addTo(map);
+      }
       esri.on("tileerror", function () {
         tileErrors += 1;
-        if (tileErrors >= 3 && map.hasLayer(esri)) {
-          map.removeLayer(esri);
-          if (!map.hasLayer(osmFr)) osmFr.addTo(map);
-        }
+        if (tileErrors < 3 || switched) return;
+        fetch("/api/public/config", { credentials: "same-origin", cache: "no-store" })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (cfg) {
+            var key = cfg && cfg.geoapifyApiKey;
+            if (key) {
+              var geo = L.tileLayer(
+                "https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=" +
+                  encodeURIComponent(key),
+                {
+                  maxZoom: 20,
+                  attribution:
+                    'Powered by <a href="https://www.geoapify.com/">Geoapify</a> | &copy; OpenStreetMap'
+                }
+              );
+              var geoErrors = 0;
+              geo.on("tileerror", function () {
+                geoErrors += 1;
+                if (geoErrors >= 3 && map.hasLayer(geo)) {
+                  map.removeLayer(geo);
+                  if (!map.hasLayer(osmFr)) osmFr.addTo(map);
+                }
+              });
+              switchFromEsri(geo);
+              return;
+            }
+            switchFromEsri(osmFr);
+          })
+          .catch(function () { switchFromEsri(osmFr); });
       });
       esri.addTo(map);
 

@@ -183,9 +183,31 @@
     }, { passive: true });
   }
 
+  var mapConfigPromise = null;
+
+  function loadMapConfig() {
+    if (mapConfigPromise) return mapConfigPromise;
+    mapConfigPromise = fetch("/api/public/config", { credentials: "same-origin", cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) { return data && data.ok ? data : {}; })
+      .catch(function () { return {}; });
+    return mapConfigPromise;
+  }
+
+  function geoapifyTileLayer(apiKey) {
+    if (!apiKey || !global.L) return null;
+    return global.L.tileLayer(
+      "https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=" + encodeURIComponent(apiKey),
+      {
+        maxZoom: 20,
+        attribution:
+          'Powered by <a href="https://www.geoapify.com/">Geoapify</a> | &copy; OpenStreetMap'
+      }
+    );
+  }
+
   function addBasemap(map) {
-    // Esri first — no API key. Do not use OSM.org (blocks apps) or Carto CDN
-    // (now serves "API KEY REQUIRED" placeholder tiles without erroring).
+    // Esri first (no key). If it fails, Geoapify (same key as address search), then OSM FR.
     var esriTiles = global.L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       {
@@ -203,14 +225,39 @@
       }
     );
     var tileErrors = 0;
+    var switched = false;
+
+    function switchFromEsri(fallback) {
+      if (switched || !map.hasLayer(esriTiles)) return;
+      switched = true;
+      map.removeLayer(esriTiles);
+      if (fallback) fallback.addTo(map);
+      else osmFrTiles.addTo(map);
+    }
+
     esriTiles.on("tileerror", function () {
       tileErrors += 1;
-      if (tileErrors >= 3 && map.hasLayer(esriTiles)) {
-        map.removeLayer(esriTiles);
-        if (!map.hasLayer(osmFrTiles)) osmFrTiles.addTo(map);
-      }
+      if (tileErrors < 3 || switched) return;
+      loadMapConfig().then(function (cfg) {
+        var geo = geoapifyTileLayer(cfg && cfg.geoapifyApiKey);
+        if (geo) {
+          var geoErrors = 0;
+          geo.on("tileerror", function () {
+            geoErrors += 1;
+            if (geoErrors >= 3 && map.hasLayer(geo)) {
+              map.removeLayer(geo);
+              if (!map.hasLayer(osmFrTiles)) osmFrTiles.addTo(map);
+            }
+          });
+          switchFromEsri(geo);
+          return;
+        }
+        switchFromEsri(osmFrTiles);
+      });
     });
     esriTiles.addTo(map);
+    // Prefetch key so fallback is ready if Esri misbehaves.
+    loadMapConfig();
   }
 
   function createMap(container) {
