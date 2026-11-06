@@ -176,11 +176,17 @@
   }
 
   function addBasemap(map) {
-    // Free raster tiles — no API key. OSM first, Esri fallback if OSM fails.
-    var osmTiles = global.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap"
-    });
+    // Do not use tile.openstreetmap.org — OSM blocks production apps (403 policy).
+    // Carto hosts OSM-based tiles for apps; Esri is the offline/network fallback.
+    var cartoTiles = global.L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      {
+        maxZoom: 20,
+        subdomains: "abcd",
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      }
+    );
     var esriTiles = global.L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       {
@@ -189,14 +195,14 @@
       }
     );
     var tileErrors = 0;
-    osmTiles.on("tileerror", function () {
+    cartoTiles.on("tileerror", function () {
       tileErrors += 1;
-      if (tileErrors >= 3 && map.hasLayer(osmTiles)) {
-        map.removeLayer(osmTiles);
+      if (tileErrors >= 3 && map.hasLayer(cartoTiles)) {
+        map.removeLayer(cartoTiles);
         if (!map.hasLayer(esriTiles)) esriTiles.addTo(map);
       }
     });
-    osmTiles.addTo(map);
+    cartoTiles.addTo(map);
   }
 
   function createMap(container) {

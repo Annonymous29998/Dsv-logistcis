@@ -906,10 +906,32 @@
         scrollWheelZoom: true
       });
       modal._mydsvMap = map;
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
+      // Carto tiles — OSM.org raster endpoints block production apps (403).
+      var carto = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        {
+          maxZoom: 20,
+          subdomains: "abcd",
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        }
+      );
+      var esri = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution: "Tiles &copy; Esri"
+        }
+      );
+      var tileErrors = 0;
+      carto.on("tileerror", function () {
+        tileErrors += 1;
+        if (tileErrors >= 3 && map.hasLayer(carto)) {
+          map.removeLayer(carto);
+          if (!map.hasLayer(esri)) esri.addTo(map);
+        }
+      });
+      carto.addTo(map);
 
       var line = L.polyline(pts, { color: "#0056b8", weight: 5, opacity: 0.9 }).addTo(map);
       L.circleMarker(pts[0], {

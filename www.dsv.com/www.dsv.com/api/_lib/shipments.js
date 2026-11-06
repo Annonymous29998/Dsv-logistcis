@@ -112,6 +112,58 @@ function appendTimeline(item, title, location) {
   item.timeline = timeline;
 }
 
+function isAdminTimelineEvent(ev) {
+  const title = String((ev && ev.title) || "").toUpperCase().trim();
+  if (!title) return false;
+  return (
+    title === "ON HOLD" ||
+    title === "HOLD RELEASED" ||
+    title === "CANCELLED" ||
+    title === "DETAILS UPDATED" ||
+    title.indexOf("HOLD") === 0 ||
+    title.indexOf("CANCEL") === 0
+  );
+}
+
+function parseTimelineStamp(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i
+  );
+  if (!match) {
+    const ms = Date.parse(raw);
+    return Number.isFinite(ms) ? ms : 0;
+  }
+  let hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const ampm = match[6].toUpperCase();
+  if (ampm === "PM" && hour < 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+  return Date.UTC(
+    Number(match[3]),
+    Number(match[1]) - 1,
+    Number(match[2]),
+    hour,
+    minute
+  );
+}
+
+function mergePlannedWithAdminTimeline(plannedVisible, existingTimeline) {
+  const adminEvents = (existingTimeline || []).filter(isAdminTimelineEvent);
+  if (!adminEvents.length) return plannedVisible.slice();
+  return plannedVisible
+    .concat(adminEvents)
+    .sort(function (a, b) {
+      const da = parseTimelineStamp(a && a.date);
+      const db = parseTimelineStamp(b && b.date);
+      if (da !== db) return da - db;
+      // Keep planned scans ahead of same-minute admin notes when stamps collide.
+      const aAdmin = isAdminTimelineEvent(a) ? 1 : 0;
+      const bAdmin = isAdminTimelineEvent(b) ? 1 : 0;
+      return aAdmin - bAdmin;
+    });
+}
+
 function progressShipment(item) {
   const current = String(item.status || "").toLowerCase();
   if (current === "on-hold" || current === "cancelled" || current === "delivered") return false;
@@ -134,8 +186,11 @@ function progressShipment(item) {
     }
   }
   if (!visible.length) return false;
-  // Don't shrink below admin-appended events; public UI hides future planned scans itself.
-  if (visible.length < (item.timeline || []).length) return false;
+
+  // Keep admin hold/cancel notes, but still advance due planned scans.
+  // Old logic refused to progress whenever timeline grew longer than the plan
+  // (e.g. after Place on hold), which permanently froze transit updates.
+  const merged = mergePlannedWithAdminTimeline(visible, item.timeline || []);
 
   const title = String(currentTitle || "").toUpperCase();
   let status = "pending";
@@ -156,8 +211,8 @@ function progressShipment(item) {
   const newRank = rank[status] || 0;
 
   let changed = false;
-  if (JSON.stringify(item.timeline || []) !== JSON.stringify(visible)) {
-    item.timeline = visible;
+  if (JSON.stringify(item.timeline || []) !== JSON.stringify(merged)) {
+    item.timeline = merged;
     changed = true;
   }
   if (newRank >= oldRank && item.status !== status) {

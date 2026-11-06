@@ -922,6 +922,56 @@ def timeline_for_status(planned_events: list[dict[str, Any]], status: str) -> li
     return out
 
 
+def _is_admin_timeline_event(ev: dict[str, Any] | None) -> bool:
+    title = str((ev or {}).get("title") or "").upper().strip()
+    if not title:
+        return False
+    return (
+        title in {"ON HOLD", "HOLD RELEASED", "CANCELLED", "DETAILS UPDATED"}
+        or title.startswith("HOLD")
+        or title.startswith("CANCEL")
+    )
+
+
+def _parse_timeline_stamp(value: str | None) -> float:
+    raw = str(value or "").strip()
+    match = re.match(
+        r"^(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$",
+        raw,
+        flags=re.I,
+    )
+    if not match:
+        try:
+            return datetime.fromisoformat(raw).timestamp()
+        except ValueError:
+            return 0.0
+    month, day, year = int(match.group(1)), int(match.group(2)), int(match.group(3))
+    hour, minute = int(match.group(4)), int(match.group(5))
+    ampm = match.group(6).upper()
+    if ampm == "PM" and hour < 12:
+        hour += 12
+    if ampm == "AM" and hour == 12:
+        hour = 0
+    return datetime(year, month, day, hour, minute).timestamp()
+
+
+def _merge_planned_with_admin_timeline(
+    planned_visible: list[dict[str, Any]],
+    existing_timeline: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    admin_events = [ev for ev in (existing_timeline or []) if _is_admin_timeline_event(ev)]
+    if not admin_events:
+        return list(planned_visible)
+    merged = list(planned_visible) + admin_events
+    merged.sort(
+        key=lambda ev: (
+            _parse_timeline_stamp(ev.get("date")),
+            1 if _is_admin_timeline_event(ev) else 0,
+        )
+    )
+    return merged
+
+
 def progress_shipment(item: dict[str, Any], force: bool = False) -> bool:
     """Advance timeline/status from stored route plan using elapsed time. Returns True if changed."""
     current = str(item.get("status") or "").lower()
@@ -959,10 +1009,10 @@ def progress_shipment(item: dict[str, Any], force: bool = False) -> bool:
     if not visible:
         return False
 
-    # Never regress history the admin already published.
-    existing = item.get("timeline") or []
-    if len(visible) < len(existing):
-        return False
+    # Keep admin hold/cancel notes, but still advance due planned scans.
+    # Old logic froze progress whenever admin events made the timeline longer
+    # than the current planned slice (common after Place on hold).
+    merged = _merge_planned_with_admin_timeline(visible, item.get("timeline") or [])
 
     title = (current_title or "").upper()
     if title == "DELIVERED":
@@ -989,8 +1039,8 @@ def progress_shipment(item: dict[str, Any], force: bool = False) -> bool:
         delivery_status = str(item.get("deliveryStatus") or delivery_status)
 
     changed = False
-    if item.get("timeline") != visible:
-        item["timeline"] = visible
+    if item.get("timeline") != merged:
+        item["timeline"] = merged
         changed = True
     if item.get("status") != status and new_rank >= old_rank:
         item["status"] = status
@@ -999,7 +1049,7 @@ def progress_shipment(item: dict[str, Any], force: bool = False) -> bool:
         item["deliveryStatus"] = delivery_status
         changed = True
 
-    # Near place from latest event
+    # Near place from latest planned scan (not hold reason text).
     last_loc = visible[-1].get("location") if visible else None
     if last_loc:
         near = re.sub(r"^FROM\s+", "", str(last_loc), flags=re.I)
