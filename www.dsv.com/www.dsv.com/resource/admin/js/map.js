@@ -67,20 +67,28 @@
 
     var created = Date.parse(row.createdAt || "");
     var eta = Date.parse(row.etaAt || "");
+    var paused = Number(row.holdPausedMs || 0) || 0;
+    if (
+      row.deliveryNotice &&
+      typeof row.deliveryNotice === "object" &&
+      Number(row.deliveryNotice.holdPausedMs) > 0
+    ) {
+      paused = Number(row.deliveryNotice.holdPausedMs) || paused;
+    }
     var now = Date.now();
-    if (s.indexOf("hold") !== -1) {
-      var held = Date.parse(row.heldAt || "");
-      if (Number.isFinite(created) && Number.isFinite(eta) && eta > created) {
-        var freezeAt = Number.isFinite(held) ? held : now;
-        return Math.max(0.05, Math.min(0.9, (freezeAt - created) / (eta - created)));
-      }
-      return 0.55;
-    }
-
     if (Number.isFinite(created) && Number.isFinite(eta) && eta > created) {
-      return Math.max(0.02, Math.min(0.98, (now - created) / (eta - created)));
+      var end = now;
+      // On hold: freeze marker at the hold moment (route does not keep moving).
+      if (s.indexOf("hold") !== -1) {
+        var held = Date.parse(row.heldAt || "");
+        end = Number.isFinite(held) ? held : now;
+      }
+      var elapsed = Math.max(0, end - created - paused);
+      var total = Math.max(1, eta - created - paused);
+      return Math.max(0.02, Math.min(0.98, elapsed / total));
     }
 
+    if (s.indexOf("hold") !== -1) return 0.55;
     if (s.indexOf("label") !== -1 || s === "pending") return 0.05;
     if (s.indexOf("out") !== -1) return 0.85;
     return 0.35;

@@ -614,6 +614,67 @@ def hold_shipment(tracking_id: str, reason: str) -> dict[str, Any]:
     return {"id": key, "shipment": admin_item(item)}
 
 
+def _get_hold_paused_ms(item: dict[str, Any]) -> int:
+    direct = item.get("holdPausedMs")
+    try:
+        if direct is not None and float(direct) > 0:
+            return int(float(direct))
+    except (TypeError, ValueError):
+        pass
+    notice = item.get("deliveryNotice")
+    if isinstance(notice, dict):
+        try:
+            nested = float(notice.get("holdPausedMs") or 0)
+            if nested > 0:
+                return int(nested)
+        except (TypeError, ValueError):
+            return 0
+    return 0
+
+
+def _set_hold_paused_ms(item: dict[str, Any], ms: int) -> None:
+    value = max(0, int(ms or 0))
+    item["holdPausedMs"] = value
+    notice = item.get("deliveryNotice")
+    if not isinstance(notice, dict):
+        notice = {}
+    else:
+        notice = dict(notice)
+    if value > 0:
+        notice["holdPausedMs"] = value
+    else:
+        notice.pop("holdPausedMs", None)
+    item["deliveryNotice"] = notice or None
+
+
+def _shift_plan_after_hold(item: dict[str, Any], pause_ms: int) -> None:
+    if pause_ms <= 0:
+        return
+    eta_raw = item.get("etaAt")
+    if eta_raw:
+        try:
+            eta = datetime.fromisoformat(str(eta_raw))
+            next_eta = eta + timedelta(milliseconds=pause_ms)
+            item["etaAt"] = next_eta.isoformat()
+            item["estimatedDelivery"] = _format_eta(next_eta)
+        except ValueError:
+            pass
+    shifted = []
+    for ev in item.get("plannedEvents") or []:
+        copy = dict(ev)
+        at_raw = copy.get("at")
+        if at_raw:
+            try:
+                at = datetime.fromisoformat(str(at_raw))
+                nxt = at + timedelta(milliseconds=pause_ms)
+                copy["at"] = nxt.isoformat()
+                copy["date"] = _format_stamp(nxt)
+            except ValueError:
+                pass
+        shifted.append(copy)
+    item["plannedEvents"] = shifted
+
+
 def release_hold(tracking_id: str, note: str | None = None) -> dict[str, Any]:
     shipments = load_shipments()
     key, item = find_shipment(shipments, tracking_id)
@@ -624,13 +685,28 @@ def release_hold(tracking_id: str, note: str | None = None) -> dict[str, Any]:
     resume = str(item.get("previousStatus") or "in-transit")
     status, delivery_status = _status_meta(resume)
     note_text = str(note or "").strip()
+    held_raw = item.get("heldAt")
+    pause_ms = 0
+    if held_raw:
+        try:
+            held = datetime.fromisoformat(str(held_raw))
+            pause_ms = max(0, int((datetime.now(timezone.utc).astimezone() - held).total_seconds() * 1000))
+        except ValueError:
+            pause_ms = 0
+    _set_hold_paused_ms(item, _get_hold_paused_ms(item) + pause_ms)
+    _shift_plan_after_hold(item, pause_ms)
     item["status"] = status
     item["deliveryStatus"] = delivery_status
     item["previousStatus"] = None
     item["holdReason"] = None
     item["statusReason"] = note_text or None
     item["heldAt"] = None
-    _append_timeline(item, "HOLD RELEASED", note_text or "Shipment released from hold")
+    # Match production API: do not publish HOLD RELEASED on the public timeline.
+    item["timeline"] = [
+        ev
+        for ev in (item.get("timeline") or [])
+        if str((ev or {}).get("title") or "").upper() != "HOLD RELEASED"
+    ]
     shipments[key] = item
     save_shipments(shipments)
     return {"id": key, "shipment": admin_item(item)}
@@ -990,8 +1066,12 @@ def progress_shipment(item: dict[str, Any], force: bool = False) -> bool:
         return False
 
     now = datetime.now(timezone.utc).astimezone()
-    total = max(1.0, (eta - created).total_seconds())
-    frac = max(0.0, min(1.0, (now - created).total_seconds() / total))
+    paused_ms = _get_hold_paused_ms(item)
+    paused = timedelta(milliseconds=paused_ms)
+    end = now
+    # On-hold shipments are skipped above; keep pause-aware clock for resume.
+    total = max(1.0, (eta - created - paused).total_seconds())
+    frac = max(0.0, min(1.0, (end - created - paused).total_seconds() / total))
 
     visible = []
     current_title = "LABEL CREATED"

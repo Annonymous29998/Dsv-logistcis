@@ -55,7 +55,11 @@ function rowToShipment(row) {
     routeDurationS: row.route_duration_s,
     createdAt: row.created_at,
     etaAt: row.eta_at,
-    progressUpdatedAt: row.progress_updated_at
+    progressUpdatedAt: row.progress_updated_at,
+    holdPausedMs:
+      row.delivery_notice && typeof row.delivery_notice === "object"
+        ? Number(row.delivery_notice.holdPausedMs || 0) || 0
+        : 0
   };
 }
 
@@ -91,6 +95,9 @@ function shipmentToRow(id, item) {
             ? { en: String(item.deliveryNotice) }
             : {};
       if (item.packageImage) notice.packageImage = item.packageImage;
+      const paused = Number(item.holdPausedMs || notice.holdPausedMs || 0) || 0;
+      if (paused > 0) notice.holdPausedMs = paused;
+      else delete notice.holdPausedMs;
       return Object.keys(notice).length ? notice : null;
     })(),
     timeline: item.timeline || [],
@@ -114,12 +121,11 @@ function publicShipment(item) {
   const {
     plannedEvents,
     adminEvents,
-    createdAt,
-    etaAt,
     progressUpdatedAt,
     previousStatus,
     ...publicFields
   } = item;
+  // Keep createdAt/etaAt/holdPausedMs so public map can freeze on hold and resume after.
   return publicFields;
 }
 

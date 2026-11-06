@@ -993,5 +993,7 @@ module.exports = {
   geocodeAddress,
   buildRoutePlan,
   timelineForStatus,
-  statusMeta
+  statusMeta,
+  formatStamp,
+  formatEta
 };

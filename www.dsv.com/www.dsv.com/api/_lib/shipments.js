@@ -3,7 +3,9 @@ const {
   geocodeAddress,
   buildRoutePlan,
   timelineForStatus,
-  statusMeta
+  statusMeta,
+  formatStamp,
+  formatEta
 } = require("./geo");
 
 // Optional column — if SQL migration was not run, strip it and keep image in delivery_notice.
@@ -56,6 +58,7 @@ async function patchShipmentStatus(id, item, options) {
     timeline: full.timeline,
     planned_events: full.planned_events,
     admin_events: full.admin_events,
+    delivery_notice: full.delivery_notice,
     eta_at: full.eta_at,
     progress_updated_at: full.progress_updated_at,
     estimated_delivery: full.estimated_delivery
@@ -164,6 +167,72 @@ function mergePlannedWithAdminTimeline(plannedVisible, existingTimeline) {
     });
 }
 
+function getHoldPausedMs(item) {
+  const direct = Number(item && item.holdPausedMs);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const notice = item && item.deliveryNotice;
+  if (notice && typeof notice === "object") {
+    const nested = Number(notice.holdPausedMs || 0);
+    if (Number.isFinite(nested) && nested > 0) return nested;
+  }
+  return 0;
+}
+
+function setHoldPausedMs(item, ms) {
+  const value = Math.max(0, Number(ms) || 0);
+  item.holdPausedMs = value;
+  if (!item.deliveryNotice || typeof item.deliveryNotice !== "object") {
+    item.deliveryNotice = {};
+  } else {
+    item.deliveryNotice = Object.assign({}, item.deliveryNotice);
+  }
+  if (value > 0) item.deliveryNotice.holdPausedMs = value;
+  else delete item.deliveryNotice.holdPausedMs;
+}
+
+function routeProgressFraction(item) {
+  const created = Date.parse(item && item.createdAt);
+  const eta = Date.parse(item && item.etaAt);
+  if (!Number.isFinite(created) || !Number.isFinite(eta) || eta <= created) return null;
+  const paused = getHoldPausedMs(item);
+  const status = String((item && item.status) || "").toLowerCase();
+  let end = Date.now();
+  if (status === "on-hold") {
+    const held = Date.parse(item && item.heldAt);
+    end = Number.isFinite(held) ? held : end;
+  }
+  const elapsed = Math.max(0, end - created - paused);
+  const total = Math.max(1, eta - created - paused);
+  return Math.max(0, Math.min(1, elapsed / total));
+}
+
+function shiftPlanAfterHold(item, pauseMs) {
+  if (!pauseMs || pauseMs <= 0) return;
+  const etaMs = Date.parse(item.etaAt);
+  if (Number.isFinite(etaMs)) {
+    const nextEta = new Date(etaMs + pauseMs);
+    item.etaAt = nextEta.toISOString();
+    item.estimatedDelivery = formatEta(nextEta);
+  }
+  item.plannedEvents = (item.plannedEvents || []).map(function (ev) {
+    const copy = Object.assign({}, ev);
+    const atMs = Date.parse(copy.at || "");
+    if (Number.isFinite(atMs)) {
+      const next = new Date(atMs + pauseMs);
+      copy.at = next.toISOString();
+      copy.date = formatStamp(next);
+    } else {
+      const stampMs = parseTimelineStamp(copy.date);
+      if (stampMs) {
+        const next = new Date(stampMs + pauseMs);
+        copy.date = formatStamp(next);
+        copy.at = next.toISOString();
+      }
+    }
+    return copy;
+  });
+}
+
 function progressShipment(item) {
   const current = String(item.status || "").toLowerCase();
   if (current === "on-hold" || current === "cancelled" || current === "delivered") return false;
@@ -175,8 +244,8 @@ function progressShipment(item) {
   const eta = new Date(item.etaAt).getTime();
   if (!Number.isFinite(created) || !Number.isFinite(eta) || eta <= created) return false;
 
-  const now = Date.now();
-  const frac = Math.max(0, Math.min(1, (now - created) / (eta - created)));
+  const fracRaw = routeProgressFraction(item);
+  const frac = fracRaw == null ? 0 : fracRaw;
   const visible = [];
   let currentTitle = "LABEL CREATED";
   for (const ev of planned) {
@@ -735,6 +804,11 @@ async function releaseHold(id, note) {
   }
   const resume = existing.previousStatus || "in-transit";
   const [status, deliveryStatus] = statusMeta(resume);
+  const heldMs = Date.parse(existing.heldAt || "");
+  const pauseMs = Number.isFinite(heldMs) ? Math.max(0, Date.now() - heldMs) : 0;
+  // Freeze accounted for: add hold duration so map/timeline resume from the stop point.
+  setHoldPausedMs(existing, getHoldPausedMs(existing) + pauseMs);
+  shiftPlanAfterHold(existing, pauseMs);
   existing.status = status;
   existing.deliveryStatus = deliveryStatus;
   existing.previousStatus = null;
