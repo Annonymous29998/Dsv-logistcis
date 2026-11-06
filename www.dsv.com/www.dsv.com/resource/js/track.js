@@ -669,7 +669,6 @@
     var data = progressed.data;
     var currentIdx = historyStageIndex(data, progressed);
     var packageImg = packageImageUrl(data);
-    var bookingId = data.bookingId || data.bookingNumber || "-";
     var houseBill = data.houseBill || data.houseBillNumber || trackingNumber;
     var kind = modeKind(data.serviceType);
     var origin = placeWithCode(data.fromLocation);
@@ -749,7 +748,6 @@
           '<div class="mydsv-mode">' + modeIcon(kind) + "</div>" +
           "<div>" +
             "<h1>Shipment " + escapeHtml(trackingNumber) + "</h1>" +
-            '<p class="mydsv-booking">Booking id: ' + escapeHtml(bookingId) + "</p>" +
             (hasRouteCoords(data)
               ? '<button type="button" class="mydsv-view-route">View route</button>'
               : "") +
