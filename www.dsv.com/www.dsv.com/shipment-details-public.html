@@ -79,11 +79,6 @@
     .mydsv-crumb .is-current { color: #333; font-weight: 600; }
 
     #track-result { padding: 0; }
-    #track-result.is-live-updated {
-      outline: 2px solid rgba(0, 86, 184, 0.35);
-      outline-offset: 4px;
-      transition: outline-color 1s ease;
-    }
 
     .mydsv-top {
       background: #fff;
@@ -119,9 +114,11 @@
       color: var(--muted);
       font-size: 0.9rem;
     }
-    .mydsv-preview-package {
+    .mydsv-preview-package,
+    .mydsv-view-route {
       display: inline-block;
       margin-top: 0.45rem;
+      margin-right: 0.85rem;
       padding: 0;
       border: 0;
       background: none;
@@ -133,9 +130,11 @@
       text-underline-offset: 2px;
       cursor: pointer;
     }
-    .mydsv-preview-package:hover { color: var(--dsv-blue); }
+    .mydsv-preview-package:hover,
+    .mydsv-view-route:hover { color: var(--dsv-blue); }
     body.mydsv-lightbox-open { overflow: hidden; }
-    .mydsv-package-lightbox {
+    .mydsv-package-lightbox,
+    .mydsv-route-lightbox {
       position: fixed;
       inset: 0;
       z-index: 80;
@@ -143,7 +142,8 @@
       place-items: center;
       padding: 1rem;
     }
-    .mydsv-package-lightbox__backdrop {
+    .mydsv-package-lightbox__backdrop,
+    .mydsv-route-lightbox__backdrop {
       position: absolute;
       inset: 0;
       border: 0;
@@ -169,7 +169,52 @@
       background: #f3f5f8;
       border-radius: 10px;
     }
-    .mydsv-package-lightbox__close {
+    .mydsv-route-lightbox__panel {
+      position: relative;
+      z-index: 1;
+      width: min(960px, 100%);
+      height: min(78vh, 720px);
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 22px 60px rgba(0, 20, 50, 0.35);
+      display: flex;
+      flex-direction: column;
+    }
+    .mydsv-route-lightbox__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .mydsv-route-lightbox__head h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .mydsv-route-lightbox__head p {
+      margin: 0.2rem 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .mydsv-route-map {
+      flex: 1 1 auto;
+      min-height: 280px;
+      width: 100%;
+      background: #e8eef5;
+    }
+    .mydsv-route-lightbox__empty {
+      margin: auto;
+      padding: 2rem 1.25rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .mydsv-package-lightbox__close,
+    .mydsv-route-lightbox__close {
       position: absolute;
       top: 0.55rem;
       right: 0.55rem;
@@ -184,6 +229,12 @@
       line-height: 1;
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    }
+    .mydsv-route-lightbox__close {
+      position: static;
+      box-shadow: none;
+      background: #f3f5f8;
+      flex: 0 0 auto;
     }
 
     .mydsv-alert {
@@ -497,6 +548,6 @@
     <div id="track-result" aria-live="polite"></div>
   </div>
   <script src="/resource/js/realtime.js?v=20261102k"></script>
-  <script src="/resource/js/track.js?v=20261102p64"></script>
+  <script src="/resource/js/track.js?v=20261102p68"></script>
 </body>
 </html>

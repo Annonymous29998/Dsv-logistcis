@@ -564,6 +564,104 @@
     return "";
   }
 
+  function hasRouteCoords(data) {
+    function ok(v) {
+      if (v == null || v === "") return false;
+      return Number.isFinite(Number(v));
+    }
+    return !!(data && ok(data.fromLat) && ok(data.fromLon) && ok(data.toLat) && ok(data.toLon));
+  }
+
+  function routePoints(data) {
+    var stops = Array.isArray(data.routeStops) ? data.routeStops : [];
+    var pts = stops
+      .filter(function (s) { return Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)); })
+      .map(function (s) { return [Number(s.lat), Number(s.lon)]; });
+    if (pts.length >= 2) return pts;
+    if (!hasRouteCoords(data)) return [];
+    return [[Number(data.fromLat), Number(data.fromLon)], [Number(data.toLat), Number(data.toLon)]];
+  }
+
+  function pointAtFraction(pts, frac) {
+    frac = Math.max(0, Math.min(1, Number(frac) || 0));
+    if (!pts || !pts.length) return null;
+    if (pts.length < 2) return pts[0];
+    var lens = [];
+    var total = 0;
+    var i;
+    for (i = 0; i < pts.length - 1; i += 1) {
+      var dlat = pts[i + 1][0] - pts[i][0];
+      var dlon = pts[i + 1][1] - pts[i][1];
+      var d = Math.sqrt(dlat * dlat + dlon * dlon);
+      lens.push(d);
+      total += d;
+    }
+    if (total <= 0) return pts[0];
+    var target = frac * total;
+    var acc = 0;
+    for (i = 0; i < lens.length; i += 1) {
+      var seg = lens[i];
+      if (acc + seg >= target || i === lens.length - 1) {
+        var local = seg ? (target - acc) / seg : 0;
+        local = Math.max(0, Math.min(1, local));
+        var a = pts[i];
+        var b = pts[i + 1];
+        return [a[0] + (b[0] - a[0]) * local, a[1] + (b[1] - a[1]) * local];
+      }
+      acc += seg;
+    }
+    return pts[pts.length - 1];
+  }
+
+  function progressFraction(data) {
+    var s = String((data && data.status) || "").toLowerCase();
+    if (s.indexOf("deliver") !== -1) return 1;
+    if (s.indexOf("cancel") !== -1) return 0.15;
+    var created = Date.parse((data && data.createdAt) || "");
+    var eta = Date.parse((data && data.etaAt) || "");
+    var now = Date.now();
+    if (s.indexOf("hold") !== -1) {
+      var held = Date.parse((data && data.heldAt) || "");
+      if (Number.isFinite(created) && Number.isFinite(eta) && eta > created) {
+        var freezeAt = Number.isFinite(held) ? held : now;
+        return Math.max(0.05, Math.min(0.9, (freezeAt - created) / (eta - created)));
+      }
+      return 0.55;
+    }
+    if (Number.isFinite(created) && Number.isFinite(eta) && eta > created) {
+      return Math.max(0.02, Math.min(0.98, (now - created) / (eta - created)));
+    }
+    if (s.indexOf("label") !== -1 || s === "pending") return 0.05;
+    if (s.indexOf("out") !== -1) return 0.85;
+    return 0.35;
+  }
+
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve(window.L);
+    return new Promise(function (resolve, reject) {
+      var cssId = "mydsv-leaflet-css";
+      if (!document.getElementById(cssId)) {
+        var link = document.createElement("link");
+        link.id = cssId;
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+      var existing = document.querySelector("script[data-mydsv-leaflet]");
+      if (existing) {
+        existing.addEventListener("load", function () { resolve(window.L); });
+        existing.addEventListener("error", reject);
+        return;
+      }
+      var script = document.createElement("script");
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.setAttribute("data-mydsv-leaflet", "1");
+      script.onload = function () { resolve(window.L); };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
   function resultCard(trackingNumber, rawData) {
     var progressed = applyScanTimelineProgress(
       applyOutForDeliveryTodayScan(resolveTrackingDataForDisplay(rawData))
@@ -652,6 +750,9 @@
           "<div>" +
             "<h1>Shipment " + escapeHtml(trackingNumber) + "</h1>" +
             '<p class="mydsv-booking">Booking id: ' + escapeHtml(bookingId) + "</p>" +
+            (hasRouteCoords(data)
+              ? '<button type="button" class="mydsv-view-route">View route</button>'
+              : "") +
             (packageImg
               ? '<button type="button" class="mydsv-preview-package">Preview package</button>'
               : "") +
@@ -720,7 +821,23 @@
   function closePackagePreview() {
     var existing = document.getElementById("mydsv-package-lightbox");
     if (existing) existing.remove();
-    document.body.classList.remove("mydsv-lightbox-open");
+    if (!document.getElementById("mydsv-route-lightbox")) {
+      document.body.classList.remove("mydsv-lightbox-open");
+    }
+  }
+
+  function closeRouteMap() {
+    var existing = document.getElementById("mydsv-route-lightbox");
+    if (existing) {
+      if (existing._mydsvMap) {
+        try { existing._mydsvMap.remove(); } catch (_err) {}
+        existing._mydsvMap = null;
+      }
+      existing.remove();
+    }
+    if (!document.getElementById("mydsv-package-lightbox")) {
+      document.body.classList.remove("mydsv-lightbox-open");
+    }
   }
 
   function openPackagePreview(src) {
@@ -745,13 +862,99 @@
     });
   }
 
-  function bindPackagePreview(root, packageImg) {
-    if (!root || !packageImg) return;
+  function openRouteMap(data, trackingNumber) {
+    closeRouteMap();
+    var pts = routePoints(data);
+    var modal = document.createElement("div");
+    modal.id = "mydsv-route-lightbox";
+    modal.className = "mydsv-route-lightbox";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Shipment route map");
+    modal.innerHTML =
+      '<button type="button" class="mydsv-route-lightbox__backdrop" data-route-close aria-label="Close map"></button>' +
+      '<div class="mydsv-route-lightbox__panel">' +
+        '<div class="mydsv-route-lightbox__head">' +
+          "<div>" +
+            "<h2>Shipment route</h2>" +
+            "<p>" + escapeHtml(trackingNumber || data.id || "") + " · live position along route</p>" +
+          "</div>" +
+          '<button type="button" class="mydsv-route-lightbox__close" data-route-close aria-label="Close">&times;</button>' +
+        "</div>" +
+        (pts.length >= 2
+          ? '<div class="mydsv-route-map" id="mydsv-route-map" role="img" aria-label="Map of shipment route"></div>'
+          : '<p class="mydsv-route-lightbox__empty">Route map is not available for this shipment yet.</p>') +
+      "</div>";
+    document.body.appendChild(modal);
+    document.body.classList.add("mydsv-lightbox-open");
+    modal.addEventListener("click", function (event) {
+      if (event.target.closest("[data-route-close]")) closeRouteMap();
+    });
+
+    if (pts.length < 2) return;
+
+    loadLeaflet().then(function (L) {
+      var mapEl = document.getElementById("mydsv-route-map");
+      if (!mapEl || !L) return;
+      var map = L.map(mapEl, {
+        zoomControl: true,
+        attributionControl: true,
+        scrollWheelZoom: true
+      });
+      modal._mydsvMap = map;
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      var line = L.polyline(pts, { color: "#0056b8", weight: 5, opacity: 0.9 }).addTo(map);
+      L.circleMarker(pts[0], {
+        radius: 7, color: "#002664", weight: 2, fillColor: "#fff", fillOpacity: 1
+      }).addTo(map).bindTooltip("Origin · " + (data.fromLocation || "From"), { direction: "top" });
+      L.circleMarker(pts[pts.length - 1], {
+        radius: 7, color: "#78b820", weight: 2, fillColor: "#fff", fillOpacity: 1
+      }).addTo(map).bindTooltip("Destination · " + (data.toLocation || "To"), { direction: "top" });
+
+      var here = pointAtFraction(pts, progressFraction(data));
+      if (here) {
+        L.circleMarker(here, {
+          radius: 9, color: "#fff", weight: 2, fillColor: "#0056b8", fillOpacity: 1
+        }).addTo(map).bindPopup(
+          "<strong>" + escapeHtml(trackingNumber || data.id || "Shipment") + "</strong><br>" +
+          escapeHtml(data.deliveryStatus || data.status || "") + "<br>" +
+          "<em>Current position</em>"
+        ).openPopup();
+      }
+
+      map.fitBounds(line.getBounds(), { padding: [36, 36], maxZoom: 12 });
+      window.setTimeout(function () {
+        try { map.invalidateSize({ animate: false }); } catch (_err) {}
+      }, 80);
+      window.setTimeout(function () {
+        try { map.invalidateSize({ animate: false }); } catch (_err) {}
+      }, 320);
+    }).catch(function () {
+      var mapEl = document.getElementById("mydsv-route-map");
+      if (mapEl) {
+        mapEl.outerHTML = '<p class="mydsv-route-lightbox__empty">Could not load the map. Please try again.</p>';
+      }
+    });
+  }
+
+  function bindShipmentActions(root, shipment, trackingNumber) {
+    if (!root) return;
     root.addEventListener("click", function (event) {
-      var btn = event.target.closest(".mydsv-preview-package");
-      if (!btn) return;
-      event.preventDefault();
-      openPackagePreview(packageImg);
+      var routeBtn = event.target.closest(".mydsv-view-route");
+      if (routeBtn) {
+        event.preventDefault();
+        openRouteMap(shipment, trackingNumber);
+        return;
+      }
+      var previewBtn = event.target.closest(".mydsv-preview-package");
+      if (previewBtn) {
+        event.preventDefault();
+        openPackagePreview(packageImageUrl(shipment));
+      }
     });
   }
 
@@ -767,15 +970,9 @@
       }
       root.innerHTML = resultCard(id, shipment);
       bindTabs(root);
-      bindPackagePreview(root, packageImageUrl(shipment));
-      if (flashLive) flashLiveUpdate(root);
+      bindShipmentActions(root, shipment, id);
+      // Live updates refresh quietly — no blinking outline flash.
     }, wait);
-  }
-
-  function flashLiveUpdate(root) {
-    if (!root) return;
-    root.classList.add("is-live-updated");
-    setTimeout(function () { root.classList.remove("is-live-updated"); }, 1200);
   }
 
   function reloadDetailsLive(root, id, raw) {
@@ -885,6 +1082,12 @@
       });
     });
   }
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    closeRouteMap();
+    closePackagePreview();
+  });
 
   function init() {
     bindHomeForms();
