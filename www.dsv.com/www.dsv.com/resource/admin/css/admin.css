@@ -469,15 +469,17 @@ body.sidebar-collapsed .btn-logout-side:focus-visible span {
   display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
   margin-bottom: 1rem; flex-wrap: wrap;
 }
-.welcome > div { min-width: 0; flex: 1 1 220px; }
+.welcome > div:not(.welcome__actions) { min-width: 0; flex: 1 1 220px; }
 .welcome h1 { margin: 0; font-size: clamp(1.35rem, 2.2vw, 1.85rem); letter-spacing: -.03em; }
 .welcome p { margin: .3rem 0 0; color: var(--muted); max-width: 42rem; line-height: 1.45; }
 .welcome__actions {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: .55rem;
   flex-wrap: wrap;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  margin-left: auto;
 }
 .btn-danger-outline {
   display: inline-flex;
@@ -495,6 +497,21 @@ body.sidebar-collapsed .btn-logout-side:focus-visible span {
 .date-pill {
   display: inline-flex; align-items: center; gap: .4rem; padding: .6rem .85rem; border-radius: 12px;
   background: #fff; border: 1px solid var(--line); font-weight: 600; font-size: .86rem; flex-shrink: 0;
+}
+
+/* Align Live book over the Pending / Delayed KPI column on desktop. */
+.kpi-book-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .9rem;
+  margin: 0 0 .55rem;
+  align-items: center;
+}
+.kpi-book-bar .date-pill {
+  grid-column: -2 / -1;
+  justify-self: end;
+  width: max-content;
+  max-width: 100%;
 }
 
 .kpi-row {
@@ -1156,6 +1173,17 @@ body.nav-open .overlay-nav { opacity: 1; pointer-events: auto; }
   .grid-3 .table-wrap table,
   .table-compact { min-width: 480px; }
   .welcome { align-items: flex-start; }
+  .welcome__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .kpi-book-bar {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .kpi-book-bar .date-pill {
+    grid-column: auto;
+  }
   .meta-grid { grid-template-columns: 1fr; }
   .meta-grid .span-2 { grid-column: auto; }
   .meta-grid strong { white-space: normal; word-break: break-word; }

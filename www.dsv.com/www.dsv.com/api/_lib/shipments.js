@@ -1,4 +1,12 @@
-const { getSupabase, rowToShipment, shipmentToRow, publicShipment, adminShipment } = require("./supabase");
+const {
+  getSupabase,
+  rowToShipment,
+  shipmentToRow,
+  publicShipment,
+  adminShipment,
+  shipmentHasPackageImage,
+  packageImagePayload
+} = require("./supabase");
 const {
   geocodeAddress,
   buildRoutePlan,
@@ -15,10 +23,27 @@ function isMissingPackageImageColumn(error) {
   return /package_image/i.test(String((error && error.message) || error || ""));
 }
 
+function nestPackageImageInNotice(row, item) {
+  if (!item || !item.packageImage) return;
+  const notice =
+    row.delivery_notice && typeof row.delivery_notice === "object"
+      ? Object.assign({}, row.delivery_notice)
+      : {};
+  notice.packageImage = item.packageImage;
+  row.delivery_notice = notice;
+}
+
 async function saveShipmentRow(id, item, mode) {
   const supabase = getSupabase();
   const row = shipmentToRow(id, item);
-  if (packageImageColumnMissing) delete row.package_image;
+  if (packageImageColumnMissing) {
+    delete row.package_image;
+    nestPackageImageInNotice(row, item);
+  } else if (row.delivery_notice && typeof row.delivery_notice === "object") {
+    // Column is available — drop nested base64 so JSONB stays small.
+    delete row.delivery_notice.packageImage;
+    if (!Object.keys(row.delivery_notice).length) row.delivery_notice = null;
+  }
 
   let result =
     mode === "insert"
@@ -28,6 +53,7 @@ async function saveShipmentRow(id, item, mode) {
   if (result.error && isMissingPackageImageColumn(result.error)) {
     packageImageColumnMissing = true;
     delete row.package_image;
+    nestPackageImageInNotice(row, item);
     result =
       mode === "insert"
         ? await supabase.from("shipments").insert(row)
@@ -44,6 +70,18 @@ async function patchShipmentStatus(id, item, options) {
   options = options || {};
   const supabase = getSupabase();
   const full = shipmentToRow(id, item);
+  // Keep holdPausedMs updates. Prefer package_image column; only nest base64
+  // into delivery_notice when that column is known missing.
+  let deliveryNotice = full.delivery_notice;
+  if (deliveryNotice && typeof deliveryNotice === "object") {
+    deliveryNotice = Object.assign({}, deliveryNotice);
+    if (packageImageColumnMissing && item.packageImage) {
+      deliveryNotice.packageImage = item.packageImage;
+    } else {
+      delete deliveryNotice.packageImage;
+    }
+    if (!Object.keys(deliveryNotice).length) deliveryNotice = null;
+  }
   const patch = {
     status: full.status,
     delivery_status: full.delivery_status,
@@ -58,7 +96,7 @@ async function patchShipmentStatus(id, item, options) {
     timeline: full.timeline,
     planned_events: full.planned_events,
     admin_events: full.admin_events,
-    delivery_notice: full.delivery_notice,
+    delivery_notice: deliveryNotice,
     eta_at: full.eta_at,
     progress_updated_at: full.progress_updated_at,
     estimated_delivery: full.estimated_delivery
@@ -914,5 +952,7 @@ module.exports = {
   clearAllShipments,
   previewRoute,
   publicShipment,
-  adminShipment
+  adminShipment,
+  shipmentHasPackageImage,
+  packageImagePayload
 };

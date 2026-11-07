@@ -319,6 +319,7 @@
       (row.deliveryNotice && typeof row.deliveryNotice === "object"
         ? row.deliveryNotice.packageImage
         : null);
+    var canPreviewPackage = !!(packageImage || row.hasPackageImage);
     var reason = row.holdReason || row.cancelReason || row.statusReason;
     document.getElementById("drawer-body").innerHTML =
       '<div class="meta-grid">' +
@@ -331,7 +332,7 @@
         '<div class="span-2"><span>Destination</span><strong>' + AdminUtils.escapeHtml(row.toLocation || "—") + "</strong></div>" +
         (reason ? '<div class="span-2"><span>Status reason</span><strong>' + AdminUtils.escapeHtml(reason) + "</strong></div>" : "") +
         (noticeText ? '<div class="span-2 backend-note">' + AdminUtils.escapeHtml(noticeText) + "</div>" : "") +
-        (packageImage
+        (canPreviewPackage
           ? '<div class="span-2"><button type="button" class="pkg-preview-link" data-package-preview>Preview package</button></div>'
           : "") +
       "</div>" +
@@ -343,16 +344,42 @@
         }).join("") +
       "</ol>";
     var body = document.getElementById("drawer-body");
-    if (packageImage && body) {
-      body.dataset.packageImage = packageImage;
+    if (canPreviewPackage && body) {
+      if (packageImage) body.dataset.packageImage = packageImage;
+      else delete body.dataset.packageImage;
+      body.dataset.packageShipmentId = id;
       body.onclick = function (event) {
         var btn = event.target.closest("[data-package-preview]");
         if (!btn) return;
         event.preventDefault();
-        openAdminPackagePreview(body.dataset.packageImage);
+        if (body.dataset.packageImage) {
+          openAdminPackagePreview(body.dataset.packageImage);
+          return;
+        }
+        if (btn.getAttribute("data-loading") === "1") return;
+        btn.setAttribute("data-loading", "1");
+        btn.disabled = true;
+        AdminAPI.getShipment(body.dataset.packageShipmentId || id)
+          .then(function (data) {
+            var ship = (data && data.shipment) || {};
+            var img =
+              ship.packageImage ||
+              (ship.deliveryNotice && ship.deliveryNotice.packageImage) ||
+              "";
+            btn.removeAttribute("data-loading");
+            btn.disabled = false;
+            if (!img) return;
+            body.dataset.packageImage = img;
+            openAdminPackagePreview(img);
+          })
+          .catch(function () {
+            btn.removeAttribute("data-loading");
+            btn.disabled = false;
+          });
       };
     } else if (body) {
       delete body.dataset.packageImage;
+      delete body.dataset.packageShipmentId;
       body.onclick = null;
     }
   }

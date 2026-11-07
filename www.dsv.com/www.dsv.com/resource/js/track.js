@@ -564,6 +564,31 @@
     return "";
   }
 
+  function hasPackagePreview(data) {
+    return !!(packageImageUrl(data) || (data && data.hasPackageImage));
+  }
+
+  function fetchPackageImage(id) {
+    if (!id) return Promise.resolve("");
+    return fetch("/api/tracking/" + encodeURIComponent(id) + "/package-image", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error((data && data.error) || "Image unavailable");
+          return data;
+        });
+      })
+      .then(function (data) {
+        var img = data && data.packageImage ? String(data.packageImage) : "";
+        return img.indexOf("data:image/") === 0 ? img : "";
+      })
+      .catch(function () {
+        return "";
+      });
+  }
+
   function hasRouteCoords(data) {
     function ok(v) {
       if (v == null || v === "") return false;
@@ -729,7 +754,7 @@
     );
     var data = progressed.data;
     var currentIdx = historyStageIndex(data, progressed);
-    var packageImg = packageImageUrl(data);
+    var packageImg = hasPackagePreview(data);
     var houseBill = data.houseBill || data.houseBillNumber || trackingNumber;
     var kind = modeKind(data.serviceType);
     var origin = placeWithCode(data.fromLocation);
@@ -1152,7 +1177,22 @@
       var previewBtn = event.target.closest(".mydsv-preview-package");
       if (previewBtn) {
         event.preventDefault();
-        openPackagePreview(packageImageUrl(shipment));
+        var inline = packageImageUrl(shipment);
+        if (inline) {
+          openPackagePreview(inline);
+          return;
+        }
+        if (!(shipment && shipment.hasPackageImage)) return;
+        if (previewBtn.getAttribute("data-loading") === "1") return;
+        previewBtn.setAttribute("data-loading", "1");
+        previewBtn.disabled = true;
+        fetchPackageImage(trackingNumber || (shipment && shipment.id)).then(function (img) {
+          previewBtn.removeAttribute("data-loading");
+          previewBtn.disabled = false;
+          if (!img) return;
+          shipment.packageImage = img;
+          openPackagePreview(img);
+        });
       }
     };
     root.addEventListener("click", root._mydsvActionsBound);
@@ -1213,7 +1253,12 @@
     if (!root || !isDetailsPage()) return;
 
     var params = new URLSearchParams(window.location.search);
-    var raw = params.get("id") || params.get("query") || "";
+    var raw =
+      params.get("id") ||
+      params.get("query") ||
+      params.get("trackingNumber") ||
+      params.get("refNumber") ||
+      "";
     var id = normalizeId(raw);
 
     if (!id) {

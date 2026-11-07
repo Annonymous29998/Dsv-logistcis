@@ -26,7 +26,9 @@ const {
   deleteShipment,
   previewRoute,
   publicShipment,
-  adminShipment
+  adminShipment,
+  packageImagePayload,
+  shipmentHasPackageImage
 } = require("./_lib/shipments");
 const { searchAddresses } = require("./_lib/geo");
 const {
@@ -66,6 +68,12 @@ function pathParts(req) {
 function shipmentListRow(item) {
   const timeline = item.timeline || [];
   const last = timeline[timeline.length - 1] || {};
+  let deliveryNotice = item.deliveryNotice;
+  if (deliveryNotice && typeof deliveryNotice === "object") {
+    deliveryNotice = Object.assign({}, deliveryNotice);
+    delete deliveryNotice.packageImage;
+    if (!Object.keys(deliveryNotice).length) deliveryNotice = null;
+  }
   return {
     id: item.id,
     status: item.status,
@@ -77,17 +85,19 @@ function shipmentListRow(item) {
     toLocation: item.toLocation,
     statusNearPlace: item.statusNearPlace,
     packageContent: item.packageContent,
+    hasPackageImage: shipmentHasPackageImage(item),
     signatureRequired: !!item.signatureRequired,
     estimatedDelivery: item.estimatedDelivery,
     deliveryTime: item.deliveryTime,
     labelCreatedDate: item.labelCreatedDate,
-    deliveryNotice: item.deliveryNotice,
+    deliveryNotice,
     holdReason: item.holdReason || null,
     cancelReason: item.cancelReason || null,
     statusReason: item.statusReason || null,
     previousStatus: item.previousStatus || null,
     heldAt: item.heldAt || null,
     cancelledAt: item.cancelledAt || null,
+    holdPausedMs: Number(item.holdPausedMs || 0) || 0,
     timeline,
     routeStops: item.routeStops || [],
     fromLat: item.fromLat,
@@ -434,6 +444,16 @@ async function handleTracking(req, res, id) {
   return sendJson(res, 200, { ok: true, id: item.id, shipment: publicShipment(item) });
 }
 
+async function handleTrackingPackageImage(req, res, id) {
+  if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method not allowed" });
+  if (!id) return sendJson(res, 400, { ok: false, error: "Missing tracking id" });
+  const item = await getShipment(String(id));
+  if (!item) return sendJson(res, 404, { ok: false, error: "Tracking not found." });
+  const packageImage = packageImagePayload(item);
+  if (!packageImage) return sendJson(res, 404, { ok: false, error: "No package image." });
+  return sendJson(res, 200, { ok: true, id: item.id, packageImage });
+}
+
 async function handlePublicSupport(req, res, id) {
   if (!id) return sendJson(res, 400, { ok: false, error: "Missing chat id" });
   if (req.method === "GET") {
@@ -532,6 +552,9 @@ module.exports = async function handler(req, res) {
     if (key === "admin/shipments") return await handleAdminShipmentsCollection(req, res);
     if (parts[0] === "admin" && parts[1] === "shipments" && parts[2]) {
       return await handleAdminShipmentItem(req, res, decodeURIComponent(parts[2]));
+    }
+    if (parts[0] === "tracking" && parts[1] && parts[2] === "package-image") {
+      return await handleTrackingPackageImage(req, res, decodeURIComponent(parts[1]));
     }
     if (parts[0] === "tracking" && parts[1]) {
       return await handleTracking(req, res, decodeURIComponent(parts[1]));

@@ -204,8 +204,10 @@
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
             "Clear all data" +
           "</button>" +
-          '<div class="date-pill" id="date-range">Live book · ' + new Date().toLocaleDateString() + "</div>" +
         "</div>" +
+      "</div>" +
+      '<div class="kpi-book-bar">' +
+        '<div class="date-pill" id="date-range">Live book · ' + new Date().toLocaleDateString() + "</div>" +
       "</div>" +
       '<div class="kpi-row">' +
         kpiCard("Total Shipments", summary.total, "blue", iconBox(), '<div class="kpi__trend">Live tracking book</div>') +

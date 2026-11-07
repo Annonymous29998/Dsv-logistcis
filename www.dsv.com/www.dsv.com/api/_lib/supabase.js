@@ -94,7 +94,8 @@ function shipmentToRow(id, item) {
           : item.deliveryNotice
             ? { en: String(item.deliveryNotice) }
             : {};
-      if (item.packageImage) notice.packageImage = item.packageImage;
+      // Do not copy item.packageImage into JSONB (that dual-stored ~200KB blobs).
+      // saveShipmentRow strips or re-nests packageImage depending on column support.
       const paused = Number(item.holdPausedMs || notice.holdPausedMs || 0) || 0;
       if (paused > 0) notice.holdPausedMs = paused;
       else delete notice.holdPausedMs;
@@ -116,6 +117,24 @@ function shipmentToRow(id, item) {
   };
 }
 
+function shipmentHasPackageImage(item) {
+  if (!item) return false;
+  if (item.packageImage && String(item.packageImage).indexOf("data:image/") === 0) return true;
+  const notice = item.deliveryNotice;
+  if (notice && typeof notice === "object" && notice.packageImage) {
+    return String(notice.packageImage).indexOf("data:image/") === 0;
+  }
+  return false;
+}
+
+function publicDeliveryNotice(notice) {
+  if (notice == null) return null;
+  if (typeof notice !== "object") return notice;
+  const out = Object.assign({}, notice);
+  delete out.packageImage;
+  return Object.keys(out).length ? out : null;
+}
+
 function publicShipment(item) {
   if (!item) return null;
   const {
@@ -123,9 +142,14 @@ function publicShipment(item) {
     adminEvents,
     progressUpdatedAt,
     previousStatus,
+    packageImage,
     ...publicFields
   } = item;
   // Keep createdAt/etaAt/holdPausedMs so public map can freeze on hold and resume after.
+  // Never inline base64 package photos — they bloat tracking JSON to hundreds of KB.
+  publicFields.hasPackageImage = shipmentHasPackageImage(item);
+  publicFields.deliveryNotice = publicDeliveryNotice(item.deliveryNotice);
+  publicFields.holdPausedMs = Number(item.holdPausedMs || 0) || 0;
   return publicFields;
 }
 
@@ -135,4 +159,25 @@ function adminShipment(item) {
   return adminFields;
 }
 
-module.exports = { getSupabase, rowToShipment, shipmentToRow, publicShipment, adminShipment };
+function packageImagePayload(item) {
+  if (!item) return null;
+  if (item.packageImage && String(item.packageImage).indexOf("data:image/") === 0) {
+    return String(item.packageImage);
+  }
+  const notice = item.deliveryNotice;
+  if (notice && typeof notice === "object" && notice.packageImage) {
+    const img = String(notice.packageImage);
+    if (img.indexOf("data:image/") === 0) return img;
+  }
+  return null;
+}
+
+module.exports = {
+  getSupabase,
+  rowToShipment,
+  shipmentToRow,
+  publicShipment,
+  adminShipment,
+  shipmentHasPackageImage,
+  packageImagePayload
+};
