@@ -131,6 +131,10 @@
   function tickLive(id) {
     var state = maps[id];
     if (!state || !state.byId) return;
+    if (!isMapAttached(state, null)) {
+      stopLive(id);
+      return;
+    }
     Object.keys(state.byId).forEach(function (sid) {
       var item = state.byId[sid];
       if (!item || !item.marker || !item.row) return;
@@ -415,9 +419,26 @@
     });
   }
 
+  function isMapAttached(state, container) {
+    if (!state || !state.map) return false;
+    var el = null;
+    try {
+      el = state.map.getContainer();
+    } catch (e) {
+      return false;
+    }
+    if (!el) return false;
+    // After dashboard re-render, root.innerHTML replaces the node — old map is orphaned.
+    if (container && el !== container) return false;
+    if (typeof el.isConnected === "boolean" && !el.isConnected) return false;
+    if (!document.body || !document.body.contains(el)) return false;
+    return true;
+  }
+
   function syncExisting(id, shipments, options) {
     var state = maps[id];
     if (!state || !state.map || !state.byId) return false;
+    if (!isMapAttached(state, null)) return false;
     var rows = (shipments || []).filter(hasCoords);
     var nextIds = rows.map(function (r) { return r.id; }).sort().join("|");
     var prevIds = (state.rows || []).map(function (r) { return r.id; }).sort().join("|");
@@ -466,8 +487,10 @@
     var id = container.id || ("map-" + Math.random().toString(36).slice(2, 8));
     container.id = id;
 
-    // Reuse existing map instance — full remount is what caused the blinking.
-    if (maps[id] && syncExisting(id, shipments, options)) {
+    // Reuse only if this Leaflet instance is still the visible DOM node.
+    // Live refresh replaces #view-root HTML; without this check the map goes blank
+    // while we keep updating an orphaned (detached) map instance.
+    if (maps[id] && isMapAttached(maps[id], container) && syncExisting(id, shipments, options)) {
       return maps[id].map;
     }
 
