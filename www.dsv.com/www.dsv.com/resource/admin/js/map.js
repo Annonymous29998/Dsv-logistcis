@@ -2,6 +2,8 @@
   "use strict";
 
   var maps = {};
+  // Remember camera when the dashboard HTML is rebuilt so zoom/pan is not reset.
+  var savedViews = {};
 
   function hasCoords(row) {
     // Number(null) === 0 — treat missing coords as unmapped so they can be repaired.
@@ -146,7 +148,20 @@
     });
   }
 
+  function captureView(id) {
+    var state = maps[id];
+    if (!state || !state.map || !isMapAttached(state, null)) return;
+    try {
+      savedViews[id] = {
+        center: state.map.getCenter(),
+        zoom: state.map.getZoom(),
+        focusId: state.focusId || null
+      };
+    } catch (e) {}
+  }
+
   function destroy(id) {
+    captureView(id);
     stopLive(id);
     if (maps[id]) {
       try {
@@ -475,7 +490,11 @@
       }
     });
     state.rows = rows;
-    if (state.options.focusId) focusShipment(id, state.options.focusId);
+    // Do not refit/zoom on data sync — that fights the user while they pan/zoom.
+    // Only refresh marker styles; camera stays where the user left it.
+    if (state.options.focusId && state.options.focusId !== state.focusId) {
+      focusShipment(id, state.options.focusId, { fit: false });
+    }
     try { state.map.invalidateSize({ animate: false }); } catch (e) {}
     return true;
   }
@@ -580,19 +599,33 @@
       focusId: focus && focus.id,
       options: options,
       maxZoom: options.maxZoom || 12,
-      liveTimer: window.setInterval(function () { tickLive(id); }, 4000),
+      // Marker creep only — does not reset camera.
+      liveTimer: window.setInterval(function () { tickLive(id); }, 8000),
       ro: null
     };
 
-    fitToRow(map, focus, options.maxZoom || 12);
-    maps[id].ro = keepMapFresh(map, container, function () {
+    var saved = savedViews[id];
+    if (saved && saved.center && typeof saved.zoom === "number") {
+      try {
+        map.setView(saved.center, saved.zoom, { animate: false });
+      } catch (e) {
+        fitToRow(map, focus, options.maxZoom || 12);
+      }
+      if (saved.focusId && byId[saved.focusId]) {
+        maps[id].focusId = saved.focusId;
+      }
+      delete savedViews[id];
+    } else {
       fitToRow(map, focus, options.maxZoom || 12);
-    });
+    }
+    // Size refresh only — never re-fit route (that resets zoom).
+    maps[id].ro = keepMapFresh(map, container, null);
 
     return map;
   }
 
-  function focusShipment(containerId, shipmentId) {
+  function focusShipment(containerId, shipmentId, opts) {
+    opts = opts || {};
     var state = maps[containerId];
     if (!state) return false;
     var entry = state.byId[shipmentId];
@@ -615,7 +648,10 @@
     });
 
     state.focusId = shipmentId;
-    fitToRow(state.map, entry.row, state.maxZoom);
+    // Fit only when the user (or UI) explicitly focuses a shipment — not on live sync.
+    if (opts.fit !== false) {
+      fitToRow(state.map, entry.row, state.maxZoom);
+    }
     try {
       state.map.getContainer().focus({ preventScroll: true });
     } catch (e) {
