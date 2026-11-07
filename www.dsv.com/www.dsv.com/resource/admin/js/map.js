@@ -148,26 +148,31 @@
     });
   }
 
-  function captureView(id) {
-    var state = maps[id];
-    if (!state || !state.map || !isMapAttached(state, null)) return;
-    try {
-      savedViews[id] = {
-        center: state.map.getCenter(),
-        zoom: state.map.getZoom(),
-        focusId: state.focusId || null
-      };
-    } catch (e) {}
-  }
-
   function destroy(id) {
-    captureView(id);
+    var state = maps[id];
+    if (state && state.map) {
+      try {
+        var el = state.map.getContainer();
+        var attached =
+          el &&
+          (typeof el.isConnected !== "boolean" || el.isConnected) &&
+          document.body &&
+          document.body.contains(el);
+        if (attached) {
+          savedViews[id] = {
+            center: state.map.getCenter(),
+            zoom: state.map.getZoom(),
+            focusId: state.focusId || null
+          };
+        }
+      } catch (e) {}
+    }
     stopLive(id);
     if (maps[id]) {
       try {
         if (maps[id].ro) maps[id].ro.disconnect();
-      } catch (e) {}
-      try { maps[id].map.remove(); } catch (e2) {}
+      } catch (e2) {}
+      try { maps[id].map.remove(); } catch (e3) {}
       delete maps[id];
     }
   }

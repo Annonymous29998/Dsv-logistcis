@@ -4,6 +4,8 @@
   function utils() { return U || (U = global.AdminUtils); }
 
   var chartInstance = null;
+  // Persist across soft live refreshes so zoom focus / ‹ › nav do not reset.
+  var dashLive = { moves: [], index: 0, focusId: null };
 
   function kpiCard(label, value, iconClass, iconSvg, trendHtml) {
     return (
@@ -44,8 +46,22 @@
       return s === "in-transit" || s === "out-for-delivery" || s === "on-hold";
     });
     if (!liveMoves.length && ctx.shipments[0]) liveMoves = [ctx.shipments[0]];
+
+    // Keep the card on the shipment the user was viewing (don't jump to #1 on refresh).
+    var preferredId = dashLive.focusId;
+    if (!preferredId) {
+      var focusBtn = root.querySelector("#dashboard-live-card [data-open-id]");
+      if (focusBtn) preferredId = focusBtn.getAttribute("data-open-id");
+    }
     var liveIndex = 0;
-    var live = liveMoves[0] || null;
+    if (preferredId) {
+      var foundIdx = liveMoves.findIndex(function (r) { return r.id === preferredId; });
+      if (foundIdx >= 0) liveIndex = foundIdx;
+    }
+    var live = liveMoves[liveIndex] || null;
+    dashLive.moves = liveMoves;
+    dashLive.index = liveIndex;
+    dashLive.focusId = live ? live.id : null;
 
     function liveCardHtml(row, index, total) {
       if (!row) return "";
@@ -72,19 +88,24 @@
       );
     }
 
-    function showLive(index) {
-      if (!liveMoves.length) return;
-      liveIndex = ((index % liveMoves.length) + liveMoves.length) % liveMoves.length;
-      live = liveMoves[liveIndex];
+    function paintLiveCard(row, index, total) {
       var cardHost = document.getElementById("dashboard-live-card");
-      if (cardHost) {
-        var wrap = document.createElement("div");
-        wrap.innerHTML = liveCardHtml(live, liveIndex, liveMoves.length);
-        cardHost.replaceWith(wrap.firstChild);
-      }
+      if (!cardHost || !row) return;
+      var wrap = document.createElement("div");
+      wrap.innerHTML = liveCardHtml(row, index, total);
+      cardHost.replaceWith(wrap.firstChild);
+    }
+
+    function showLive(index) {
+      var moves = dashLive.moves || [];
+      if (!moves.length) return;
+      dashLive.index = ((index % moves.length) + moves.length) % moves.length;
+      var row = moves[dashLive.index];
+      dashLive.focusId = row.id;
+      paintLiveCard(row, dashLive.index, moves.length);
       if (global.AdminMap) {
         // User chose a shipment — fitting the route is intentional.
-        global.AdminMap.focusShipment("dashboard-live-map", live.id);
+        global.AdminMap.focusShipment("dashboard-live-map", row.id);
       }
     }
 
@@ -104,10 +125,10 @@
           var next = event.target.closest("[data-live-next]");
           if (prev) {
             event.preventDefault();
-            showLive(liveIndex - 1);
+            showLive(dashLive.index - 1);
           } else if (next) {
             event.preventDefault();
-            showLive(liveIndex + 1);
+            showLive(dashLive.index + 1);
           }
         });
       }
@@ -116,21 +137,18 @@
     function mountLiveMap() {
       if (!global.AdminMap) return;
       global.AdminMap.mount(document.getElementById("dashboard-live-map"), ctx.shipments, {
-        focusId: live && live.id,
+        focusId: dashLive.focusId,
         onFocus: function (row) {
-          var idx = liveMoves.findIndex(function (r) { return r.id === row.id; });
+          var moves = dashLive.moves || [];
+          var idx = moves.findIndex(function (r) { return r.id === row.id; });
           if (idx < 0) {
-            liveMoves.push(row);
-            idx = liveMoves.length - 1;
+            moves.push(row);
+            dashLive.moves = moves;
+            idx = moves.length - 1;
           }
-          liveIndex = idx;
-          live = row;
-          var cardHost = document.getElementById("dashboard-live-card");
-          if (cardHost) {
-            var wrap = document.createElement("div");
-            wrap.innerHTML = liveCardHtml(live, liveIndex, liveMoves.length);
-            cardHost.replaceWith(wrap.firstChild);
-          }
+          dashLive.index = idx;
+          dashLive.focusId = row.id;
+          paintLiveCard(row, idx, moves.length);
         }
       });
     }
@@ -162,6 +180,15 @@
       ];
       for (var ki = 0; ki < kpis.length && ki < kpiValues.length; ki += 1) {
         kpis[ki].textContent = String(kpiValues[ki]);
+      }
+      var recentBody = root.querySelector(".card--recent tbody");
+      if (recentBody) {
+        recentBody.innerHTML = recent.map(function (row) {
+          return '<tr data-open-id="' + utils().escapeHtml(row.id) + '"><td class="mono">' + utils().escapeHtml(row.id) + "</td><td>" +
+            utils().escapeHtml(utils().cityOnly(row.fromLocation)) + " → " + utils().escapeHtml(utils().cityOnly(row.toLocation)) +
+            '</td><td><span class="' + utils().statusClass(row.status) + '">' + utils().escapeHtml(utils().statusLabel(row.status)) + "</span></td><td>" +
+            utils().escapeHtml(row.lastDate || "—") + "</td></tr>";
+        }).join("");
       }
       wireDashboardChrome();
       mountLiveMap();

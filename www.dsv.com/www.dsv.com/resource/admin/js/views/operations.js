@@ -83,6 +83,28 @@
       var s = U().normalizeStatus(r.status);
       return s === "in-transit" || s === "out-for-delivery";
     });
+    var mapRows = moving.length ? moving : ctx.shipments;
+    var tableHtml =
+      moving.map(function (row) {
+        return '<tr data-open-id="' + U().escapeHtml(row.id) + '"><td class="mono">' + U().escapeHtml(row.id) + "</td><td>" +
+          U().escapeHtml(row.statusNearPlace || U().shortPlace(row.lastLocation)) + '</td><td><span class="' +
+          U().statusClass(row.status) + '">' + U().escapeHtml(U().statusLabel(row.status)) + "</span></td></tr>";
+      }).join("") +
+      (moving.length ? "" : '<tr><td colspan="3" class="empty">No active moves.</td></tr>');
+
+    // Soft refresh: keep network map camera when live data updates.
+    var existingMap = root.querySelector("#tracking-network-map.leaflet-container");
+    if (existingMap && root.querySelector(".grid-2")) {
+      var pill = root.querySelector(".card__head .pill");
+      if (pill) pill.textContent = moving.length + " active";
+      var tbody = root.querySelector(".table-compact tbody");
+      if (tbody) tbody.innerHTML = tableHtml;
+      if (global.AdminMap) {
+        global.AdminMap.mount(existingMap, mapRows, { maxZoom: 10 });
+      }
+      return;
+    }
+
     root.innerHTML =
       '<div class="welcome"><div><h1>Live Tracking</h1><p>Active moves from the current book.</p></div></div>' +
       '<div class="grid-2">' +
@@ -91,18 +113,13 @@
           '<div class="map-stage"><div class="map-canvas map-canvas--tall" id="tracking-network-map" aria-label="Network map of active shipments"></div></div>' +
         "</div></article>" +
         '<article class="card"><div class="card__head"><h2>Moving now</h2></div><div class="card__body table-wrap"><table class="table-compact"><thead><tr><th>ID</th><th>Near</th><th>Status</th></tr></thead><tbody>' +
-        moving.map(function (row) {
-          return '<tr data-open-id="' + U().escapeHtml(row.id) + '"><td class="mono">' + U().escapeHtml(row.id) + "</td><td>" +
-            U().escapeHtml(row.statusNearPlace || U().shortPlace(row.lastLocation)) + '</td><td><span class="' +
-            U().statusClass(row.status) + '">' + U().escapeHtml(U().statusLabel(row.status)) + "</span></td></tr>";
-        }).join("") +
-        (moving.length ? "" : '<tr><td colspan="3" class="empty">No active moves.</td></tr>') +
+        tableHtml +
         "</tbody></table></div></article></div>";
 
     if (global.AdminMap) {
       global.AdminMap.mount(
         document.getElementById("tracking-network-map"),
-        moving.length ? moving : ctx.shipments,
+        mapRows,
         { maxZoom: 10 }
       );
     }
