@@ -60,10 +60,33 @@
     return pts[pts.length - 1];
   }
 
+  function hasStartedTransit(row) {
+    var timeline = Array.isArray(row && row.timeline) ? row.timeline : [];
+    for (var i = 0; i < timeline.length; i += 1) {
+      var title = String((timeline[i] && timeline[i].title) || "").toUpperCase();
+      if (
+        title === "IN TRANSIT" ||
+        title === "OUT FOR DELIVERY" ||
+        title === "DELIVERED" ||
+        title === "TO"
+      ) {
+        return true;
+      }
+    }
+    var s = String((row && row.status) || "").toLowerCase();
+    return s.indexOf("out") !== -1 || s.indexOf("deliver") !== -1;
+  }
+
   function progressFraction(row) {
     var s = String(row.status || "").toLowerCase();
     if (s.indexOf("deliver") !== -1) return 1;
-    if (s.indexOf("cancel") !== -1) return 0.15;
+    if (s.indexOf("cancel") !== -1) return 0;
+
+    // Stay at origin until the first IN TRANSIT scan — not at label created / pick-up.
+    if (!hasStartedTransit(row)) {
+      if (s.indexOf("hold") !== -1) return 0;
+      return 0;
+    }
 
     var created = Date.parse(row.createdAt || "");
     var eta = Date.parse(row.etaAt || "");
@@ -89,7 +112,6 @@
     }
 
     if (s.indexOf("hold") !== -1) return 0.55;
-    if (s.indexOf("label") !== -1 || s === "pending") return 0.05;
     if (s.indexOf("out") !== -1) return 0.85;
     return 0.35;
   }
