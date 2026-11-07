@@ -145,9 +145,105 @@
   function destroy(id) {
     stopLive(id);
     if (maps[id]) {
-      try { maps[id].map.remove(); } catch (e) {}
+      try {
+        if (maps[id].ro) maps[id].ro.disconnect();
+      } catch (e) {}
+      try { maps[id].map.remove(); } catch (e2) {}
       delete maps[id];
     }
+  }
+
+  var LEAFLET_SOURCES = [
+    {
+      css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
+      js: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+    },
+    {
+      css: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+      js: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    },
+    {
+      css: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css",
+      js: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"
+    }
+  ];
+
+  var leafletPromise = null;
+
+  function ensureCss(href) {
+    if (document.querySelector('link[data-dsv-leaflet-css="' + href + '"]')) return;
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.setAttribute("data-dsv-leaflet-css", href);
+    document.head.appendChild(link);
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[data-dsv-leaflet-js="' + src + '"]');
+      if (existing) {
+        if (global.L) return resolve(global.L);
+        existing.addEventListener("load", function () { resolve(global.L); });
+        existing.addEventListener("error", reject);
+        return;
+      }
+      var script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.setAttribute("data-dsv-leaflet-js", src);
+      script.onload = function () {
+        if (global.L) resolve(global.L);
+        else reject(new Error("Leaflet missing after load"));
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  function ensureLeaflet() {
+    if (global.L) return Promise.resolve(global.L);
+    if (leafletPromise) return leafletPromise;
+    leafletPromise = (function trySource(index) {
+      if (index >= LEAFLET_SOURCES.length) {
+        return Promise.reject(new Error("Leaflet CDNs unavailable"));
+      }
+      var source = LEAFLET_SOURCES[index];
+      ensureCss(source.css);
+      return loadScript(source.js).catch(function () {
+        return trySource(index + 1);
+      });
+    })(0);
+    leafletPromise = leafletPromise.catch(function (err) {
+      leafletPromise = null;
+      throw err;
+    });
+    return leafletPromise;
+  }
+
+  function keepMapFresh(map, container, fitFn) {
+    function refresh() {
+      if (!map || !container) return;
+      if (container.clientWidth < 40 || container.clientHeight < 40) return;
+      try {
+        map.invalidateSize({ animate: false });
+        if (typeof fitFn === "function") fitFn();
+      } catch (e) {}
+    }
+    [60, 200, 500, 1200, 2500, 5000].forEach(function (ms) {
+      window.setTimeout(refresh, ms);
+    });
+    var ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(function () { refresh(); });
+      try { ro.observe(container); } catch (e) {}
+    }
+    function onVis() {
+      if (!document.hidden) refresh();
+    }
+    document.addEventListener("visibilitychange", onVis);
+    map.whenReady(refresh);
+    return ro;
   }
 
   function fitToRow(map, row, maxZoom) {
@@ -229,13 +325,9 @@
   }
 
   function addBasemap(map) {
-    // Esri first (no key). If it fails, Geoapify (same key as address search), then OSM FR.
     var esriTiles = global.L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri"
-      }
+      { maxZoom: 19, attribution: "Tiles &copy; Esri" }
     );
     var osmFrTiles = global.L.tileLayer(
       "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
@@ -246,40 +338,68 @@
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> / osmfr'
       }
     );
-    var tileErrors = 0;
-    var switched = false;
+    var active = null;
+    var gotTile = false;
+    var queueIndex = 0;
+    var queue = [];
 
-    function switchFromEsri(fallback) {
-      if (switched || !map.hasLayer(esriTiles)) return;
-      switched = true;
-      map.removeLayer(esriTiles);
-      if (fallback) fallback.addTo(map);
-      else osmFrTiles.addTo(map);
+    function markTile() {
+      gotTile = true;
     }
 
-    esriTiles.on("tileerror", function () {
-      tileErrors += 1;
-      if (tileErrors < 3 || switched) return;
-      loadMapConfig().then(function (cfg) {
-        var geo = geoapifyTileLayer(cfg && cfg.geoapifyApiKey);
-        if (geo) {
-          var geoErrors = 0;
-          geo.on("tileerror", function () {
-            geoErrors += 1;
-            if (geoErrors >= 3 && map.hasLayer(geo)) {
-              map.removeLayer(geo);
-              if (!map.hasLayer(osmFrTiles)) osmFrTiles.addTo(map);
-            }
-          });
-          switchFromEsri(geo);
-          return;
-        }
-        switchFromEsri(osmFrTiles);
+    function useLayer(layer) {
+      if (!layer || !map) return;
+      if (active && map.hasLayer(active) && active !== layer) {
+        try { map.removeLayer(active); } catch (e) {}
+      }
+      active = layer;
+      if (!map.hasLayer(layer)) layer.addTo(map);
+      layer.off("tileload", markTile);
+      layer.off("load", markTile);
+      layer.on("tileload", markTile);
+      layer.on("load", markTile);
+    }
+
+    function armErrors(layer, onFail) {
+      var errors = 0;
+      layer.on("tileerror", function () {
+        errors += 1;
+        if (errors >= 2) onFail();
       });
+    }
+
+    function tryNext() {
+      if (gotTile) return;
+      queueIndex += 1;
+      if (queueIndex >= queue.length) return;
+      useLayer(queue[queueIndex]);
+      armErrors(queue[queueIndex], tryNext);
+      window.setTimeout(function () {
+        if (!gotTile) tryNext();
+      }, 2800);
+    }
+
+    // Show Esri immediately so the map is never blank while config loads.
+    queue = [esriTiles, osmFrTiles];
+    useLayer(esriTiles);
+    armErrors(esriTiles, tryNext);
+    window.setTimeout(function () {
+      if (!gotTile) tryNext();
+    }, 2800);
+
+    loadMapConfig().then(function (cfg) {
+      var geo = geoapifyTileLayer(cfg && cfg.geoapifyApiKey);
+      if (!geo) return;
+      // Prefer Geoapify when available — insert as first fallback after current.
+      queue = [active || esriTiles, geo, esriTiles, osmFrTiles].filter(function (layer, idx, arr) {
+        return layer && arr.indexOf(layer) === idx;
+      });
+      if (!gotTile) {
+        useLayer(geo);
+        armErrors(geo, tryNext);
+        queueIndex = queue.indexOf(geo);
+      }
     });
-    esriTiles.addTo(map);
-    // Prefetch key so fallback is ready if Esri misbehaves.
-    loadMapConfig();
   }
 
   function createMap(container) {
@@ -363,6 +483,7 @@
 
     // No shipments yet: still show a real map (world overview).
     if (!rows.length) {
+      map.setView([20, 0], 2);
       maps[id] = {
         map: map,
         rows: [],
@@ -370,15 +491,9 @@
         focusId: null,
         options: options,
         maxZoom: options.maxZoom || 12,
-        liveTimer: null
+        liveTimer: null,
+        ro: keepMapFresh(map, container, null)
       };
-      map.setView([20, 0], 2);
-      function refreshEmpty() {
-        try { map.invalidateSize({ animate: false }); } catch (e) {}
-      }
-      window.setTimeout(refreshEmpty, 80);
-      window.setTimeout(refreshEmpty, 320);
-      window.setTimeout(refreshEmpty, 800);
       return map;
     }
 
@@ -442,20 +557,14 @@
       focusId: focus && focus.id,
       options: options,
       maxZoom: options.maxZoom || 12,
-      liveTimer: window.setInterval(function () { tickLive(id); }, 4000)
+      liveTimer: window.setInterval(function () { tickLive(id); }, 4000),
+      ro: null
     };
 
     fitToRow(map, focus, options.maxZoom || 12);
-
-    function refreshSize() {
-      try {
-        map.invalidateSize({ animate: false });
-        fitToRow(map, focus, options.maxZoom || 12);
-      } catch (e) {}
-    }
-    window.setTimeout(refreshSize, 80);
-    window.setTimeout(refreshSize, 320);
-    window.setTimeout(refreshSize, 800);
+    maps[id].ro = keepMapFresh(map, container, function () {
+      fitToRow(map, focus, options.maxZoom || 12);
+    });
 
     return map;
   }
@@ -494,26 +603,50 @@
 
   function mount(container, shipments, options) {
     if (!container) return null;
+    options = options || {};
+    container.classList.remove("map-canvas--empty");
+    if (!maps[container.id] && !container.querySelector(".leaflet-pane")) {
+      container.innerHTML = '<div class="map-note">Loading map…</div>';
+    }
+
+    function attempt(attemptNo) {
+      ensureLeaflet()
+        .then(function () {
+          mountNow(container, shipments, options);
+        })
+        .catch(function () {
+          container.classList.remove("map-canvas--empty");
+          container.innerHTML = '<div class="map-note">Loading map…</div>';
+          window.setTimeout(function () {
+            attempt((attemptNo || 0) + 1);
+          }, Math.min(8000, 1200 + (attemptNo || 0) * 800));
+        });
+    }
+
     if (global.L) return mountNow(container, shipments, options);
-    var tries = 0;
-    var timer = window.setInterval(function () {
-      tries += 1;
-      if (global.L) {
-        window.clearInterval(timer);
-        mountNow(container, shipments, options);
-      } else if (tries > 40) {
-        window.clearInterval(timer);
-        container.innerHTML = '<div class="map-note">Map library failed to load. Refresh the page.</div>';
-        container.classList.add("map-canvas--empty");
-      }
-    }, 100);
+    attempt(0);
     return null;
+  }
+
+  function refreshAll() {
+    Object.keys(maps).forEach(function (id) {
+      var state = maps[id];
+      if (!state || !state.map) return;
+      try {
+        state.map.invalidateSize({ animate: false });
+        if (state.focusId && state.byId[state.focusId]) {
+          fitToRow(state.map, state.byId[state.focusId].row, state.maxZoom || 12);
+        }
+      } catch (e) {}
+    });
   }
 
   global.AdminMap = {
     mount: mount,
     destroy: destroy,
     focusShipment: focusShipment,
-    hasCoords: hasCoords
+    hasCoords: hasCoords,
+    refreshAll: refreshAll,
+    ensureLeaflet: ensureLeaflet
   };
 })(window);

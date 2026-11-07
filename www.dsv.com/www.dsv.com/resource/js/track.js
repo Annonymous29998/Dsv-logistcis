@@ -666,28 +666,61 @@
 
   function loadLeaflet() {
     if (window.L) return Promise.resolve(window.L);
-    return new Promise(function (resolve, reject) {
-      var cssId = "mydsv-leaflet-css";
-      if (!document.getElementById(cssId)) {
-        var link = document.createElement("link");
-        link.id = cssId;
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
+    var sources = [
+      {
+        css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
+        js: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+      },
+      {
+        css: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+        js: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      },
+      {
+        css: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css",
+        js: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"
       }
-      var existing = document.querySelector("script[data-mydsv-leaflet]");
-      if (existing) {
-        existing.addEventListener("load", function () { resolve(window.L); });
-        existing.addEventListener("error", reject);
-        return;
-      }
-      var script = document.createElement("script");
-      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-      script.setAttribute("data-mydsv-leaflet", "1");
-      script.onload = function () { resolve(window.L); };
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
+    ];
+
+    function ensureCss(href) {
+      if (document.querySelector('link[data-mydsv-leaflet-css="' + href + '"]')) return;
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.setAttribute("data-mydsv-leaflet-css", href);
+      document.head.appendChild(link);
+    }
+
+    function loadScript(src) {
+      return new Promise(function (resolve, reject) {
+        var existing = document.querySelector('script[data-mydsv-leaflet-js="' + src + '"]');
+        if (existing) {
+          if (window.L) return resolve(window.L);
+          existing.addEventListener("load", function () { resolve(window.L); });
+          existing.addEventListener("error", reject);
+          return;
+        }
+        var script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.setAttribute("data-mydsv-leaflet-js", src);
+        script.onload = function () {
+          if (window.L) resolve(window.L);
+          else reject(new Error("Leaflet missing"));
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    function trySource(index) {
+      if (index >= sources.length) return Promise.reject(new Error("Leaflet unavailable"));
+      ensureCss(sources[index].css);
+      return loadScript(sources[index].js).catch(function () {
+        return trySource(index + 1);
+      });
+    }
+
+    return trySource(0);
   }
 
   function resultCard(trackingNumber, rawData) {
@@ -925,7 +958,7 @@
 
     if (pts.length < 2) return;
 
-    loadLeaflet().then(function (L) {
+    function paintRouteMap(L) {
       var mapEl = document.getElementById("mydsv-route-map");
       if (!mapEl || !L) return;
       var map = L.map(mapEl, {
@@ -934,13 +967,10 @@
         scrollWheelZoom: true
       });
       modal._mydsvMap = map;
-      // Esri first; Geoapify (same address API key) then OSM FR if Esri fails.
+
       var esri = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-        {
-          maxZoom: 19,
-          attribution: "Tiles &copy; Esri"
-        }
+        { maxZoom: 19, attribution: "Tiles &copy; Esri" }
       );
       var osmFr = L.tileLayer(
         "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
@@ -951,47 +981,53 @@
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> / osmfr'
         }
       );
-      var tileErrors = 0;
-      var switched = false;
-      function switchFromEsri(fallback) {
-        if (switched || !map.hasLayer(esri)) return;
-        switched = true;
-        map.removeLayer(esri);
-        (fallback || osmFr).addTo(map);
+      var active = null;
+      var gotTile = false;
+      var queue = [esri, osmFr];
+      var queueIndex = 0;
+      function markTile() { gotTile = true; }
+      function useLayer(layer) {
+        if (active && map.hasLayer(active) && active !== layer) {
+          try { map.removeLayer(active); } catch (e) {}
+        }
+        active = layer;
+        if (!map.hasLayer(layer)) layer.addTo(map);
+        layer.on("tileload", markTile);
+        layer.on("load", markTile);
       }
-      esri.on("tileerror", function () {
-        tileErrors += 1;
-        if (tileErrors < 3 || switched) return;
-        fetch("/api/public/config", { credentials: "same-origin", cache: "no-store" })
-          .then(function (res) { return res.ok ? res.json() : null; })
-          .then(function (cfg) {
-            var key = cfg && cfg.geoapifyApiKey;
-            if (key) {
-              var geo = L.tileLayer(
-                "https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=" +
-                  encodeURIComponent(key),
-                {
-                  maxZoom: 20,
-                  attribution:
-                    'Powered by <a href="https://www.geoapify.com/">Geoapify</a> | &copy; OpenStreetMap'
-                }
-              );
-              var geoErrors = 0;
-              geo.on("tileerror", function () {
-                geoErrors += 1;
-                if (geoErrors >= 3 && map.hasLayer(geo)) {
-                  map.removeLayer(geo);
-                  if (!map.hasLayer(osmFr)) osmFr.addTo(map);
-                }
-              });
-              switchFromEsri(geo);
-              return;
+      function tryNext() {
+        if (gotTile) return;
+        queueIndex += 1;
+        if (queueIndex >= queue.length) return;
+        useLayer(queue[queueIndex]);
+        window.setTimeout(function () { if (!gotTile) tryNext(); }, 2800);
+      }
+      useLayer(esri);
+      esri.on("tileerror", function () { if (!gotTile) tryNext(); });
+      window.setTimeout(function () { if (!gotTile) tryNext(); }, 2800);
+      fetch("/api/public/config", { credentials: "same-origin", cache: "no-store" })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (cfg) {
+          var key = cfg && cfg.geoapifyApiKey;
+          if (!key) return;
+          var geo = L.tileLayer(
+            "https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=" +
+              encodeURIComponent(key),
+            {
+              maxZoom: 20,
+              attribution:
+                'Powered by <a href="https://www.geoapify.com/">Geoapify</a> | &copy; OpenStreetMap'
             }
-            switchFromEsri(osmFr);
-          })
-          .catch(function () { switchFromEsri(osmFr); });
-      });
-      esri.addTo(map);
+          );
+          queue = [active || esri, geo, esri, osmFr].filter(function (layer, idx, arr) {
+            return layer && arr.indexOf(layer) === idx;
+          });
+          if (!gotTile) {
+            useLayer(geo);
+            queueIndex = queue.indexOf(geo);
+          }
+        })
+        .catch(function () {});
 
       var line = L.polyline(pts, { color: "#0056b8", weight: 5, opacity: 0.9 }).addTo(map);
       L.circleMarker(pts[0], {
@@ -1012,19 +1048,36 @@
         ).openPopup();
       }
 
-      map.fitBounds(line.getBounds(), { padding: [36, 36], maxZoom: 12 });
-      window.setTimeout(function () {
-        try { map.invalidateSize({ animate: false }); } catch (_err) {}
-      }, 80);
-      window.setTimeout(function () {
-        try { map.invalidateSize({ animate: false }); } catch (_err) {}
-      }, 320);
-    }).catch(function () {
-      var mapEl = document.getElementById("mydsv-route-map");
-      if (mapEl) {
-        mapEl.outerHTML = '<p class="mydsv-route-lightbox__empty">Could not load the map. Please try again.</p>';
+      function refresh() {
+        try {
+          map.invalidateSize({ animate: false });
+          map.fitBounds(line.getBounds(), { padding: [36, 36], maxZoom: 12 });
+        } catch (_err) {}
       }
-    });
+      map.fitBounds(line.getBounds(), { padding: [36, 36], maxZoom: 12 });
+      [80, 250, 700, 1500].forEach(function (ms) {
+        window.setTimeout(refresh, ms);
+      });
+    }
+
+    loadLeaflet()
+      .then(paintRouteMap)
+      .catch(function () {
+        window.setTimeout(function () {
+          loadLeaflet()
+            .then(paintRouteMap)
+            .catch(function () {
+              var mapEl = document.getElementById("mydsv-route-map");
+              if (mapEl) {
+                mapEl.innerHTML =
+                  '<p class="mydsv-route-lightbox__empty">Loading map… retrying</p>';
+              }
+              window.setTimeout(function () {
+                loadLeaflet().then(paintRouteMap).catch(function () {});
+              }, 2000);
+            });
+        }, 1200);
+      });
   }
 
   function showCopyToast(message) {
