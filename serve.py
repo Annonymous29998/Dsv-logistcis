@@ -700,12 +700,21 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             if action == "end":
                 return _json_response(self, 200, {"ok": True, "chat": support_service.end_chat(chat_id)})
             text = str(payload.get("text") or "").strip()
-            if not text:
+            image = str(payload.get("image") or "").strip()
+            if not text and not (image.startswith("data:image/") and len(image) <= 900000):
                 return _json_response(self, 400, {"ok": False, "error": "Message required"})
-            chat = support_service.append_message(
-                chat_id,
-                {"from": "agent", "text": text, "at": int(time.time() * 1000)},
-            )
+            try:
+                chat = support_service.append_message(
+                    chat_id,
+                    {
+                        "from": "agent",
+                        "text": text,
+                        "image": image or None,
+                        "at": int(time.time() * 1000),
+                    },
+                )
+            except ValueError as err:
+                return _json_response(self, 400, {"ok": False, "error": str(err) or "Message required"})
             return _json_response(self, 200, {"ok": True, "chat": chat})
 
         if clean == "/api/admin/shipments":

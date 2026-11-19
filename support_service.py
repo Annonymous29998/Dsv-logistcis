@@ -234,13 +234,21 @@ def append_message(chat_id: str, message: dict[str, Any], options: dict[str, Any
             if geo.get(key) is not None:
                 existing[key] = str(geo.get(key) or "")
         existing["messages"] = list(existing.get("messages") or [])
-        existing["messages"].append(
-            {
-                "from": message.get("from"),
-                "text": message.get("text"),
-                "at": message.get("at") or _now_ms(),
-            }
-        )
+        image = message.get("image")
+        image_s = str(image or "").strip()
+        if not (image_s.startswith("data:image/") and len(image_s) <= 900000):
+            image_s = ""
+        text_s = str(message.get("text") or "").strip()
+        if not text_s and not image_s:
+            raise ValueError("Message required")
+        entry: dict[str, Any] = {
+            "from": message.get("from"),
+            "text": text_s or ("📷 Photo" if image_s else ""),
+            "at": message.get("at") or _now_ms(),
+        }
+        if image_s:
+            entry["image"] = image_s
+        existing["messages"].append(entry)
         existing["updatedAt"] = _now_ms()
         existing["typingAgentAt"] = None
         if existing.get("status") != "ended":

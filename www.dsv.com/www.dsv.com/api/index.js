@@ -429,8 +429,16 @@ async function handleAdminSupport(req, res) {
       return sendJson(res, 200, { ok: true, chat });
     }
     const text = String(payload.text || "").trim();
-    if (!text) return sendJson(res, 400, { ok: false, error: "Message required" });
-    const chat = await appendMessage(id, { from: "agent", text, at: Date.now() });
+    const image = String(payload.image || "").trim();
+    if (!text && !(image && image.indexOf("data:image/") === 0)) {
+      return sendJson(res, 400, { ok: false, error: "Message required" });
+    }
+    const chat = await appendMessage(id, {
+      from: "agent",
+      text,
+      image: image || null,
+      at: Date.now()
+    });
     return sendJson(res, 200, { ok: true, chat });
   }
   return sendJson(res, 405, { ok: false, error: "Method not allowed" });

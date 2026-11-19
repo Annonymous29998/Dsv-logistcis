@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <link rel="stylesheet" href="/resource/admin/css/admin.css?v=20261107p12">
+  <link rel="stylesheet" href="/resource/admin/css/admin.css?v=20261119chat1">
   <script>
     // Block dashboard until session is confirmed; bounce guests to login.
     (function () {
@@ -144,7 +144,19 @@
     </div>
     <div class="chat-msgs" id="chat-drawer-msgs"></div>
     <div class="drawer__foot chat-drawer__foot">
+      <div class="chat-attach-preview" id="chat-attach-preview" hidden>
+        <img id="chat-attach-thumb" alt="Image to send">
+        <button type="button" class="btn" id="chat-attach-clear">Remove</button>
+      </div>
       <form class="chat-compose" id="chat-drawer-form">
+        <label class="chat-attach-btn" title="Upload image" aria-label="Upload image">
+          <input type="file" id="chat-attach-input" accept="image/*" hidden>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </label>
         <input id="chat-drawer-input" placeholder="Type a reply…" autocomplete="off">
         <button type="submit">Send</button>
       </form>
@@ -179,7 +191,7 @@
   <script src="/resource/admin/js/views/dashboard.js?v=20261107p11"></script>
   <script src="/resource/admin/js/views/operations.js?v=20261107p09"></script>
   <script src="/resource/admin/js/views/create-shipment.js?v=20261102p67"></script>
-  <script src="/resource/admin/js/views/system.js?v=20261102p63"></script>
+  <script src="/resource/admin/js/views/system.js?v=20261119chat1"></script>
   <script src="/resource/admin/js/app.js?v=20261107p10"></script>
 </body>
 </html>

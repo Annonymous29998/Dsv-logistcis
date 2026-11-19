@@ -144,8 +144,17 @@ async function saveChat(chat) {
   return normalized;
 }
 
+function sanitizeChatImage(value) {
+  const img = String(value || "");
+  if (img.indexOf("data:image/") !== 0) return null;
+  // Keep chat payloads bounded so message history stays usable.
+  if (img.length > 900000) return null;
+  return img;
+}
+
 function messageKey(m) {
-  return `${m && m.from}|${m && m.at}|${m && m.text}`;
+  const img = m && m.image ? String(m.image).slice(0, 48) : "";
+  return `${m && m.from}|${m && m.at}|${m && m.text}|${img}`;
 }
 
 async function patchMetaOnly(id, metaPatch) {
@@ -173,7 +182,15 @@ async function patchMetaOnly(id, metaPatch) {
 async function appendMessage(id, message, options) {
   options = options || {};
   const at = message.at || Date.now();
-  const incoming = { from: message.from, text: message.text, at };
+  const image = sanitizeChatImage(message.image);
+  const text = String(message.text || "").trim();
+  if (!text && !image) {
+    const err = new Error("Message required");
+    err.status = 400;
+    throw err;
+  }
+  const incoming = { from: message.from, text: text || (image ? "📷 Photo" : ""), at };
+  if (image) incoming.image = image;
   let last = null;
 
   // Retry: concurrent typing/read upserts used to clobber the messages array.

@@ -252,6 +252,11 @@
     }
   }
 
+  function safeChatImage(src) {
+    src = String(src || "");
+    return src.indexOf("data:image/") === 0 ? src : "";
+  }
+
   function renderMessageList(list) {
     if (!messages) return;
     messages.innerHTML = "";
@@ -260,7 +265,28 @@
       var el = document.createElement("div");
       var who = (m.from === "agent" || m.from === "bot" || m.from === "system") ? "bot" : "user";
       el.className = "dsv-support-chat__msg dsv-support-chat__msg--" + who;
-      el.textContent = m.from === "agent" ? ("🕵️ Agent: " + m.text) : m.text;
+      var imgSrc = safeChatImage(m && m.image);
+      if (imgSrc) {
+        var img = document.createElement("img");
+        img.className = "dsv-support-chat__msg-img";
+        img.src = imgSrc;
+        img.alt = "Shared image";
+        el.appendChild(img);
+      }
+      var text = String((m && m.text) || "");
+      if (text && text !== "📷 Photo") {
+        var label = document.createElement("div");
+        label.className = "dsv-support-chat__msg-text";
+        label.textContent = m.from === "agent" ? ("🕵️ Agent: " + text) : text;
+        el.appendChild(label);
+      } else if (!imgSrc) {
+        el.textContent = m.from === "agent" ? ("🕵️ Agent: " + text) : text;
+      } else if (m.from === "agent") {
+        var agentTag = document.createElement("div");
+        agentTag.className = "dsv-support-chat__msg-text";
+        agentTag.textContent = "🕵️ Agent shared a photo";
+        el.appendChild(agentTag);
+      }
       messages.appendChild(el);
     });
     renderedCount = (list || []).length;

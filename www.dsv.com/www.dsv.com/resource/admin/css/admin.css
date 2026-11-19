@@ -997,16 +997,41 @@ button.note { font: inherit; color: inherit; width: 100%; cursor: pointer; }
 .bubble.bot { align-self: flex-start; background: #eef2ff; border: 1px solid #dbe4ff; color: var(--ink); }
 .chat-compose {
   display: flex; gap: .5rem; padding: .8rem; border-top: 1px solid var(--line);
-  background: #fff; flex-shrink: 0;
+  background: #fff; flex-shrink: 0; align-items: center;
 }
-.chat-compose input {
+.chat-compose input[type="text"],
+.chat-compose #chat-drawer-input {
   flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: .7rem .8rem;
   font-size: 16px; /* prevent iOS Safari zoom on focus */
 }
-.chat-compose button {
+.chat-compose button[type="submit"] {
   border: 0; border-radius: 12px; padding: 0 .9rem; background: var(--blue); color: #fff;
-  font-weight: 700; cursor: pointer; flex-shrink: 0;
+  font-weight: 700; cursor: pointer; flex-shrink: 0; min-height: 2.6rem;
 }
+.chat-attach-btn {
+  width: 2.6rem; height: 2.6rem; border-radius: 12px; border: 1px solid var(--line);
+  background: #f8fafc; color: var(--ink); display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.chat-attach-btn:hover { background: #eef4ff; border-color: #bfdbfe; color: var(--blue); }
+.chat-attach-btn.is-disabled,
+.chat-attach-btn:has(input:disabled) {
+  opacity: .45; cursor: default; pointer-events: none;
+}
+.chat-attach-preview {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .55rem .65rem; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc;
+}
+.chat-attach-preview[hidden] { display: none !important; }
+.chat-attach-preview img {
+  width: 3.2rem; height: 3.2rem; object-fit: cover; border-radius: 8px; border: 1px solid var(--line);
+}
+.bubble__img {
+  display: block; max-width: min(100%, 220px); max-height: 220px; width: auto; height: auto;
+  border-radius: 10px; margin: 0 0 .45rem; object-fit: cover; background: rgba(0,0,0,.06);
+}
+.bubble.agent .bubble__img { box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+.bubble.customer .bubble__img { border: 1px solid var(--line); }
 .drawer--chat {
   width: min(460px, 100%);
   z-index: 76;

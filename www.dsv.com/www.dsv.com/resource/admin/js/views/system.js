@@ -127,6 +127,7 @@
   }
 
   var supportCache = [];
+  var pendingChatImage = null;
   var typingIdleTimer = null;
   var typingPulseTimer = null;
   var typingActiveChatId = null;
@@ -210,6 +211,7 @@
       drawer.setAttribute("aria-hidden", "true");
     }
     if (backdrop) backdrop.classList.remove("is-open");
+    clearChatAttach();
   }
 
   function chatGeoLabel(chat) {
@@ -238,10 +240,14 @@
         (chat.status === "ended" ? " · ended" : "");
     }
     var nextHtml = (chat.messages || []).map(function (m) {
+      var img = safeChatImage(m && m.image);
+      var body =
+        (img ? '<img class="bubble__img" src="' + U().escapeHtml(img) + '" alt="Shared image">' : "") +
+        (m.text && String(m.text) !== "📷 Photo" ? U().escapeHtml(m.text) : (img ? "" : U().escapeHtml(m.text || "")));
       if (m.from === "system") {
-        return '<div class="bubble bot">' + U().escapeHtml(m.text) + "</div>";
+        return '<div class="bubble bot">' + body + "</div>";
       }
-      return '<div class="bubble ' + bubbleClass(m.from) + '">' + U().escapeHtml(m.text) + "</div>";
+      return '<div class="bubble ' + bubbleClass(m.from) + '">' + body + "</div>";
     }).join("") || '<p class="empty">No messages in this conversation yet.</p>';
     // Avoid wiping the transcript DOM (and scroll) when nothing changed.
     if (msgs.getAttribute("data-msg-sig") !== String((chat.messages || []).length) + ":" + nextHtml.length) {
@@ -257,9 +263,75 @@
     if (form) {
       var input = document.getElementById("chat-drawer-input");
       var sendBtn = form.querySelector('button[type="submit"]');
+      var attachInput = document.getElementById("chat-attach-input");
       if (input) input.disabled = ended;
       if (sendBtn) sendBtn.disabled = ended;
+      if (attachInput) attachInput.disabled = ended;
+      if (ended) clearChatAttach();
     }
+  }
+
+  function safeChatImage(src) {
+    src = String(src || "");
+    return src.indexOf("data:image/") === 0 ? src : "";
+  }
+
+  function clearChatAttach() {
+    var preview = document.getElementById("chat-attach-preview");
+    var thumb = document.getElementById("chat-attach-thumb");
+    var input = document.getElementById("chat-attach-input");
+    if (preview) preview.hidden = true;
+    if (thumb) thumb.removeAttribute("src");
+    if (input) input.value = "";
+    pendingChatImage = null;
+  }
+
+  function setChatAttach(dataUrl) {
+    pendingChatImage = dataUrl || null;
+    var preview = document.getElementById("chat-attach-preview");
+    var thumb = document.getElementById("chat-attach-thumb");
+    if (!preview || !thumb) return;
+    if (dataUrl) {
+      thumb.src = dataUrl;
+      preview.hidden = false;
+    } else {
+      clearChatAttach();
+    }
+  }
+
+  function compressChatImage(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !String(file.type || "").startsWith("image/")) {
+        reject(new Error("Choose an image file."));
+        return;
+      }
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error("Could not read image.")); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var maxSide = 960;
+          var scale = Math.min(1, maxSide / Math.max(img.width || 1, img.height || 1));
+          var w = Math.max(1, Math.round(img.width * scale));
+          var h = Math.max(1, Math.round(img.height * scale));
+          var canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          var ctx2d = canvas.getContext("2d");
+          ctx2d.drawImage(img, 0, 0, w, h);
+          var dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+          if (dataUrl.length > 700000) dataUrl = canvas.toDataURL("image/jpeg", 0.58);
+          if (dataUrl.length > 900000) {
+            reject(new Error("Image is still too large after compression."));
+            return;
+          }
+          resolve(dataUrl);
+        };
+        img.onerror = function () { reject(new Error("Invalid image file.")); };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   function findCachedChat(chatId, ctx) {
@@ -388,17 +460,54 @@
       });
     }
 
+    var attachInput = document.getElementById("chat-attach-input");
+    var attachClear = document.getElementById("chat-attach-clear");
+    if (attachInput) {
+      attachInput.addEventListener("change", async function () {
+        var file = attachInput.files && attachInput.files[0];
+        if (!file) return;
+        try {
+          var dataUrl = await compressChatImage(file);
+          setChatAttach(dataUrl);
+        } catch (err) {
+          clearChatAttach();
+          if (global.AdminUtils && typeof global.AdminUtils.toast === "function") {
+            global.AdminUtils.toast({
+              type: "error",
+              title: "Upload failed",
+              message: (err && err.message) || "Could not prepare image."
+            });
+          }
+        }
+      });
+    }
+    if (attachClear) {
+      attachClear.addEventListener("click", function () {
+        clearChatAttach();
+      });
+    }
+
     if (form) {
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
         var replyInput = document.getElementById("chat-drawer-input");
         var text = (replyInput && replyInput.value || "").trim();
-        if (!text || !ctx.selectedChatId) return;
+        var image = pendingChatImage || "";
+        if ((!text && !image) || !ctx.selectedChatId) return;
         clearAgentTyping(ctx.selectedChatId);
+        var sendBtn = form.querySelector('button[type="submit"]');
+        if (sendBtn) sendBtn.disabled = true;
         try {
-          await global.AdminAPI.supportAction({ id: ctx.selectedChatId, action: "message", text: text });
+          await global.AdminAPI.supportAction({
+            id: ctx.selectedChatId,
+            action: "message",
+            text: text,
+            image: image || undefined
+          });
+          if (replyInput) replyInput.value = "";
+          clearChatAttach();
         } catch (e) {}
-        if (replyInput) replyInput.value = "";
+        if (sendBtn) sendBtn.disabled = false;
         var chats = await fetchSupportChats();
         notifySupportChanged();
         var chat = chats.find(function (c) { return c.id === ctx.selectedChatId; });
@@ -513,7 +622,11 @@
           chats.map(function (c) {
             var online = isOnline(c);
             var preview = c.messages && c.messages.length
-              ? c.messages[c.messages.length - 1].text
+              ? (c.messages[c.messages.length - 1].image
+                  ? (c.messages[c.messages.length - 1].text && c.messages[c.messages.length - 1].text !== "📷 Photo"
+                      ? c.messages[c.messages.length - 1].text
+                      : "📷 Photo")
+                  : c.messages[c.messages.length - 1].text)
               : (online ? "Browsing the website" : "On website · waiting");
             var unread = c.status === "ended" ? 0 : (c.unread || 0);
             var when = c.updatedAt ? new Date(c.updatedAt).toLocaleString() : "";
