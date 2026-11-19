@@ -257,6 +257,53 @@
     return src.indexOf("data:image/") === 0 ? src : "";
   }
 
+  function closeChatImageLightbox() {
+    var existing = document.getElementById("dsv-chat-image-lightbox");
+    if (!existing) {
+      document.body.classList.remove("dsv-chat-lightbox-open");
+      return;
+    }
+    try {
+      if (typeof existing.close === "function" && existing.open) existing.close();
+    } catch (e) {}
+    existing.remove();
+    document.body.classList.remove("dsv-chat-lightbox-open");
+  }
+
+  function openChatImageLightbox(src) {
+    src = safeChatImage(src);
+    if (!src) return;
+    closeChatImageLightbox();
+    // Use a native <dialog>.showModal() so it stacks above the open chat dialog
+    // (body-level fixed overlays sit under the chat top-layer and look like a no-op).
+    var modal = document.createElement("dialog");
+    modal.id = "dsv-chat-image-lightbox";
+    modal.className = "dsv-chat-image-lightbox";
+    modal.setAttribute("aria-label", "Shared image");
+    modal.innerHTML =
+      '<div class="dsv-chat-image-lightbox__panel">' +
+        '<button type="button" class="dsv-chat-image-lightbox__close" data-chat-image-close aria-label="Close">&times;</button>' +
+        '<img src="' + src.replace(/"/g, "&quot;") + '" alt="Shared image">' +
+      "</div>";
+    document.body.appendChild(modal);
+    document.body.classList.add("dsv-chat-lightbox-open");
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal || event.target.closest("[data-chat-image-close]")) {
+        closeChatImageLightbox();
+      }
+    });
+    modal.addEventListener("cancel", function (event) {
+      event.preventDefault();
+      closeChatImageLightbox();
+    });
+    try {
+      if (typeof modal.showModal === "function") modal.showModal();
+      else modal.setAttribute("open", "");
+    } catch (e) {
+      modal.setAttribute("open", "");
+    }
+  }
+
   function renderMessageList(list) {
     if (!messages) return;
     messages.innerHTML = "";
@@ -267,11 +314,21 @@
       el.className = "dsv-support-chat__msg dsv-support-chat__msg--" + who;
       var imgSrc = safeChatImage(m && m.image);
       if (imgSrc) {
+        var imgBtn = document.createElement("button");
+        imgBtn.type = "button";
+        imgBtn.className = "dsv-support-chat__msg-img-btn";
+        imgBtn.setAttribute("aria-label", "Open shared image");
+        imgBtn.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          openChatImageLightbox(imgSrc);
+        });
         var img = document.createElement("img");
         img.className = "dsv-support-chat__msg-img";
         img.src = imgSrc;
         img.alt = "Shared image";
-        el.appendChild(img);
+        imgBtn.appendChild(img);
+        el.appendChild(imgBtn);
       }
       var text = String((m && m.text) || "");
       if (text && text !== "📷 Photo") {
@@ -647,5 +704,8 @@
   window.setInterval(pulsePresence, 15000);
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") pulsePresence();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") closeChatImageLightbox();
   });
 })();

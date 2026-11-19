@@ -780,6 +780,16 @@
             color: #1a2433;
             border-bottom-left-radius: 0.25rem;
         }
+        .dsv-support-chat__msg-img-btn {
+            display: block;
+            padding: 0;
+            margin: 0 0 0.4rem;
+            border: 0;
+            background: transparent;
+            cursor: zoom-in;
+            text-align: left;
+            max-width: 100%;
+        }
         .dsv-support-chat__msg-img {
             display: block;
             max-width: min(100%, 220px);
@@ -787,13 +797,58 @@
             width: auto;
             height: auto;
             border-radius: 0.65rem;
-            margin: 0 0 0.4rem;
             object-fit: cover;
             background: rgba(0, 0, 0, 0.04);
         }
         .dsv-support-chat__msg-text {
             white-space: pre-wrap;
             word-break: break-word;
+        }
+        body.dsv-chat-lightbox-open { overflow: hidden; }
+        .dsv-chat-image-lightbox {
+            border: 0;
+            padding: 1rem;
+            margin: auto;
+            max-width: none;
+            width: min(96vw, 960px);
+            background: transparent;
+            color: inherit;
+        }
+        .dsv-chat-image-lightbox::backdrop {
+            background: rgba(10, 18, 32, 0.78);
+        }
+        .dsv-chat-image-lightbox__panel {
+            position: relative;
+            background: #0b1220;
+            border-radius: 1rem;
+            padding: 0.65rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+        }
+        .dsv-chat-image-lightbox__panel img {
+            display: block;
+            max-width: min(90vw, 880px);
+            max-height: min(80vh, 860px);
+            width: auto;
+            height: auto;
+            margin: 0 auto;
+            object-fit: contain;
+            border-radius: 0.65rem;
+            background: #111827;
+        }
+        .dsv-chat-image-lightbox__close {
+            position: absolute;
+            top: 0.45rem;
+            right: 0.45rem;
+            width: 2.2rem;
+            height: 2.2rem;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #111827;
+            font-size: 1.35rem;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 2;
         }
         .dsv-support-chat__msg--user {
             align-self: flex-end;
@@ -3094,7 +3149,7 @@ Standard terms and conditions
             });
         })();
     </script>
-    <script src="/resource/js/support-widget.js?v=20261119chat1"></script>
+    <script src="/resource/js/support-widget.js?v=20261119chat3"></script>
     <script>
         (function () {
             var root = document.querySelector(".js-hero-rotator");
